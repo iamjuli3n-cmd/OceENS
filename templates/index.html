@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCEENS II - Plateforme d'évaluation</title>
+    <meta name="description" content="OCEENS II — Plateforme de sondages et évaluation des enseignements">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0b1929;
+            color: #e0e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Top Bar ─────────────────────────────── */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 14px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            background: rgba(11, 25, 41, 0.6);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .top-bar img {
+            height: 36px;
+            object-fit: contain;
+        }
+
+        /* ── Hero Banner ─────────────────────────── */
+        .hero {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('/static/img/fond_appli.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 0;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                180deg,
+                rgba(8, 22, 48, 0.70) 0%,
+                rgba(10, 30, 60, 0.55) 40%,
+                rgba(12, 36, 72, 0.70) 100%
+            );
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        /* ── Logo Title ──────────────────────────── */
+        .logo-title {
+            font-size: 4.5rem;
+            font-weight: 800;
+            letter-spacing: 6px;
+            color: #ffffff;
+            text-shadow: 0 2px 30px rgba(30, 80, 160, 0.4);
+            margin-bottom: 12px;
+        }
+
+        .logo-subtitle {
+            font-size: 1.05rem;
+            font-weight: 300;
+            color: rgba(200, 220, 240, 0.7);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 50px;
+        }
+
+        /* ── Buttons ─────────────────────────────── */
+        .hero-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hero-btn {
+            display: inline-block;
+            padding: 15px 36px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: none;
+        }
+
+        .hero-btn-primary {
+            background: linear-gradient(135deg, #1a5276, #1f6f9f);
+            color: #ffffff;
+            box-shadow: 0 4px 20px rgba(26, 82, 118, 0.35);
+        }
+
+        .hero-btn-primary:hover {
+            background: linear-gradient(135deg, #1f6f9f, #2589b8);
+            box-shadow: 0 6px 28px rgba(26, 82, 118, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .hero-btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: #c8dce8;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .hero-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        /* ── Responsive ──────────────────────────── */
+        @media (max-width: 600px) {
+            .logo-title {
+                font-size: 2.8rem;
+                letter-spacing: 3px;
+            }
+
+            .logo-subtitle {
+                font-size: 0.85rem;
+            }
+
+            .hero-btn {
+                padding: 13px 28px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Top bar with EPF logo -->
+    <div class="top-bar">
+        <img src="/static/img/epf_logo.png" alt="EPF">
+    </div>
+
+    <!-- Hero Banner -->
+    <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1 class="logo-title">OCEENS II</h1>
+            <p class="logo-subtitle">Plateforme d'évaluation des enseignements</p>
+            <div class="hero-actions">
+                <a href="/parametrage" class="hero-btn hero-btn-primary">Créer un sondage</a>
+                <a href="#" class="hero-btn hero-btn-secondary">Dashboard</a>
+            </div>
+        </div>
+    </section>
+
+</body>
+
+</html>

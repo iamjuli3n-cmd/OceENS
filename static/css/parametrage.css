@@ -1,0 +1,413 @@
+/* ═══════════════════════════════════════════════════════
+   Paramétrage — Thème EPF (blanc/rouge #DF251F)
+   ═══════════════════════════════════════════════════════ */
+
+/* --- Conteneur principal --- */
+#parametrage-container {
+    margin-top: 10px;
+}
+
+/* --- Ligne de sélecteurs Campus / Filière --- */
+.param-selectors {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.param-selectors .param-field {
+    flex: 1;
+    min-width: 200px;
+}
+
+.param-field label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.param-field select,
+.param-field input[type="text"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #333;
+    background: white;
+    transition: border-color 0.2s;
+}
+
+.param-field select:focus,
+.param-field input[type="text"]:focus {
+    outline: none;
+    border-color: #1a5276;
+    box-shadow: 0 0 0 2px rgba(26, 82, 118, 0.15);
+}
+
+.param-select-group {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+    color: #1a5276;
+}
+
+.btn-icon:hover {
+    border-color: #1a5276;
+    background: rgba(26, 82, 118, 0.05);
+}
+
+/* --- Liste des UE --- */
+.param-ue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* --- Bloc UE (accordéon) --- */
+.param-ue {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    overflow: visible;
+}
+
+.param-ue-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid transparent;
+    transition: background 0.2s;
+}
+
+.param-ue-header:hover {
+    background: #f0f0f0;
+}
+
+.param-ue.open .param-ue-header {
+    border-bottom: 1px solid #ddd;
+}
+
+/* Chevron */
+.param-chevron {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 5px solid #999;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.param-ue.open .param-chevron {
+    transform: rotate(90deg);
+}
+
+.param-ue-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.param-ue-name input {
+    border: 1px solid transparent;
+    background: transparent;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #333;
+    padding: 2px 6px;
+    border-radius: 3px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.param-ue-name input:hover {
+    border-color: #ddd;
+}
+
+.param-ue-name input:focus {
+    outline: none;
+    border-color: #1a5276;
+    background: white;
+}
+
+.param-badge-optionnel {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #fff3cd;
+    color: #856404;
+    font-weight: 600;
+}
+
+.param-ue-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.param-ue-actions label {
+    font-size: 0.8rem;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.param-ue-actions input[type="checkbox"] {
+    accent-color: #1a5276;
+    cursor: pointer;
+}
+
+/* --- Corps UE (modules) --- */
+.param-ue-body {
+    display: none;
+    padding: 12px 15px;
+}
+
+.param-ue.open .param-ue-body {
+    display: block;
+}
+
+/* --- Ligne Module --- */
+.param-module-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.param-module {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    flex-wrap: wrap;
+}
+
+.param-module-name {
+    flex: 1;
+    min-width: 140px;
+}
+
+.param-module-name input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+.param-module-name input:focus {
+    outline: none;
+    border-color: #1a5276;
+}
+
+.param-module-modalite {
+    min-width: 160px;
+}
+
+.param-module-modalite select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    color: #333;
+    background: white;
+}
+
+.param-module-modalite select:focus {
+    outline: none;
+    border-color: #1a5276;
+}
+
+/* --- Tags Professeurs --- */
+.param-module-profs {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.param-prof-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: #e9ecef;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: #333;
+}
+
+.param-prof-tag .param-remove-tag {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0 2px;
+    line-height: 1;
+}
+
+.param-prof-tag .param-remove-tag:hover {
+    color: #c0392b;
+}
+
+.param-add-prof-btn {
+    background: none;
+    border: 1px dashed #ccc;
+    color: #666;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.param-add-prof-btn:hover {
+    border-color: #1a5276;
+    color: #1a5276;
+}
+
+/* Dropdown profs */
+.param-prof-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.param-prof-dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    z-index: 9999;
+    min-width: 220px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.param-prof-dropdown-content.show {
+    display: block;
+}
+
+.param-prof-dropdown-content .param-prof-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+.param-prof-dropdown-content .param-prof-option:hover {
+    background: #f0f4f8;
+    color: #1a5276;
+}
+
+.param-prof-dropdown-content .param-prof-option-new {
+    font-weight: bold;
+    color: #1a5276;
+    border-bottom: 1px solid #eee;
+    background: #f5f8fb;
+}
+
+.param-prof-dropdown-content .param-prof-option-new:hover {
+    background: rgba(26, 82, 118, 0.08);
+}
+
+/* --- Boutons d'action --- */
+.param-btn-remove {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 2px 6px;
+    line-height: 1;
+    border-radius: 3px;
+    transition: all 0.2s;
+}
+
+.param-btn-remove:hover {
+    color: #c0392b;
+    background: rgba(192, 57, 43, 0.08);
+}
+
+.param-btn-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 14px;
+    background: white;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    color: #666;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+}
+
+.param-btn-add:hover {
+    border-color: #1a5276;
+    color: #1a5276;
+}
+
+.param-btn-add-ue {
+    margin-top: 12px;
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    font-size: 0.9rem;
+}
+
+/* --- Message vide --- */
+.param-empty {
+    text-align: center;
+    color: #999;
+    padding: 30px 20px;
+    font-size: 0.9rem;
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+    .param-module {
+        flex-direction: column;
+    }
+
+    .param-module-name,
+    .param-module-modalite,
+    .param-module-profs {
+        min-width: 100%;
+    }
+}
