@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OceENS II - Plateforme</title>
+    <style>
+        /* --- RESET ET BASE --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+
+        /* --- HEADER / NAVBAR --- */
+        header {
+            background-color: #DF251F; /* Votre Rouge DA */
+            color: white;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        /* --- LOGO --- */
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo span {
+            background-color: white;
+            color: #DF251F; /* Texte rouge comme le fond header */
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* --- NAVIGATION --- */
+        .main-nav {
+            display: flex;
+            height: 100%;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            height: 100%;
+            transition: all 0.3s;
+            border-bottom: 4px solid transparent;
+        }
+
+        .nav-btn:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+            color: white;
+        }
+
+        .nav-btn.active {
+            color: white;
+            border-bottom: 8px solid #eee; /* Votre style de bordure active */
+            font-weight: bold;
+        }
+
+        /* --- PROFIL UTILISATEUR --- */
+        .user-menu {
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background-color: #e0e0e0;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #DF251F;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .user-name {
+            font-size: 0.95rem;
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
+            .user-name { display: block; }
+        }
+
+        /* Dropdown Menu */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 50px;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border-radius: 4px;
+            z-index: 1001;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+
+        .dropdown-content.show {
+            display: block;
+        }
+
+        .dropdown-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            background-color: #f9f9f9;
+        }
+        
+        .dropdown-header strong { display: block; color: #333; }
+        .dropdown-header span { font-size: 0.8rem; color: #666; }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+            color: #51a118; /* Votre vert au survol */
+        }
+
+        /* --- CONTENU PRINCIPAL --- */
+        main {
+            margin-top: 80px;
+            padding: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cartes */
+        .card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .card h2 {
+            color: #DF251F; /* Adapté à votre rouge */
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .list-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .list-item:last-child { border-bottom: none; }
+        
+        /* Badges */
+        .badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .badge-green { background-color: #d4edda; color: #155724; }
+        .badge-blue { background-color: #cce5ff; color: #004085; }
+        .badge-gray { background-color: #e2e3e5; color: #383d41; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- STYLES AJOUTÉS POUR LA CRÉATION DE SONDAGE --- */
+        
+        /* Boutons */
+        .btn {
+            background-color: #DF251F; /* Votre rouge */
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+        .btn:hover { background-color: #b91d19; }
+
+        .btn-cancel {
+            background-color: #6c757d; /* Gris pour annuler */
+        }
+        .btn-cancel:hover { background-color: #5a6268; }
+
+        /* Formulaires */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .form-control:focus {
+            border-color: #DF251F;
+            outline: none;
+        }
+        
+        /* En-tête des onglets avec bouton d'action */
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header-actions h2 {
+            margin: 0;
+            color: #333;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo">
+            <!-- Pas de chapeau -->
+            Oce<span>ENS</span> II
+        </div>
+
+        <nav class="main-nav">
+            <button class="nav-btn active" onclick="openTab('sondages')">Sondages</button>
+            <button class="nav-btn" onclick="openTab('statistiques')">Statistiques</button>
+            <button class="nav-btn" onclick="openTab('historique')">Historique</button>
+        </nav>
+
+        <div class="user-menu" onclick="toggleUserMenu()">
+            <span class="user-name">Julien B.</span>
+            <div class="user-avatar">JB</div>
+            <span style="font-size: 0.7rem;">▼</span>
+
+            <div class="dropdown-content" id="userDropdown">
+                <div class="dropdown-header">
+                    <strong>Julien B</strong>
+                    <span>juju_b@oceens.edu</span>
+                </div>
+                <a href="#"> Mon Profil</a>
+                <a href="#"> Préférences</a>
+                <a href="#"> Notes</a>
+                <div style="border-top: 1px solid #eee;"></div>
+                <a href="#" style="color: #dc3545;"> Déconnexion</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENU PRINCIPAL -->
+    <main>
+        
+        <!-- ONGLET 1 : SONDAGES -->
+        <div id="sondages" class="tab-content active">
+            
+            <!-- VUE 1 : LISTE (Visible par défaut) -->
+            <div id="sondages-liste">
+                <div class="header-actions">
+                    <!-- Titre vide ou texte selon préférence, ici juste le bouton aligné à droite -->
+                    <div></div> 
+                    <button class="btn" onclick="afficherCreation()">+ Créer un sondage</button>
+                </div>
+
+                <div class="card">
+                    <h2>Sondages en cours</h2>
+                    <div class="list-item">
+                        <div>
+                            <h3>Choix des électifs - Semestre 2</h3>
+                            <p style="color:#666; font-size:0.9rem; margin-top:5px;">Veuillez choisir vos cours optionnels avant le 25 février.</p>
+                        </div>
+                        <button class="btn">Répondre</button>
+                    </div>
+                    <div class="list-item">
+                        <div>
+                            <h3>Évaluation du cours de Physique</h3>
+                            <p style="color:#666; font-size:0.9rem; margin-top:5px;">Anonyme • 5 minutes estimées</p>
+                        </div>
+                        <button class="btn">Répondre</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Sondages terminés récemment</h2>
+                    <div class="list-item">
+                        <span>Date de la réunion de rentrée</span>
+                        <span class="badge badge-gray">Fermé</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VUE 2 : CRÉATION (Caché par défaut) -->
+            <div id="sondages-creation" style="display: none;">
+                <div class="card">
+                    <h2>Nouveau Sondage</h2>
+                    <p style="margin-bottom: 20px; color: #666;">Remplissez les informations ci-dessous pour créer un nouveau sondage.</p>
+                    
+                    <form onsubmit="event.preventDefault(); alert('Sondage publié !'); masquerCreation();">
+                        <div class="form-group">
+                            <label class="form-label">Titre du sondage</label>
+                            <input type="text" class="form-control" placeholder="Ex: Choix du projet de groupe">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" rows="4" placeholder="Instructions pour les participants..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Date limite</label>
+                            <input type="date" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Type de question</label>
+                            <select class="form-control">
+                                <option>Choix unique</option>
+                                <option>Choix multiples</option>
+                                <option>Réponse libre</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-top: 20px; display: flex; gap: 10px;">
+                            <button type="submit" class="btn">Publier</button>
+                            <button type="button" class="btn btn-cancel" onclick="masquerCreation()">Annuler</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ONGLET 2 : STATISTIQUES -->
+        <div id="statistiques" class="tab-content">
+            <div class="card">
+                <h2>Vue d'ensemble</h2>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 1; background:#f8f9fa; padding:20px; border-radius:5px; text-align:center;">
+                        <h3 style="font-size:2rem; color:#DF251F;">85%</h3>
+                        <p>Taux de participation</p>
+                    </div>
+                    <div style="flex: 1; background:#f8f9fa; padding:20px; border-radius:5px; text-align:center;">
+                        <h3 style="font-size:2rem; color:#28a745;">12</h3>
+                        <p>Sondages complétés</p>
+                    </div>
+                    <div style="flex: 1; background:#f8f9fa; padding:20px; border-radius:5px; text-align:center;">
+                        <h3 style="font-size:2rem; color:#ffc107;">3</h3>
+                        <p>En attente</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Progression par matière</h2>
+                <p><em>(Espace réservé pour des graphiques JS comme Chart.js)</em></p>
+                <div style="margin-top:20px;">
+                    <div style="margin-bottom: 10px;">Mathématiques <div style="background:#e9ecef; height:10px; border-radius:5px; margin-top:5px;"><div style="background:#DF251F; width:70%; height:100%; border-radius:5px;"></div></div></div>
+                    <div style="margin-bottom: 10px;">Informatique <div style="background:#e9ecef; height:10px; border-radius:5px; margin-top:5px;"><div style="background:#28a745; width:90%; height:100%; border-radius:5px;"></div></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ONGLET 3 : HISTORIQUE -->
+        <div id="historique" class="tab-content">
+            <div class="card">
+                <h2>Historique 2025</h2>
+                <div class="list-item">
+                    <div>
+                        <strong>Sondage - MEE - 2024/2025</strong><br>
+                        <span style="font-size:0.8rem; color:#777;">Aujourd'hui, 14:30</span>
+                    </div>
+                    <span class="badge badge-blue">Sondage</span>
+                </div>
+                <div class="list-item">
+                    <div>
+                        <strong>Sondage - MDE - 2024/2025</strong><br>
+                        <span style="font-size:0.8rem; color:#777;">Hier, 18:45</span>
+                    </div>
+                    <span class="badge badge-green">Sondage</span>
+                </div>
+                <div class="list-item">
+                    <div>
+                        <strong>Sondage - MIN - 2024/2025</strong><br>
+                        <span style="font-size:0.8rem; color:#777;">20 Fev, 09:12</span>
+                    </div>
+                    <span class="badge badge-green">Sondage</span>
+                </div>
+                <div class="list-item">
+                    <div>
+                        <strong>Sondage - MDB - 2024/2025</strong><br>
+                        <span style="font-size:0.8rem; color:#777;">18 Fev, 11:00</span>
+                    </div>
+                    <span class="badge badge-blue">Ressource</span>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Historique 2024</h2>
+                <div class="list-item">
+                    <div>
+                        <strong>Connexion au portail</strong><br>
+                        <span style="font-size:0.8rem; color:#777;">Aujourd'hui, 14:30</span>
+                    </div>
+                    <span class="badge badge-blue">Système</span>
+                </div>
+                <div class="list-item">
+                    <div>
+                        <strong>Soumission: Devoir de Mathématiques</strong><br>
+                        <span style="font-size:0.8rem; color:#777;">Hier, 18:45</span>
+                    </div>
+                    <span class="badge badge-green">Devoir</span>
+                </div>
+                <div class="list-item">
+                    <div>
+                        <strong>Participation: Sondage "Repas de Noël"</strong><br>
+                        <span style="font-size:0.8rem; color:#777;">20 Fev, 09:12</span>
+                    </div>
+                    <span class="badge badge-green">Sondage</span>
+                </div>
+                <div class="list-item">
+                    <div>
+                        <strong>Téléchargement: Syllabus.pdf</strong><br>
+                        <span style="font-size:0.8rem; color:#777;">18 Fev, 11:00</span>
+                    </div>
+                    <span class="badge badge-blue">Ressource</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- NAVIGATION ONGLETS ---
+        function openTab(tabName) {
+            var contents = document.getElementsByClassName("tab-content");
+            for (var i = 0; i < contents.length; i++) {
+                contents[i].classList.remove("active");
+            }
+
+            var buttons = document.getElementsByClassName("nav-btn");
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove("active");
+            }
+
+            document.getElementById(tabName).classList.add("active");
+            event.currentTarget.classList.add("active");
+
+            // Si on revient sur l'onglet sondage, on réinitialise l'affichage sur la liste
+            if(tabName === 'sondages') {
+                masquerCreation();
+            }
+        }
+
+        // --- MENU UTILISATEUR ---
+        function toggleUserMenu() {
+            var dropdown = document.getElementById("userDropdown");
+            dropdown.classList.toggle("show");
+            event.stopPropagation();
+        }
+
+        document.addEventListener('click', function(event) {
+            var dropdown = document.getElementById("userDropdown");
+            var userMenu = document.querySelector('.user-menu');
+            if (!userMenu.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // --- GESTION CREATION SONDAGE ---
+        function afficherCreation() {
+            document.getElementById('sondages-liste').style.display = 'none';
+            document.getElementById('sondages-creation').style.display = 'block';
+        }
+
+        function masquerCreation() {
+            document.getElementById('sondages-creation').style.display = 'none';
+            document.getElementById('sondages-liste').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
