@@ -18,43 +18,59 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0b1929;
-            color: #e0e8f0;
+            background: #ffffff;
+            color: #333333;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             overflow-x: hidden;
         }
 
-        /* ── Top Bar ─────────────────────────────── */
-        .top-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            padding: 14px 30px;
+        /* ── Top Header ─────────────────────────────── */
+        header {
+            background-color: #ffffff;
+            height: 80px;
             display: flex;
             align-items: center;
-            justify-content: flex-start;
-            background: rgba(11, 25, 41, 0.6);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            justify-content: space-between;
+            padding: 0 40px;
+            border-bottom: 1px solid #e0e0e0;
+            z-index: 100;
+            position: relative;
         }
 
-        .top-bar img {
-            height: 36px;
+        .header-logo {
+            height: 50px;
             object-fit: contain;
         }
 
-        /* ── Hero Banner ─────────────────────────── */
-        .hero {
+        .header-user {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #333;
+            background: transparent;
+        }
+
+        .header-user svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* ── Main Content Area (Hero) ────────────────── */
+        main {
+            flex: 1;
             position: relative;
-            width: 100%;
-            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
 
         .hero-bg {
@@ -63,54 +79,64 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('/static/img/fond_appli.png');
+            background-image: url('/static/img/fond_accueil.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             z-index: 0;
         }
 
-        .hero-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                180deg,
-                rgba(8, 22, 48, 0.70) 0%,
-                rgba(10, 30, 60, 0.55) 40%,
-                rgba(12, 36, 72, 0.70) 100%
-            );
-            z-index: 1;
-        }
-
         .hero-content {
             position: relative;
             z-index: 2;
             text-align: center;
+            background: rgba(255, 255, 255, 0.4);
+            padding: 40px 60px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            max-width: 90%;
         }
 
-        /* ── Logo Title ──────────────────────────── */
+        /* Si l'image 'fond_accueil.png' contient déjà le flou et qu'il n'y a pas
+           de boite translucide dans la maquette, on peut enlever le fond blanc ci-dessus
+           en rendant l'arrière plan transparent. La maquette montre le texte directement
+           sur le flou. Modifions le fond de .hero-content : */
+        .hero-content {
+            background: transparent;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            padding: 20px;
+        }
+
+        /* ── Title ───────────────────────────────────── */
         .logo-title {
-            font-size: 4.5rem;
-            font-weight: 800;
-            letter-spacing: 6px;
-            color: #ffffff;
-            text-shadow: 0 2px 30px rgba(30, 80, 160, 0.4);
-            margin-bottom: 12px;
+            font-size: 5.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .text-orange {
+            color: #ff5a00;
+        }
+
+        .text-blue {
+            color: #0044b3;
         }
 
         .logo-subtitle {
-            font-size: 1.05rem;
-            font-weight: 300;
-            color: rgba(200, 220, 240, 0.7);
-            letter-spacing: 3px;
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: #111111;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            margin-bottom: 50px;
+            margin-bottom: 40px;
         }
 
-        /* ── Buttons ─────────────────────────────── */
+        /* ── Buttons ─────────────────────────────────── */
         .hero-actions {
             display: flex;
             gap: 20px;
@@ -120,57 +146,59 @@
 
         .hero-btn {
             display: inline-block;
-            padding: 15px 36px;
+            padding: 16px 40px;
             font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
+            font-size: 1.05rem;
             font-weight: 600;
-            letter-spacing: 0.5px;
-            border-radius: 8px;
+            border-radius: 50px;
             text-decoration: none;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
             border: none;
         }
 
-        .hero-btn-primary {
-            background: linear-gradient(135deg, #1a5276, #1f6f9f);
+        .hero-btn-blue {
+            background-color: #0d47a1; /* Bleu foncé similaire à la maquette */
             color: #ffffff;
-            box-shadow: 0 4px 20px rgba(26, 82, 118, 0.35);
         }
 
-        .hero-btn-primary:hover {
-            background: linear-gradient(135deg, #1f6f9f, #2589b8);
-            box-shadow: 0 6px 28px rgba(26, 82, 118, 0.5);
+        .hero-btn-blue:hover {
+            background-color: #08306b;
             transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(13, 71, 161, 0.3);
         }
 
-        .hero-btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
-            color: #c8dce8;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-
-        .hero-btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.14);
+        .hero-btn-orange {
+            background-color: #ff6d00; /* Orange similaire à la maquette */
             color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .hero-btn-orange:hover {
+            background-color: #e65100;
             transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 109, 0, 0.3);
         }
 
         /* ── Responsive ──────────────────────────── */
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
             .logo-title {
-                font-size: 2.8rem;
-                letter-spacing: 3px;
+                font-size: 4rem;
             }
 
             .logo-subtitle {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
 
             .hero-btn {
-                padding: 13px 28px;
-                font-size: 0.9rem;
+                padding: 14px 30px;
+                font-size: 0.95rem;
+                width: 100%;
+            }
+
+            header {
+                padding: 0 20px;
+                height: 70px;
             }
         }
     </style>
@@ -178,24 +206,28 @@
 
 <body>
 
-    <!-- Top bar with EPF logo -->
-    <div class="top-bar">
-        <img src="/static/img/epf_logo.png" alt="EPF">
-    </div>
+    <header>
+        <img src="/static/img/epf_logo.png" alt="EPF Engineering School" class="header-logo">
+        <div class="header-user" aria-label="Profil utilisateur">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+        </div>
+    </header>
 
-    <!-- Hero Banner -->
-    <section class="hero">
+    <main>
         <div class="hero-bg"></div>
-        <div class="hero-overlay"></div>
         <div class="hero-content">
-            <h1 class="logo-title">OCEENS II</h1>
-            <p class="logo-subtitle">Plateforme d'évaluation des enseignements</p>
+            <h1 class="logo-title">
+                <span class="text-orange">Oceens</span><span class="text-blue">II</span>
+            </h1>
+            <p class="logo-subtitle">Plateformes d'évaluation des enseignements</p>
             <div class="hero-actions">
-                <a href="/parametrage" class="hero-btn hero-btn-primary">Créer un sondage</a>
-                <a href="#" class="hero-btn hero-btn-secondary">Dashboard</a>
+                <a href="/parametrage" class="hero-btn hero-btn-blue">Créer questionnaire</a>
+                <a href="#" class="hero-btn hero-btn-orange">Visionner dashboard</a>
             </div>
         </div>
-    </section>
+    </main>
 
 </body>
 
