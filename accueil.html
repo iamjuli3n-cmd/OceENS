@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,14 +21,15 @@
 
         /* --- HEADER / NAVBAR --- */
         header {
-            background-color: #DF251F; /* Votre Rouge DA */
+            background-color: #DF251F;
+            /* Votre Rouge DA */
             color: white;
             height: 60px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             position: fixed;
             top: 0;
             width: 100%;
@@ -41,13 +43,9 @@
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-        
-        .logo span {
             background-color: white;
-            color: #DF251F; /* Texte rouge comme le fond header */
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 4px 12px;
+            border-radius: 8px;
         }
 
         /* --- NAVIGATION --- */
@@ -75,7 +73,8 @@
 
         .nav-btn.active {
             color: white;
-            border-bottom: 8px solid #eee; /* Votre style de bordure active */
+            border-bottom: 8px solid #eee;
+            /* Votre style de bordure active */
             font-weight: bold;
         }
 
@@ -105,9 +104,11 @@
             font-size: 0.95rem;
             display: none;
         }
-        
+
         @media (min-width: 768px) {
-            .user-name { display: block; }
+            .user-name {
+                display: block;
+            }
         }
 
         /* Dropdown Menu */
@@ -118,7 +119,7 @@
             top: 50px;
             background-color: white;
             min-width: 200px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             border-radius: 4px;
             z-index: 1001;
             overflow: hidden;
@@ -134,9 +135,16 @@
             border-bottom: 1px solid #eee;
             background-color: #f9f9f9;
         }
-        
-        .dropdown-header strong { display: block; color: #333; }
-        .dropdown-header span { font-size: 0.8rem; color: #666; }
+
+        .dropdown-header strong {
+            display: block;
+            color: #333;
+        }
+
+        .dropdown-header span {
+            font-size: 0.8rem;
+            color: #666;
+        }
 
         .dropdown-content a {
             color: #333;
@@ -148,7 +156,8 @@
 
         .dropdown-content a:hover {
             background-color: #f1f1f1;
-            color: #51a118; /* Votre vert au survol */
+            color: #51a118;
+            /* Votre vert au survol */
         }
 
         /* --- CONTENU PRINCIPAL --- */
@@ -176,11 +185,12 @@
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .card h2 {
-            color: #DF251F; /* Adapté à votre rouge */
+            color: #DF251F;
+            /* Adapté à votre rouge */
             margin-bottom: 15px;
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
@@ -193,9 +203,11 @@
             justify-content: space-between;
             align-items: center;
         }
-        
-        .list-item:last-child { border-bottom: none; }
-        
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
         /* Badges */
         .badge {
             padding: 5px 10px;
@@ -203,20 +215,40 @@
             font-size: 0.8rem;
             font-weight: bold;
         }
-        .badge-green { background-color: #d4edda; color: #155724; }
-        .badge-blue { background-color: #cce5ff; color: #004085; }
-        .badge-gray { background-color: #e2e3e5; color: #383d41; }
+
+        .badge-green {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .badge-blue {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+
+        .badge-gray {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* --- STYLES AJOUTÉS POUR LA CRÉATION DE SONDAGE --- */
-        
+
         /* Boutons */
         .btn {
-            background-color: #DF251F; /* Votre rouge */
+            background-color: #DF251F;
+            /* Votre rouge */
             color: white;
             padding: 10px 15px;
             border: none;
@@ -226,23 +258,32 @@
             font-size: 0.9rem;
             display: inline-block;
         }
-        .btn:hover { background-color: #b91d19; }
+
+        .btn:hover {
+            background-color: #b91d19;
+        }
 
         .btn-cancel {
-            background-color: #6c757d; /* Gris pour annuler */
+            background-color: #6c757d;
+            /* Gris pour annuler */
         }
-        .btn-cancel:hover { background-color: #5a6268; }
+
+        .btn-cancel:hover {
+            background-color: #5a6268;
+        }
 
         /* Formulaires */
         .form-group {
             margin-bottom: 15px;
         }
+
         .form-label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
             color: #555;
         }
+
         .form-control {
             width: 100%;
             padding: 10px;
@@ -250,11 +291,12 @@
             border-radius: 4px;
             font-size: 1rem;
         }
+
         .form-control:focus {
             border-color: #DF251F;
             outline: none;
         }
-        
+
         /* En-tête des onglets avec bouton d'action */
         .header-actions {
             display: flex;
@@ -262,20 +304,21 @@
             align-items: center;
             margin-bottom: 20px;
         }
+
         .header-actions h2 {
             margin: 0;
             color: #333;
         }
-
     </style>
 </head>
+
 <body>
 
     <!-- HEADER -->
     <header>
         <div class="logo">
-            <!-- Pas de chapeau -->
-            Oce<span>ENS</span> II
+            <span style="color: #ff5a00;">Oce</span><span style="color: #0044b3;">ens</span><span
+                style="color: #ff5a00;">II</span>
         </div>
 
         <nav class="main-nav">
@@ -305,15 +348,15 @@
 
     <!-- CONTENU PRINCIPAL -->
     <main>
-        
+
         <!-- ONGLET 1 : SONDAGES -->
         <div id="sondages" class="tab-content active">
-            
+
             <!-- VUE 1 : LISTE (Visible par défaut) -->
             <div id="sondages-liste">
                 <div class="header-actions">
                     <!-- Titre vide ou texte selon préférence, ici juste le bouton aligné à droite -->
-                    <div></div> 
+                    <div></div>
                     <button class="btn" onclick="afficherCreation()">+ Créer un sondage</button>
                 </div>
 
@@ -322,7 +365,8 @@
                     <div class="list-item">
                         <div>
                             <h3>Choix des électifs - Semestre 2</h3>
-                            <p style="color:#666; font-size:0.9rem; margin-top:5px;">Veuillez choisir vos cours optionnels avant le 25 février.</p>
+                            <p style="color:#666; font-size:0.9rem; margin-top:5px;">Veuillez choisir vos cours
+                                optionnels avant le 25 février.</p>
                         </div>
                         <button class="btn">Répondre</button>
                     </div>
@@ -348,8 +392,9 @@
             <div id="sondages-creation" style="display: none;">
                 <div class="card">
                     <h2>Nouveau Sondage</h2>
-                    <p style="margin-bottom: 20px; color: #666;">Remplissez les informations ci-dessous pour créer un nouveau sondage.</p>
-                    
+                    <p style="margin-bottom: 20px; color: #666;">Remplissez les informations ci-dessous pour créer un
+                        nouveau sondage.</p>
+
                     <form onsubmit="event.preventDefault(); alert('Sondage publié !'); masquerCreation();">
                         <div class="form-group">
                             <label class="form-label">Titre du sondage</label>
@@ -358,7 +403,8 @@
 
                         <div class="form-group">
                             <label class="form-label">Description</label>
-                            <textarea class="form-control" rows="4" placeholder="Instructions pour les participants..."></textarea>
+                            <textarea class="form-control" rows="4"
+                                placeholder="Instructions pour les participants..."></textarea>
                         </div>
 
                         <div class="form-group">
@@ -409,8 +455,16 @@
                 <h2>Progression par matière</h2>
                 <p><em>(Espace réservé pour des graphiques JS comme Chart.js)</em></p>
                 <div style="margin-top:20px;">
-                    <div style="margin-bottom: 10px;">Mathématiques <div style="background:#e9ecef; height:10px; border-radius:5px; margin-top:5px;"><div style="background:#DF251F; width:70%; height:100%; border-radius:5px;"></div></div></div>
-                    <div style="margin-bottom: 10px;">Informatique <div style="background:#e9ecef; height:10px; border-radius:5px; margin-top:5px;"><div style="background:#28a745; width:90%; height:100%; border-radius:5px;"></div></div></div>
+                    <div style="margin-bottom: 10px;">Mathématiques <div
+                            style="background:#e9ecef; height:10px; border-radius:5px; margin-top:5px;">
+                            <div style="background:#DF251F; width:70%; height:100%; border-radius:5px;"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">Informatique <div
+                            style="background:#e9ecef; height:10px; border-radius:5px; margin-top:5px;">
+                            <div style="background:#28a745; width:90%; height:100%; border-radius:5px;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -500,7 +554,7 @@
             event.currentTarget.classList.add("active");
 
             // Si on revient sur l'onglet sondage, on réinitialise l'affichage sur la liste
-            if(tabName === 'sondages') {
+            if (tabName === 'sondages') {
                 masquerCreation();
             }
         }
@@ -512,7 +566,7 @@
             event.stopPropagation();
         }
 
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             var dropdown = document.getElementById("userDropdown");
             var userMenu = document.querySelector('.user-menu');
             if (!userMenu.contains(event.target)) {
@@ -532,4 +586,5 @@
         }
     </script>
 </body>
+
 </html>
