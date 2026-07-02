@@ -24,6 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, SQLModel, create_engine, select, delete, func
 import uvicorn
+from seed import seed_all_if_necessary
 
 # ┌─ Importation des modèles et du module d'authentification ─────────────┐
 from models import (
@@ -100,6 +101,7 @@ engine = create_engine(sqlite_url, connect_args=connect_args)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+    
 
 
 def get_session():
@@ -347,6 +349,7 @@ def build_parametrage_data(
 async def lifespan(app: FastAPI):
     print("Initialisation de la base de données...")
     create_db_and_tables()
+    seed_all_if_necessary()
     yield
     print("Fermeture de la connexion...")
 
