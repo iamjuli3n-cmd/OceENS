@@ -154,7 +154,7 @@ class SurveyFullCreate(BaseModel):
 
 class ReponseItem(BaseModel):
     section_id: int
-    answer_id: int
+    question_id: int
     value: str
     module_id: Optional[int] = None
     teacher: Optional[str] = None
@@ -593,9 +593,9 @@ def create_app():
         return JSONResponse(
             content={
                 "ues": list(ues_dict.values()),
-                "teachers_list": teachers,
-                "previous_school_year": previous_school_year,
-                "survey_id": previous_survey.survey_id,
+                "teachersList": teachers_list,
+                "previousSchoolYear": previous_school_year,
+                "surveyId": previous_survey.survey_id,
             }
         )
 
@@ -738,7 +738,7 @@ def create_app():
                     )
 
                     survey_url = (
-                        f"/surveys/{next_survey_id}"
+                        f"/api/surveys/{next_survey_id}"
                     )
 
                     new_survey = Survey(
@@ -983,7 +983,6 @@ def create_app():
     @api_router.post("/surveys/{survey_id}")
     def submit_reponses(
         request: Request,
-        template_id: int,
         survey_id: int,
         submission: QuestionnaireSubmission,
         session: SessionDep,
@@ -1051,19 +1050,19 @@ def create_app():
                 # Calculer le prochain Id_Reponse
                 existing_reponses = session.exec(select(Answer)).all()
                 next_id_reponse = (
-                    max([r.response_id for r in existing_reponses] + [0]) + 1
+                    max([r.answer_id for r in existing_reponses] + [0]) + 1
                 )
 
                 # Insérer chaque réponse individuelle dans la table Reponses
                 for rep in submission.answers:
                     new_reponse = Answer(
-                        template_id=template_id,
+                        template_id=survey.template_id,
                         survey_id=survey_id,
                         section_id=rep.section_id,
                         module_id=rep.module_id,
                         teacher=rep.teacher,
-                        answer_id=rep.answer_id,
-                        response_id=next_id_reponse,
+                        question_id=rep.question_id,
+                        answer_id=next_id_reponse,
                         value=rep.value,
                     )
                     session.add(new_reponse)
@@ -1178,7 +1177,7 @@ def create_app():
     # └────────────────────────────────────────────────────────────────┘
 
     # ┌─ API : Questionnaire assigné à l'étudiant connecté ──────────────┐
-    @api_router.get("/surveys/my")
+    @api_router.get("/surveys/my/")
     def get_connected_user_surveys(request: Request, session: SessionDep):
         """
         Retourne le questionnaire assigné à l'étudiant connecté.
@@ -1233,7 +1232,7 @@ def create_app():
                 "template_id": entry.template_id,
                 "survey_id": entry.survey_id,
                 "has_answered": bool(entry.has_answered),
-                "url": f"/surveys/{entry.template_id}/{entry.survey_id}",
+                "url": f"/api/surveys/{entry.survey_id}",
                 "program": survey.program if survey else None,
                 "semester": survey.semester if survey else None,
             }

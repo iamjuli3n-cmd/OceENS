@@ -150,7 +150,7 @@ def seed_surveys(db: Session):
         "campus": "Montpellier",
         "program": "Majeure Test",
         "semester": "Automne",
-        "url": "/surveys/1",
+        "url": "/api/surveys/1",
         "status": 1,
         "school_year": "2026-2027",
         "password": None

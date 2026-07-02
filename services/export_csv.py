@@ -16,7 +16,7 @@ EXPORT_COLUMNS = [
     "category",
     "question_type",
     "question_id",
-    "response_id",
+    "answer_id",
     "answer_value",
 ]
 

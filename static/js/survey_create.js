@@ -33,19 +33,23 @@ const Parametrage = {
         this.container = document.getElementById(containerId);
         if (!this.container) return;
 
+        console.log(initialData);
+
         this.templatesList = (initialData.templates || []).map(template => ({
-            id: template.id_template,
+            id: template.template_id,
             titre: template.name
         }));
         this.campusList = initialData.campusList || [];
         this.allPrograms = initialData.programs || [];
         this.teachersList = initialData.teachersList || [];
+        console.log(this.teachersList);
         this.mockUEsByProgram = initialData.uesByFiliere || {};
         this.selectedCampusId = initialData.selectedCampusId || null;
         this.selectedProgramId = initialData.selectedProgramId || null;
         this.selectedTemplateId = initialData.selectedTemplateId || null;
         this.semesterYear = initialData.semesterYear || '';
-        this.schoolYear = initialData.schoolYear || [];
+        this.schoolYears = initialData.schoolYears || [];
+        
         this.selectedSchoolYear = initialData.selectedSchoolYear || '';
         this.isProgramManager = initialData.isProgramManager || false;
         // Pour les RP-RM, afficher toutes les filières autorisées sans filtrage par campus
@@ -83,8 +87,8 @@ const Parametrage = {
                     <label>Année scolaire</label>
                     <div class="param-select-group" style="display: flex; gap: 10px; width: 100%;">
                         <select id="param-annee" onchange="Parametrage.onAnneeChange(this.value)" style="flex: 1;">
-                            <option value="">-- Sélectionnez --</option>
-                            ${this.schoolYear.map(a => `<option value="${a}" ${this.selectedSchoolYear === a ? 'selected' : ''}>${a}</option>`).join('')}
+                            <option value="">-- Sélectionnez -- </option>
+                            ${this.schoolYears.map(a => `<option value="${a}" ${this.selectedSchoolYear === a ? 'selected' : ''}>${a}</option>`).join('')}
                         </select>
                         <button class="btn-icon" onclick="Parametrage.addAnneeScolaire()" title="Ajouter une année scolaire" style="flex-shrink: 0; padding: 0 15px; background: linear-gradient(135deg, #1a5276, #1f6f9f); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">+</button>
                     </div>
@@ -224,15 +228,18 @@ const Parametrage = {
             }
             const data = await response.json();
 
+            console.log(data);
+
             this.campusList = data.campusList || this.campusList;
             this.allPrograms = data.programs || this.allPrograms;
             this.teachersList = data.teachersList || this.teachersList;
+            console.log(this.teachersList);
             this.templatesList = (data.templates || []).map(template => ({
-                id: template.id_template,
+                id: template.template_id,
                 titre: template.name
             }));
             this.mockUEsByProgram = data.uesByFiliere || this.mockUEsByProgram;
-            if (data.schoolYear) this.schoolYear = data.schoolYear;
+            if (data.schoolYears) this.schoolYears = data.schoolYears;
             if (data.selectedSchoolYear && !this.selectedSchoolYear) this.selectedSchoolYear = data.selectedSchoolYear;
 
             if (this.isProgramManager) {
@@ -272,11 +279,11 @@ const Parametrage = {
     addAnneeScolaire() {
         const nouvelleAnnee = prompt("Saisissez la nouvelle année scolaire (ex: 2024-2025) :");
         if (!nouvelleAnnee || !nouvelleAnnee.trim()) return;
-        const annee = nouvelleAnnee.trim();
-        if (!this.schoolYear.includes(annee)) {
-            this.schoolYear.push(annee);
+        const school_year = nouvelleAnnee.trim();
+        if (!this.schoolYears.includes(school_year)) {
+            this.schoolYears.push(school_year);
         }
-        this.selectedSchoolYear = annee;
+        this.selectedSchoolYear = school_year;
         this.render();
         this._tryFetchModulesPrecedents();
     },
@@ -329,21 +336,23 @@ const Parametrage = {
                 });
                 this.nextId = localId;
 
+                console.log(data.teachersList)
+
                 // Enrichir la liste des profs avec ceux du sondage précédent
                 if (data.teachersList && data.teachersList.length > 0) {
                     const existingIds = new Set(this.teachersList.map(p => `${(p.firstname||'').toLowerCase()}_${(p.name||'').toLowerCase()}`));
-                    for (const prof of data.teachersList) {
+                    for (const teacher of data.teachersList) {
                         const key = `${(teacher.firstname||'').toLowerCase()}_${(teacher.name||'').toLowerCase()}`;
                         if (!existingIds.has(key)) {
                             this.nextId++;
                             teacher.id = this.nextId;
-                            this.teachersList.push(prof);
+                            this.teachersList.push(teacher);
                             existingIds.add(key);
                         }
                     }
                 }
 
-                console.log(`[Parametrage] ${data.ues.length} UE(s) chargée(s) depuis le sondage ${data.annee_precedente}`);
+                console.log(`[Parametrage] ${data.ues.length} UE(s) chargée(s) depuis le sondage ${data.previousSchoolYear}`);
             } else {
                 // Aucun historique : liste vide, l'utilisateur ajoutera manuellement
                 this.ues = [];
@@ -400,9 +409,9 @@ const Parametrage = {
                                onblur="Parametrage.renameUE(${ue.id}, this.value)"
                                onkeydown="if(event.key==='Enter'){this.blur();}">
                     </span>
-                    ${ue.optionnel ? '<span class="param-badge-optionnel">Optionnelle</span>' : ''}
+                    ${ue.is_optional ? '<span class="param-badge-optionnel">Optionnelle</span>' : ''}
                     <span class="param-ue-actions" onclick="event.stopPropagation()">
-                        <label><input type="checkbox" ${ue.optionnel ? 'checked' : ''} onchange="Parametrage.toggleOptional(${ue.id}, this.checked)"> Opt.</label>
+                        <label><input type="checkbox" ${ue.is_optional ? 'checked' : ''} onchange="Parametrage.toggleOptional(${ue.id}, this.checked)"> Opt.</label>
                         <button class="param-btn-remove" onclick="Parametrage.removeUE(${ue.id})" title="Supprimer l'UE">&times;</button>
                     </span>
                 </div>
@@ -418,7 +427,7 @@ const Parametrage = {
 
     // ─── Render un Module ───────────────────────────────
     renderModule(mod, ueId) {
-        const assignedIds = (mod.professeurs || []).map(p => p.id);
+        const assignedIds = (mod.teachers || []).map(p => p.id);
         const availableProfs = this.teachersList.filter(p => !assignedIds.includes(p.id));
 
         return `
@@ -430,14 +439,14 @@ const Parametrage = {
                 </div>
                 <div class="param-module-modalite">
                     <label class="param-checkbox-label">
-                        <input type="checkbox" ${mod.choix_enseignant_exclusif ? 'checked' : ''}
+                        <input type="checkbox" ${mod.one_teacher_in_list ? 'checked' : ''}
                                onchange="Parametrage.toggleChoixEnseignant(${mod.id}, this.checked, ${ueId})">
                         <span>1 seul enseignant parmi la liste</span>
                     </label>
                 </div>
                 <div class="param-module-profs">
                     <ul class="param-prof-list">
-                        ${(mod.professeurs || []).map(p => `
+                        ${(mod.teachers || []).map(p => `
                             <li class="param-prof-item">
                                 <span class="param-prof-name">${this.esc(p.firstname)} ${this.esc(p.name)}</span>
                                 <button class="param-remove-tag" onclick="Parametrage.removeProf(${mod.id}, ${p.id}, ${ueId})">&times;</button>
@@ -482,7 +491,7 @@ const Parametrage = {
             id: newId,
             name: nom.trim(),
             filiere_id: this.selectedProgramId,
-            optionnel: false,
+            is_optional: false,
             _open: true,
             modules: []
         });
@@ -498,7 +507,7 @@ const Parametrage = {
     toggleOptional(ueId, checked) {
         const ue = this.ues.find(u => u.id === ueId);
         if (ue) {
-            ue.optionnel = checked;
+            ue.is_optional = checked;
             this.renderUEs();
         }
     },
@@ -519,8 +528,8 @@ const Parametrage = {
             id: newId,
             name: 'Nouveau module',
             ue_id: ueId,
-            choix_enseignant_exclusif: false,
-            professeurs: []
+            one_teacher_in_list: false,
+            teachers: []
         });
         ue._open = true;
         this.renderUEs();
@@ -538,7 +547,7 @@ const Parametrage = {
         const ue = this.ues.find(u => u.id === ueId);
         if (!ue) return;
         const mod = (ue.modules || []).find(m => m.id === modId);
-        if (mod) mod.choix_enseignant_exclusif = checked;
+        if (mod) mod.one_teacher_in_list = checked;
     },
 
     removeModule(modId, ueId) {
@@ -559,7 +568,7 @@ const Parametrage = {
         if (dd) dd.classList.toggle('show');
     },
 
-    addProf(modId, profId, ueId) {
+    addProf(modId, teacherId, ueId) {
         const dd = document.getElementById('prof-dd-' + modId);
         if (dd) dd.classList.remove('show');
 
@@ -568,10 +577,10 @@ const Parametrage = {
         const mod = (ue.modules || []).find(m => m.id === modId);
         if (!mod) return;
 
-        const prof = this.teachersList.find(p => p.id === profId);
-        if (!prof) return;
-        if (!mod.professeurs) mod.professeurs = [];
-        mod.professeurs.push({ ...prof });
+        const teacher = this.teachersList.find(p => p.id === teacherId);
+        if (!teacher) return;
+        if (!mod.teachers) mod.teachers = [];
+        mod.teachers.push({ ...teacher });
         ue._open = true;
         this.renderUEs();
     },
@@ -591,12 +600,12 @@ const Parametrage = {
         this.addProf(modId, newId, ueId);
     },
 
-    removeProf(modId, profId, ueId) {
+    removeProf(modId, teacherId, ueId) {
         const ue = this.ues.find(u => u.id === ueId);
         if (!ue) return;
         const mod = (ue.modules || []).find(m => m.id === modId);
         if (!mod) return;
-        mod.professeurs = (mod.professeurs || []).filter(p => p.id !== profId);
+        mod.teachers = (mod.teachers || []).filter(p => p.id !== teacherId);
         ue._open = true;
         this.renderUEs();
     },
@@ -714,7 +723,7 @@ const Parametrage = {
 
         // Préparer les données du sondage en JSON
         const surveyData = {
-            id_template: this.selectedTemplateId,
+            template_id: this.selectedTemplateId,
             campus: campusNom,
             program: filiereNom,
             semester: this.semesterYear,
@@ -745,13 +754,13 @@ const Parametrage = {
 
         // Construire le FormData avec le JSON + fichier optionnel
         const formData = new FormData();
-        formData.append('sondage_data', JSON.stringify(surveyData));
+        formData.append('survey_data', JSON.stringify(surveyData));
         if (this.importedFile) {
             formData.append('file', this.importedFile);
         }
 
         try {
-            const response = await fetch('/api/sondage', {
+            const response = await fetch('/api/surveys', {
                 method: 'POST',
                 body: formData,
             });
