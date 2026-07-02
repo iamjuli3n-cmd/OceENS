@@ -162,7 +162,7 @@ def seed_surveys(db: Session):
 def seed_modules(db: Session):
     """Remplit la table modules."""
     modules_data = [
-        (1, 'Introduction to Cloud', 'Théo B.', 'UE1 – Software as $as a Service', 0, 0, 1, 1),
+        (1, 'Introduction to Cloud', 'Théo B.', 'UE1 – Software as a Service', 0, 0, 1, 1),
         (2, 'Coding Agents Management', 'Xavier C.', 'UE1 – Software as a Service', 0, 0, 1, 1),
         (3, 'Complex Web Services', 'Xavier C.', 'UE1 – Software as a Service', 0, 0, 1, 1),
         (4, 'Machine Learning and Deep Learning', 'Thalita D.', 'UE2 – Machine Learning Theory & Practice', 0, 0, 1, 1),
