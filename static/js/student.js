@@ -38,14 +38,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Carte d'identité du questionnaire (formation + semestre/année)
         const metaParts = [];
-        if (q.semestre) metaParts.push(q.semestre);
-        if (q.annee_scolaire) metaParts.push(q.annee_scolaire);
+        if (q.semester) metaParts.push(q.semester);
+        if (q.school_year) metaParts.push(q.school_year);
 
-        if (q.formation || metaParts.length) {
+        if (q.program || metaParts.length) {
             showCard({
-                formation: q.formation || 'Questionnaire',
+                program: q.program || 'Questionnaire',
                 meta: metaParts.join(' · '),
-                done: !!q.repondu,
+                done: !!q.has_answered,
             });
         }
 

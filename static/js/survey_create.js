@@ -273,10 +273,10 @@ const Parametrage = {
         const nouvelleAnnee = prompt("Saisissez la nouvelle année scolaire (ex: 2024-2025) :");
         if (!nouvelleAnnee || !nouvelleAnnee.trim()) return;
         const annee = nouvelleAnnee.trim();
-        if (!this.schoolYear.includes(school_year)) {
-            this.schoolYear.push(school_year);
+        if (!this.schoolYear.includes(annee)) {
+            this.schoolYear.push(annee);
         }
-        this.selectedSchoolYear = school_year;
+        this.selectedSchoolYear = annee;
         this.render();
         this._tryFetchModulesPrecedents();
     },
@@ -418,7 +418,7 @@ const Parametrage = {
 
     // ─── Render un Module ───────────────────────────────
     renderModule(mod, ueId) {
-        const assignedIds = (mod.teachers || []).map(p => p.id);
+        const assignedIds = (mod.professeurs || []).map(p => p.id);
         const availableProfs = this.teachersList.filter(p => !assignedIds.includes(p.id));
 
         return `
@@ -430,14 +430,14 @@ const Parametrage = {
                 </div>
                 <div class="param-module-modalite">
                     <label class="param-checkbox-label">
-                        <input type="checkbox" ${mod.one_teacher_in_list ? 'checked' : ''}
+                        <input type="checkbox" ${mod.choix_enseignant_exclusif ? 'checked' : ''}
                                onchange="Parametrage.toggleChoixEnseignant(${mod.id}, this.checked, ${ueId})">
                         <span>1 seul enseignant parmi la liste</span>
                     </label>
                 </div>
                 <div class="param-module-profs">
                     <ul class="param-prof-list">
-                        ${(mod.teachers || []).map(p => `
+                        ${(mod.professeurs || []).map(p => `
                             <li class="param-prof-item">
                                 <span class="param-prof-name">${this.esc(p.firstname)} ${this.esc(p.name)}</span>
                                 <button class="param-remove-tag" onclick="Parametrage.removeProf(${mod.id}, ${p.id}, ${ueId})">&times;</button>
@@ -480,9 +480,9 @@ const Parametrage = {
         const newId = ++this.nextId;
         this.ues.push({
             id: newId,
-            nom: nom.trim(),
+            name: nom.trim(),
             filiere_id: this.selectedProgramId,
-            is_optional: false,
+            optionnel: false,
             _open: true,
             modules: []
         });
@@ -517,10 +517,10 @@ const Parametrage = {
         if (!ue.modules) ue.modules = [];
         ue.modules.push({
             id: newId,
-            nom: 'Nouveau module',
+            name: 'Nouveau module',
             ue_id: ueId,
-            one_teacher_in_list: false,
-            teachers: []
+            choix_enseignant_exclusif: false,
+            professeurs: []
         });
         ue._open = true;
         this.renderUEs();
@@ -538,7 +538,7 @@ const Parametrage = {
         const ue = this.ues.find(u => u.id === ueId);
         if (!ue) return;
         const mod = (ue.modules || []).find(m => m.id === modId);
-        if (mod) mod.one_teacher_in_list = checked;
+        if (mod) mod.choix_enseignant_exclusif = checked;
     },
 
     removeModule(modId, ueId) {
@@ -570,8 +570,8 @@ const Parametrage = {
 
         const prof = this.teachersList.find(p => p.id === profId);
         if (!prof) return;
-        if (!mod.teachers) mod.teachers = [];
-        mod.teachers.push({ ...prof });
+        if (!mod.professeurs) mod.professeurs = [];
+        mod.professeurs.push({ ...prof });
         ue._open = true;
         this.renderUEs();
     },
@@ -580,13 +580,13 @@ const Parametrage = {
         const dd = document.getElementById('prof-dd-' + modId);
         if (dd) dd.classList.remove('show');
 
-        const prenom = prompt('Prénom du professeur :');
-        if (!prenom || !prenom.trim()) return;
+        const firstname = prompt('Prénom du professeur :');
+        if (!firstname || !firstname.trim()) return;
         const nom = prompt('Nom du professeur :');
         if (!nom || !nom.trim()) return;
 
         const newId = ++this.nextId;
-        const newProf = { id: newId, nom: nom.trim(), prenom: prenom.trim() };
+        const newProf = { id: newId, name: nom.trim(), firstname: firstname.trim() };
         this.teachersList.push(newProf);
         this.addProf(modId, newId, ueId);
     },
@@ -596,7 +596,7 @@ const Parametrage = {
         if (!ue) return;
         const mod = (ue.modules || []).find(m => m.id === modId);
         if (!mod) return;
-        mod.teachers = (mod.teachers || []).filter(p => p.id !== profId);
+        mod.professeurs = (mod.professeurs || []).filter(p => p.id !== profId);
         ue._open = true;
         this.renderUEs();
     },
@@ -721,16 +721,16 @@ const Parametrage = {
             school_year: this.selectedSchoolYear,
             ues: this.ues.map(ue => ({
                 id: ue.id,
-                nom: ue.name,
+                name: ue.name,
                 is_optional: ue.is_optional,
                 modules: (ue.modules || []).map(mod => ({
                     id: mod.id,
-                    nom: mod.name,
+                    name: mod.name,
                     one_teacher_in_list: mod.one_teacher_in_list || false,
                     teachers: (mod.teachers || []).map(teacher => ({
                         id: teacher.id,
-                        prenom: teacher.firstname,
-                        nom: teacher.name
+                        firstname: teacher.firstname,
+                        name: teacher.name
                     }))
                 }))
             }))

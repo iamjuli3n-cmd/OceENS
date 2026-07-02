@@ -205,7 +205,7 @@
       <div class="banner-badge">RP-RM</div>
       <div class="banner-greeting">Bonjour, {{ user.name }} !</div>
     </div>
-    <a href="/parametrage" class="btn-banner">+ Créer un questionnaire</a>
+    <a href="/dashboard/survey-create" class="btn-banner">+ Créer un questionnaire</a>
   </div>
 
   <div class="questionnaires-card">
@@ -218,14 +218,14 @@
     <div class="sondage-row">
       <div style="flex:1;">
         <div class="sondage-row-name">
-          <a href="{{ sondage['url'] }}" style="text-decoration: none; color: inherit;">
-            {{ sondage['formation'] }} — {{ sondage['semestre'] }}
+          <a href="{{ survey['url'] }}" style="text-decoration: none; color: inherit;">
+            {{ survey['program'] }} — {{ survey['semester'] }}
           </a>
         </div>
-        <div class="sondage-row-meta">{{ sondage['campus'] }} · {{ sondage['annee_scolaire'] }}</div>
+        <div class="sondage-row-meta">{{ survey['campus'] }} · {{ survey['school_year'] }}</div>
       </div>
       
-      <a href="{{ sondage['url'] }}" style="background: var(--bg-accent); color: var(--text-accent); border: 0.5px solid var(--border-accent); border-radius: 8px; padding: 5px 11px; text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+      <a href="{{ survey['url'] }}" style="background: var(--bg-accent); color: var(--text-accent); border: 0.5px solid var(--border-accent); border-radius: 8px; padding: 5px 11px; text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
         Lien questionnaire
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
       </a>
@@ -239,13 +239,13 @@
       </div>
 
       <div class="row-actions">
-        <a href="/visualisation/{{ sondage['id_template'] }}/{{ sondage['id_sondage'] }}" class="row-icon"
+        <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon"
           title="Visualisation" onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
           <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
           </svg>
         </a>
-        <a href="/api/export/{{ sondage['id_template'] }}/{{ sondage['id_sondage'] }}" class="row-icon"
+        <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon"
           title="Export CSV" onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
           <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -271,7 +271,7 @@
       </div>
       <div style="font-size:13px; color:#aaa; margin-bottom:20px;">Vous n'avez pas encore créé de
         questionnaire.<br>Cliquez sur le bouton pour commencer.</div>
-      <a href="/parametrage"
+      <a href="/dashboard/survey-create"
         style="background:#df231d; color:white; border-radius:24px; padding:10px 22px; text-decoration:none; font-size:13px; font-weight:600;">+
         Créer un questionnaire</a>
     </div>
@@ -296,8 +296,8 @@
   <script>
     // Stockage des filières du RP-RM en sessionStorage
     // Disponible côté JS pour le paramétrage et le filtrage
-    const filieres = {{ filieres | tojson }};
-    sessionStorage.setItem('rprm_filieres', JSON.stringify(filieres));
+    const programs = {{ programs | tojson }};
+    sessionStorage.setItem('program_manager_programs', JSON.stringify(programs));
 
     let pendingUrl = "";
     function checkParticipation(event, url, repondants, inscrits) {

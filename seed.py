@@ -715,7 +715,7 @@ def seed_answers(db: Session):
  (1,1,3,20,'Louis G.',4,496,'Le cours manque clairement de structure. On passe d’un sujet à l’autre sans vraie logique, ce qui rend la compréhension très difficile.')
     ]
     for r_data in answers_data:
-        answer = Answer(template_id=r_data[0],survey_id=r_data[1],section_id=r_data[2],module_id=r_data[3],teacher=r_data[4],question_id=r_data[5],answer_id=r_data[6],valeur=r_data[7])
+        answer = Answer(template_id=r_data[0],survey_id=r_data[1],section_id=r_data[2],module_id=r_data[3],teacher=r_data[4],question_id=r_data[5],answer_id=r_data[6],value=r_data[7])
         db.merge(answer)  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
     db.commit()
 

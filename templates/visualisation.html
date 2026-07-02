@@ -283,14 +283,14 @@
             <div class="filter-item">
                 <span class="filter-label">Campus</span>
                 <select class="filter-select" id="flt-campus" disabled>
-                    <option>{{ sondage.campus }}</option>
+                    <option>{{ survey.campus }}</option>
                 </select>
             </div>
             <span class="filter-separator">›</span>
             <div class="filter-item">
                 <span class="filter-label">Filière</span>
                 <select class="filter-select" id="flt-filiere" disabled>
-                    <option>{{ sondage.formation }}</option>
+                    <option>{{ survey.program }}</option>
                 </select>
             </div>
             <span class="filter-separator">›</span>
@@ -314,7 +314,7 @@
             <div class="kpi-left">
                 <h3>Taux de satisfaction global</h3>
                 <div class="huge-pct" id="global-sat-val">0%</div>
-                <p>Calculé sur l'ensemble des réponses de la filière <br><strong>{{ sondage.formation }}</strong> — <span id="global-sat-context">Toutes les UE</span>.</p>
+                <p>Calculé sur l'ensemble des réponses de la filière <br><strong>{{ survey.program }}</strong> — <span id="global-sat-context">Toutes les UE</span>.</p>
             </div>
             <div class="kpi-right">
                 <h3>Recommanderaient le module</h3>
@@ -368,7 +368,7 @@
                     <div class="indicator-item">
                         <div class="ind-label"><div class="ind-dot" style="background: var(--epf-purple);"></div> Taux de réponse</div>
                         <div class="ind-value" style="color: var(--epf-purple);" id="ind-taux-rep">
-                            {% if nb_inscrits > 0 %}{{ ((nb_repondants / nb_inscrits) * 100)|round|int }}%{% else %}0%{% endif %}
+                            {% if respondents_count > 0 %}{{ ((answers_count / respondents_count) * 100)|round|int }}%{% else %}0%{% endif %}
                         </div>
                     </div>
                 </div>
@@ -427,9 +427,9 @@
             }
         });
         metadata.modules.forEach(m => {
-            if(m && m.nom) {
+            if(m && m.name) {
                 const opt = document.createElement('option');
-                opt.value = m.nom; opt.textContent = m.nom; opt.dataset.ue = m.ue;
+                opt.value = m.name; opt.textContent = m.name; opt.dataset.ue = m.ue;
                 modSelect.appendChild(opt);
             }
         });
@@ -489,8 +489,8 @@
             let totalReco = 0;
 
             data.forEach(r => {
-                const qType = String(r.Type_Question || "").toUpperCase();
-                const val = String(r.Valeur_Reponse || "");
+                const qType = String(r.question_type || "").toUpperCase();
+                const val = String(r.value || "");
                 
                 // SATISFACTION / NOTES
                 if(qType.includes("SATISFACTION") || qType.includes("NOTE")) {
@@ -625,7 +625,7 @@
                 const row = document.createElement('div');
                 row.className = 'module-row';
                 row.onclick = () => {
-                    modSelect.value = m.nom;
+                    modSelect.value = m.name;
                     if(ueSelect.value === "ALL" && m.ue) ueSelect.value = m.ue;
                     updateDashboard();
                 };
@@ -633,7 +633,7 @@
                 row.innerHTML = `
                     <div class="mod-rank">${idx + 1}</div>
                     <div class="mod-info">
-                        <div class="mod-name">${m.nom}</div>
+                        <div class="mod-name">${m.name}</div>
                         <div class="mod-sub">${m.score}% recommandent ce module</div>
                     </div>
                     <div class="mod-score">

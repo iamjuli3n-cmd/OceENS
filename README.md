@@ -24,7 +24,7 @@ L'application **OcéEns II** permet à l'administration et à la scolarité de c
 | Route | Page | Description |
 |-------|------|-------------|
 | `/` | Accueil | Hub principal avec la charte graphique EPF. Accès à l'authentification. |
-| `/dasboard/survey_create` | Paramétrage | Interface de création de sondage : sélection année, campus, filière, configuration des UE, modules et professeurs. |
+| `/dashboard/survey-create` | Paramétrage | Interface de création de sondage : sélection année, campus, filière, configuration des UE, modules et professeurs. |
 | `/survey/{id_sondage}` | Questionnaire | Interface de réponse au sondage avec affichage dynamique des sections et questions (choix unique, multiple, ouverte). |
 | `/dashboard/admin` | Dashboard Admin | Tableau de bord administrateur. |
 | `/dashboard/student` | Dashboard Étudiant | Tableau de bord étudiant. |

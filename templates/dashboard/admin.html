@@ -126,7 +126,7 @@
       <div class="banner-badge">Administrateur</div>
       <div class="banner-greeting">Bonjour, {{ user.name }} !</div>
     </div>
-    <a href="/parametrage" class="btn-banner">+ Créer un questionnaire</a>
+    <a href="/dashboard/survey-create" class="btn-banner">+ Créer un questionnaire</a>
   </div>
 
   <main>
@@ -227,14 +227,14 @@
             </div>
 
             <div class="row-actions">
-              <a href="/visualisation/{{ survey['survey_id'] }}" class="row-icon"
+              <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon"
                 title="Visualisation"
                 onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
                 <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
               </a>
-              <a href="/api/export/{{ survey['id_sondage'] }}" class="row-icon"
+              <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon"
                 title="Export CSV"
                 onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
                 <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">

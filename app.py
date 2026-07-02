@@ -18,7 +18,7 @@ from typing import Annotated, Dict, List, Optional
 from datetime import datetime
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Request, UploadFile,APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -397,8 +397,20 @@ def create_app():
 
     # └────────────────────────────────────────────────────────────────┘
 
+    dashboard_router = APIRouter(
+        tags=["Dashboard"],
+        prefix="/dashboard"
+    )
+
+    api_router = APIRouter(
+        tags=["API"],
+        prefix="/api"
+    )
+
+
+
     # ┌─ Route : Paramétrage (accès restreint Admin + RP-RM) ──────────────┐
-    @app.get("/dashboard/survey_create", response_class=HTMLResponse)
+    @dashboard_router.get("/survey-create", response_class=HTMLResponse)
     def surveys_create(request: Request, session: SessionDep):
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
         user = require_roles(request, ["admin", "program_manager"])
@@ -427,7 +439,7 @@ def create_app():
         data = build_parametrage_data(session, allowed_programs=allowed_programs)
         return templates.TemplateResponse(
             request=request,
-            name="surveys_create.html",
+            name="survey_create.html",
             context={
                 "request": request,
                 "templates": data["templates"],
@@ -439,7 +451,7 @@ def create_app():
                 "ues_by_program": data["ues_by_program"],
                 "selected_template_id": data["selected_template_id"],
                 "selected_campus_id": data["selected_campus_id"],
-                "selected_filiere_id": data["selected_filiere_id"],
+                "selected_program_id": data["selected_program_id"],
                 "semester_year": data["semester_year"],
                 "selected_school_year": data["selected_school_year"],
                 "is_program_manager": is_program_manager,
@@ -449,7 +461,7 @@ def create_app():
     # └────────────────────────────────────────────────────────────────┘
 
     # ┌─ API : Données de paramétrage (accès restreint Admin + RP-RM) ────┐
-    @app.get("/api/parametrage")
+    @api_router.get("/parametrage")
     def parametrage_api(request: Request, session: SessionDep):
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
         user = require_roles(request, ["admin", "program_manager"])
@@ -475,7 +487,7 @@ def create_app():
     # └────────────────────────────────────────────────────────────────┘
 
     # ┌─ API : Modules du survey de l'année précédente ─────────────────┐
-    @app.get("/api/modules-precedents")
+    @api_router.get("/modules/previous")
     def modules_precedents_api(
         session: SessionDep,
         semester: str = "",
@@ -590,7 +602,7 @@ def create_app():
     # └────────────────────────────────────────────────────────────────┘
 
     # ┌─ API : Création d'un survey (accès restreint Admin + RP-RM) ────┐
-    @app.post("/api/surveys")
+    @api_router.post("/surveys")
     async def create_survey(
         request: Request,
         session: SessionDep,
@@ -726,7 +738,7 @@ def create_app():
                     )
 
                     survey_url = (
-                        f"/surveys/{survey.template_id}/{next_survey_id}"
+                        f"/surveys/{next_survey_id}"
                     )
 
                     new_survey = Survey(
@@ -856,7 +868,7 @@ def create_app():
     # └────────────────────────────────────────────────────────────────┘
 
     # ┌─ Page questionnaire ─────────────────────────────────────────────┐
-    @app.get("/surveys/{survey_id}", response_class=HTMLResponse)
+    @api_router.get("/surveys/{survey_id}", response_class=HTMLResponse)
     def questionnaire_page(
         request: Request, survey_id: int, session: SessionDep
     ):
@@ -968,7 +980,7 @@ def create_app():
     # └────────────────────────────────────────────────────────────────┘
 
     # ┌─ API : Soumission des réponses du questionnaire ─────────────────┐
-    @app.post("/api/surveys/{survey_id}")
+    @api_router.post("/surveys/{survey_id}")
     def submit_reponses(
         request: Request,
         template_id: int,
@@ -1081,7 +1093,7 @@ def create_app():
 
     # ┌─ Route : Dashboards par rôle ────────────────────────────────────┐
 
-    @app.get("/dashboard/{role}", response_class=HTMLResponse)
+    @dashboard_router.get("/{role}", response_class=HTMLResponse)
     async def dashboard(request: Request, role: str, session: SessionDep):
         user = get_current_user(request)
         if not user:
@@ -1166,8 +1178,8 @@ def create_app():
     # └────────────────────────────────────────────────────────────────┘
 
     # ┌─ API : Questionnaire assigné à l'étudiant connecté ──────────────┐
-    @app.get("/api/surveys/my")
-    def get_etudiant_questionnaire(request: Request, session: SessionDep):
+    @api_router.get("/surveys/my")
+    def get_connected_user_surveys(request: Request, session: SessionDep):
         """
         Retourne le questionnaire assigné à l'étudiant connecté.
         Interroge la table Respondent pour récupérer survey_id, template_id
@@ -1240,7 +1252,7 @@ def create_app():
             return True
         return False
 
-    @app.get("/api/users")
+    @api_router.get("/users")
     def get_users(request: Request, session: SessionDep):
         # ── Sécurité : seul un Admin peut lister tous les utilisateurs ──
         user = require_roles(request, ["admin"])
@@ -1252,7 +1264,7 @@ def create_app():
         users = session.exec(select(User)).all()
         return [{"user_id": u.user_id, "mail": u.mail, "role": u.role} for u in users]
 
-    @app.put("/api/users/{user_id}/role")
+    @api_router.put("/users/{user_id}/role")
     def update_user_role(
         request: Request, user_id: int, body: RoleUpdate, session: SessionDep
     ):
@@ -1325,11 +1337,11 @@ def create_app():
 
         warning_msg = None
         if answers_count < respondents_count or survey.status == 1:
-            warning_msg = f"Attention : Le survey est toujours en cours. Seulement {answers_count} élève(s) ont répondu sur {respondents_count} inscrits."
+            warning_msg = f"Attention : Le sondage est toujours en cours. Seulement {answers_count} élève(s) ont répondu sur {respondents_count} inscrits."
 
         return survey, warning_msg, respondents_count, answers_count
 
-    @app.get("/api/export/{survey_id}")
+    @api_router.get("/surveys/{survey_id}/export")
     def export_sondage_csv(
         request: Request, survey_id: int, session: SessionDep
     ):
@@ -1363,7 +1375,7 @@ def create_app():
 
         return resp
 
-    @app.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
+    @api_router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
     def visualisation_page(
         request: Request, survey_id: int, session: SessionDep
     ):
@@ -1413,6 +1425,9 @@ def create_app():
 
 
     # └───────────────────────────────────────────────────────────────────┘
+
+    app.include_router(api_router)
+    app.include_router(dashboard_router)
 
     return app
 

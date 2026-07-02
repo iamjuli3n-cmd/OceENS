@@ -46,8 +46,8 @@ def clean_mojibake(text: Any) -> str:
 
 @dataclass
 class OptionData:
-    id_option: int
-    intitule: str
+    option_id: int
+    text: str
 
 
 @dataclass
@@ -63,7 +63,7 @@ class AnswerData:
 @dataclass
 class QuestionData:
     question_id: int
-    intitule: str
+    text: str
     category: str
     question_type: str
     options: List[OptionData] = field(default_factory=list)
@@ -93,7 +93,7 @@ class FullSurvey:
     template_id: int
     survey_id: int
     campus: str
-    programs: str
+    program: str
     semester: str
     school_year: str  # Corrigé d'après models.py (scolaire en minuscule)
     modules: List[ModuleData] = field(default_factory=list)
@@ -111,7 +111,7 @@ class FullSurvey:
                     records.append(
                         {
                             "campus": self.campus,
-                            "program": self.programs,
+                            "program": self.program,
                             "semester": self.semester,
                             "school_year": self.school_year,
                             "ue": answer.ue,
@@ -154,8 +154,8 @@ def load_sondage_complet(
 
     # --- A. Infos du survey ---
     cursor.execute(
-        "SELECT * FROM surveys WHERE  survey_id = ?",
-        (survey_id),
+        "SELECT * FROM surveys WHERE survey_id = ?",
+        (survey_id,),
     )
     survey_row = cursor.fetchone()
     if not survey_row:
@@ -168,7 +168,7 @@ def load_sondage_complet(
         template_id=survey_row["template_id"],
         survey_id=survey_row["survey_id"],
         campus=clean_mojibake(survey_row["campus"]),
-        programs=clean_mojibake(survey_row["program"]),
+        program=clean_mojibake(survey_row["program"]),
         semester=clean_mojibake(survey_row["semester"]),
         school_year=clean_mojibake(survey_row["school_year"]),
     )
@@ -176,7 +176,7 @@ def load_sondage_complet(
     # --- B. Récupération des Modules ---
     cursor.execute(
         "SELECT * FROM Modules WHERE survey_id = ?",
-        ( survey_id),
+        ( survey_id,),
     )
     for row in cursor.fetchall():
         survey.modules.append(
@@ -191,7 +191,7 @@ def load_sondage_complet(
 
     # --- C. Récupération des Sections ---
     cursor.execute(
-        "SELECT * FROM Sections WHERE template_id = ? ORDER BY order", (survey.template_id,)
+        "SELECT * FROM Sections WHERE template_id = ? ORDER BY 'order'", (survey.template_id,)
     )
     sections_dict = {}
     for row in cursor.fetchall():
@@ -204,7 +204,7 @@ def load_sondage_complet(
         survey.sections.append(sec)
 
     # --- D. Récupération des Questions ---
-    cursor.execute("SELECT * FROM  WHERE template_id = ?", (survey.template_id,))
+    cursor.execute("SELECT * FROM questions WHERE template_id = ?", (survey.template_id,))
     questions_dict = {}
     for row in cursor.fetchall():
         q = QuestionData(
@@ -221,7 +221,7 @@ def load_sondage_complet(
     cursor.execute("SELECT * FROM Options WHERE template_id = ?", (survey.template_id,))
     for row in cursor.fetchall():
         opt = OptionData(
-            id_option=row["option_id"],
+            option_id=row["option_id"],
             text=clean_mojibake(row["text"]),
         )
         q_key = (row["section_id"], row["question_id"])
@@ -232,7 +232,7 @@ def load_sondage_complet(
 
     cursor.execute(
         "SELECT * FROM Answers WHERE survey_id = ?",
-        (survey_id),
+        (survey_id,),
     )
 
     for row in cursor.fetchall():
