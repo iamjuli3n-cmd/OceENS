@@ -2,14 +2,14 @@
 <html lang="fr">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8">  
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paramétrage - OCEENS II</title>
     <meta name="description" content="Paramétrage des sondages OCEENS II">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/parametrage.css">
+    <link rel="stylesheet" href="/static/css/survey_create.css">
     <style>
         * {
             box-sizing: border-box;
@@ -204,8 +204,8 @@
                         <label>Modèle de questions</label>
                         <select id="param-template">
                             {% for template in templates %}
-                            <option value="{{ template.id_template }}" {% if selected_template_id==template.id_template
-                                %}selected{% endif %}>{{ template.nom }}</option>
+                            <option value="{{ template.template_id }}" {% if selected_template_id==template.template_id
+                                %}selected{% endif %}>{{ template.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -213,7 +213,7 @@
                         <label>Semestre</label>
                         <select id="param-semestre">
                             <option value="">-- Sélectionnez un semestre --</option>
-                            {% for s in ['Automne', 'Printemps'] %}
+                            {% for s in ['Automne','Printemps'] %}
                             <option value="{{ s }}" {% if semestre_annee==s %}selected{% endif %}>{{ s }}</option>
                             {% endfor %}
                         </select>
@@ -223,8 +223,8 @@
                         <div class="param-select-group" style="display: flex; gap: 10px; width: 100%;">
                             <select id="param-annee" style="flex: 1;">
                                 <option value="">-- Sélectionnez --</option>
-                                {% for a in annees_scolaires %}
-                                <option value="{{ a }}" {% if selected_annee_scolaire==a %}selected{% endif %}>{{ a }}
+                                {% for sy in school_year %}
+                                <option value="{{ sy }}" {% if selected_school_year==a %}selected{% endif %}>{{ a }}
                                 </option>
                                 {% endfor %}
                             </select>
@@ -243,7 +243,7 @@
                             <select id="param-campus">
                                 {% for campus in campus_list %}
                                 <option value="{{ campus.id }}" {% if selected_campus_id==campus.id %}selected{% endif
-                                    %}>{{ campus.nom }}</option>
+                                    %}>{{ campus.name }}</option>
                                 {% endfor %}
                             </select>
 
@@ -253,9 +253,9 @@
                         <label>Filière</label>
                         <div class="param-select-group">
                             <select id="param-filiere" {% if not selected_campus_id %}disabled{% endif %}>
-                                {% for filiere in filieres %}
-                                <option value="{{ filiere.id }}" {% if selected_filiere_id==filiere.id %}selected{%
-                                    endif %}>{{ filiere.nom }}</option>
+                                {% for program in programs %}
+                                <option value="{{ program.id }}" {% if selected_program_id==program.id %}selected{%
+                                    endif %}>{{ program.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -279,23 +279,23 @@
     {
         "templates": {{ templates | tojson }},
         "campusList": {{ campus_list | tojson }},
-        "filieres": {{ filieres | tojson }},
-        "semestres": {{ semestres | tojson }},
-        "anneesScolaires": {{ annees_scolaires | tojson }},
-        "profsList": {{ profs | tojson }},
-        "uesByFiliere": {{ ues_by_filiere | tojson }},
+        "programs": {{ programs | tojson }},
+        "semesters": {{ semesters | tojson }},
+        "schoolYears": {{ school_years | tojson }},
+        "teachersList": {{ teachers_list | tojson }},
+        "uesByProgram": {{ ues_by_program | tojson }},
         "selectedTemplateId": {{ selected_template_id | tojson }},
         "selectedCampusId": {{ selected_campus_id | tojson }},
-        "selectedFiliereId": {{ selected_filiere_id | tojson }},
-        "semestreAnnee": {{ semestre_annee | tojson }},
-        "selectedAnneeScolaire": {{ selected_annee_scolaire | tojson }},
-        "isRprm": {{ is_rprm | tojson }}
+        "selectedProgramId": {{ selected_program_id | tojson }},
+        "semesterYear": {{ semester_year | tojson }},
+        "selectedSchoolYear": {{ selected_school_year | tojson }},
+        "isProgramManager": {{ is_program_manager | tojson }}
     }
     </script>
     <script>
         window.__initialData__ = JSON.parse(document.getElementById('app-data').textContent);
     </script>
-    <script src="/static/js/parametrage.js"></script>
+    <script src="/static/js/survey_create.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             Parametrage.init('parametrage-container', window.__initialData__);

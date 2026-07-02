@@ -126,7 +126,7 @@
       <div class="banner-badge">Administrateur</div>
       <div class="banner-greeting">Bonjour, {{ user.name }} !</div>
     </div>
-    <a href="/parametrage" class="btn-banner">+ Créer un questionnaire</a>
+    <a href="/dashboard/survey-create" class="btn-banner">+ Créer un questionnaire</a>
   </div>
 
   <main>
@@ -157,9 +157,9 @@
 
           <div class="filter-tabs">
             <button class="filter-tab active" data-filter="all">Tous</button>
-            <button class="filter-tab" data-filter="Etudiant">Étudiants</button>
-            <button class="filter-tab" data-filter="Admin">Admins</button>
-            <button class="filter-tab" data-filter="RP-RM">RP-RM</button>
+            <button class="filter-tab" data-filter="student">Étudiants</button>
+            <button class="filter-tab" data-filter="admin">Admins</button>
+            <button class="filter-tab" data-filter="program_manager">RP-RM</button>
           </div>
 
           <table class="users-table" id="users-table">
@@ -193,18 +193,18 @@
             <div class="questionnaires-title">Tous les questionnaires</div>
           </div>
 
-          {% for sondage in sondages %}
+          {% for survey in surveys %}
           <div class="sondage-row">
             <div style="flex:1;">
               <div class="sondage-row-name">
-                <a href="{{ sondage['url'] }}" style="text-decoration: none; color: inherit;">
-                  {{ sondage['formation'] }} — {{ sondage['semestre'] }}
+                <a href="{{ survey['url'] }}" style="text-decoration: none; color: inherit;">
+                  {{ survey['program'] }} — {{ survey['semester'] }}
                 </a>
               </div>
-              <div class="sondage-row-meta">{{ sondage['campus'] }} · {{ sondage['annee_scolaire'] }}</div>
+              <div class="sondage-row-meta">{{ survey['campus'] }} · {{ survey['school_year'] }}</div>
             </div>
 
-            <a href="{{ sondage['url'] }}"
+            <a href="/api/surveys/{{ survey['survey_id'] }}"
               style="background: var(--bg-accent); color: var(--text-accent); border: 0.5px solid var(--border-accent); border-radius: 8px; padding: 5px 11px; text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
               Lien questionnaire
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -215,28 +215,28 @@
             </a>
 
             <div style="text-align: right; margin-right: 12px; margin-left: 12px; min-width: 100px;">
-              <div style="font-size: 13px; font-weight: 500; color: #111;">{{ sondage['nb_repondants'] }} / {{
-                sondage['nb_inscrits'] }}</div>
+              <div style="font-size: 13px; font-weight: 500; color: #111;">{{ survey['answers_count'] }} / {{
+                survey['respondents_count'] }}</div>
               <div style="font-size: 10px; color: #aaa;">ont répondu / inscrits</div>
               <div
                 style="height: 4px; border-radius: 99px; width: 72px; background: var(--border); margin-top: 4px; margin-left: auto;">
                 <div
-                  style="height: 100%; border-radius: 99px; background: #470a68; width: {% if sondage['nb_inscrits'] > 0 %}{{ (sondage['nb_repondants'] / sondage['nb_inscrits']) * 100 }}{% else %}0{% endif %}%;">
+                  style="height: 100%; border-radius: 99px; background: #470a68; width: {% if survey['respondents_count'] > 0 %}{{ (survey['answers_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
                 </div>
               </div>
             </div>
 
             <div class="row-actions">
-              <a href="/visualisation/{{ sondage['id_template'] }}/{{ sondage['id_sondage'] }}" class="row-icon"
+              <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon"
                 title="Visualisation"
-                onclick="return checkParticipation(event, this.href, {{ sondage['nb_repondants'] }}, {{ sondage['nb_inscrits'] }})">
+                onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
                 <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
               </a>
-              <a href="/api/export/{{ sondage['id_template'] }}/{{ sondage['id_sondage'] }}" class="row-icon"
+              <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon"
                 title="Export CSV"
-                onclick="return checkParticipation(event, this.href, {{ sondage['nb_repondants'] }}, {{ sondage['nb_inscrits'] }})">
+                onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
                 <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>

@@ -27,13 +27,13 @@ function getInitials(mail) {
 
 function getRoleBadge(role) {
     if (!role) return '';
-    if (role === 'Etudiant') return '<span class="role-badge etudiant"><span class="role-dot"></span>Étudiant</span>';
-    if (role.startsWith('Admin')) {
+    if (role === 'student') return '<span class="role-badge etudiant"><span class="role-dot"></span>Étudiant</span>';
+    if (role.startsWith('admin')) {
         var parts = role.split(':');
         var label = parts.length > 1 ? 'Administrateur : ' + parts[1].replace(/;/g, ', ') : 'Administrateur';
         return '<span class="role-badge admin"><span class="role-dot"></span>' + label + '</span>';
     }
-    if (role.startsWith('RP-RM')) {
+    if (role.startsWith('program_manager')) {
         var parts = role.split(':');
         var label = parts.length > 1 ? 'RP-RM : ' + parts[1].replace(/;/g, ', ') : 'RP-RM';
         return '<span class="role-badge rprm"><span class="role-dot"></span>' + label + '</span>';
@@ -66,10 +66,10 @@ function filteredUsers() {
         var matchSearch = !q || (p.prenom + ' ' + p.nom + ' ' + u.mail).toLowerCase().indexOf(q) !== -1;
         var matchFilter = currentFilter === 'all';
         if (!matchFilter) {
-            if (currentFilter === 'RP-RM') {
-                matchFilter = u.role && u.role.startsWith('RP-RM');
-            } else if (currentFilter === 'Admin') {
-                matchFilter = u.role && u.role.startsWith('Admin');
+            if (currentFilter === 'program_manager') {
+                matchFilter = u.role && u.role.startsWith('program_manager');
+            } else if (currentFilter === 'admin') {
+                matchFilter = u.role && u.role.startsWith('admin');
             } else {
                 matchFilter = u.role === currentFilter;
             }
@@ -98,14 +98,14 @@ function renderTable() {
 
     tbody.innerHTML = list.map(function (u) {
         var p = parseMail(u.mail);
-        return '<tr data-id="' + u.id_user + '">'
+        return '<tr data-id="' + u.user_id + '">'
             + '<td><div class="user-info">'
-            + '<div class="avatar" style="background:' + AVATAR_COLORS[u.id_user % 8] + '">' + getInitials(u.mail) + '</div>'
+            + '<div class="avatar" style="background:' + AVATAR_COLORS[u.user_id % 8] + '">' + getInitials(u.mail) + '</div>'
             + '<div><div class="user-name">' + p.prenom + ' ' + p.nom + '</div>'
             + '<div class="user-email">' + u.mail + '</div></div>'
             + '</div></td>'
             + '<td>' + getRoleBadge(u.role) + '</td>'
-            + '<td class="td-actions"><button class="btn-edit" data-id="' + u.id_user + '">Modifier</button></td>'
+            + '<td class="td-actions"><button class="btn-edit" data-id="' + u.user_id + '">Modifier</button></td>'
             + '</tr>';
     }).join('');
 
@@ -174,7 +174,7 @@ function refreshFiliereDropdown() {
 
 // ── Ouvrir la modale ────────────────────────────
 function openModal(userId) {
-    var user = localUsers.find(function (u) { return u.id_user === userId; });
+    var user = localUsers.find(function (u) { return u.user_id === userId; });
     if (!user) return;
 
     editingUserId = userId;
@@ -187,7 +187,7 @@ function openModal(userId) {
             ? parts[1].split(';').map(function (f) { return f.trim(); }).filter(Boolean)
             : [];
     } else {
-        selectedRole = user.role || 'Etudiant';
+        selectedRole = user.role || 'student';
         selectedFilieres = [];
     }
 
@@ -202,7 +202,7 @@ function openModal(userId) {
     });
 
     // Section filières
-    if (selectedRole === 'RP-RM' || selectedRole === 'Admin') {
+    if (selectedRole === 'program_manager' || selectedRole === 'admin') {
         showFiliereSection();
     } else {
         hideFiliereSection();
@@ -239,7 +239,7 @@ document.querySelectorAll('.role-option').forEach(function (opt) {
         opt.classList.add('selected');
         selectedRole = opt.dataset.role;
 
-        if (selectedRole === 'RP-RM' || selectedRole === 'Admin') {
+        if (selectedRole === 'program_manager' || selectedRole === 'admin') {
             showFiliereSection();
             renderFiliereTags();
             refreshFiliereDropdown();
@@ -300,16 +300,16 @@ document.getElementById('new-formation-input').addEventListener('keydown', funct
 
 // ── Sauvegarde ───────────────────────────────────
 document.getElementById('btn-save').addEventListener('click', function () {
-    var user = localUsers.find(function (u) { return u.id_user === editingUserId; });
+    var user = localUsers.find(function (u) { return u.user_id === editingUserId; });
     if (!user || !selectedRole) return;
 
     // Construire le rôle final
     var finalRole = selectedRole;
-    if (selectedRole === 'RP-RM' && selectedFilieres.length > 0) {
-        finalRole = 'RP-RM:' + selectedFilieres.join(';');
+    if (selectedRole === 'program_manager' && selectedFilieres.length > 0) {
+        finalRole = 'program_manager:' + selectedFilieres.join(';');
     }
-    if (selectedRole === 'Admin' && selectedFilieres.length > 0) {
-        finalRole = 'Admin:' + selectedFilieres.join(';');
+    if (selectedRole === 'admin' && selectedFilieres.length > 0) {
+        finalRole = 'admin:' + selectedFilieres.join(';');
     }
 
     var btn = document.getElementById('btn-save');

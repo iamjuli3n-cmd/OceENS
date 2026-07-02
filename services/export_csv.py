@@ -5,19 +5,19 @@ from fastapi.responses import Response
 
 
 EXPORT_COLUMNS = [
-    "Campus",
-    "Formation",
-    "Annee_Scolaire",
-    "Semestre",
-    "UE",
-    "Module",
-    "Enseignant",
-    "Section",
-    "Categorie",
-    "Type_Question",
-    "Valeur_Reponse",
-    "Question_ID",
-    "Reponse_ID",
+    "campus",
+    "program",
+    "school_year",
+    "semester",
+    "ue",
+    "module",
+    "teacher",
+    "section",
+    "category",
+    "question_type",
+    "question_id",
+    "answer_id",
+    "answer_value",
 ]
 
 
@@ -27,11 +27,11 @@ def _safe_filename(value: str) -> str:
     return value.strip("_")
 
 
-def generate_csv_response(sondage_obj) -> Response:
+def generate_csv_response(survey_obj) -> Response:
     """
-    Convertit l'objet SondageComplet en CSV via Pandas et retourne une FastAPI Response.
+    Convertit l'objet FullSurvey en CSV via Pandas et retourne une FastAPI Response.
     """
-    records = sondage_obj.to_flat_dataframe_records()
+    records = survey_obj.to_flat_dataframe_records()
     df = pd.DataFrame(records) if records else pd.DataFrame()
 
     # Garantit que toutes les colonnes attendues existent
@@ -45,14 +45,14 @@ def generate_csv_response(sondage_obj) -> Response:
     csv_text = df.to_csv(index=False, sep=";")
     csv_bytes = csv_text.encode("utf-8-sig")
 
-    campus = _safe_filename(getattr(sondage_obj, "campus", "campus"))
-    formation = _safe_filename(getattr(sondage_obj, "formation", "formation"))
-    semestre = _safe_filename(getattr(sondage_obj, "semestre", "semestre"))
-    annee_scolaire = _safe_filename(
-        getattr(sondage_obj, "annee_scolaire", "annee_scolaire")
+    campus = _safe_filename(getattr(survey_obj, "campus", "campus"))
+    program = _safe_filename(getattr(survey_obj, "program", "program"))
+    semester = _safe_filename(getattr(survey_obj, "semester", "semester"))
+    school_year = _safe_filename(
+        getattr(survey_obj, "school_year", "school_year")
     )
 
-    filename = f"export_{campus}_{formation}_{semestre}_{annee_scolaire}.csv"
+    filename = f"export_{campus}_{program}_{semester}_{school_year}.csv"
 
     return Response(
         content=csv_bytes,

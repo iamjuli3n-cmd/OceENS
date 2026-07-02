@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     try {
-        const response = await fetch('/api/etudiant/questionnaire', { cache: 'no-store' });
+        const response = await fetch('/api/surveys/my/', { cache: 'no-store' });
         const data = await response.json();
 
         if (!response.ok) {
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             return;
         }
 
-        if (!data.questionnaire) {
+        if (!data.survey) {
             btn.textContent = 'Aucun questionnaire assigné';
             btn.classList.remove('loading');
             btn.disabled = true;
@@ -34,18 +34,18 @@ document.addEventListener('DOMContentLoaded', async function () {
             return;
         }
 
-        const q = data.questionnaire;
+        const q = data.survey;
 
         // Carte d'identité du questionnaire (formation + semestre/année)
         const metaParts = [];
-        if (q.semestre) metaParts.push(q.semestre);
-        if (q.annee_scolaire) metaParts.push(q.annee_scolaire);
+        if (q.semester) metaParts.push(q.semester);
+        if (q.school_year) metaParts.push(q.school_year);
 
-        if (q.formation || metaParts.length) {
+        if (q.program || metaParts.length) {
             showCard({
-                formation: q.formation || 'Questionnaire',
+                program: q.program || 'Questionnaire',
                 meta: metaParts.join(' · '),
-                done: !!q.repondu,
+                done: !!q.has_answered,
             });
         }
 

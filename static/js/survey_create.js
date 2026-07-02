@@ -7,52 +7,56 @@ const Parametrage = {
     container: null,
 
     campusList: [],
-    allFilieres: [],
-    profsList: [],
+    allPrograms: [],
+    teachersList: [],
     templatesList: [],
-    mockUEsByFiliere: {},
+    mockUEsByProgram: {},
 
     // ─── État courant ───────────────────────────────────
-    filieresList: [],
+    programsList: [],
     selectedCampusId: null,
-    selectedFiliereId: null,
+    selectedProgramId: null,
     selectedTemplateId: null,
-    semestreAnnee: '',
-    anneesScolaires: [],
-    selectedAnneeScolaire: '',
+    semesterYear: '',
+    schoolYear: [],
+    selectedSchoolYear: '',
     ues: [],
     nextId: 9000,
     isLoading: false,
     loadError: null,
     importedFile: null,     // Fichier .xlsx sélectionné (pas encore envoyé)
     _notifTimer: null,      // Timer pour auto-dismiss de la notification
-    isRprm: false,           // True si l'utilisateur est RP-RM (pas de création de filière)
+    isProgramManager: false,           // True si l'utilisateur est RP-RM (pas de création de filière)
 
     // ─── Init ───────────────────────────────────────────
     init(containerId, initialData = {}) {
         this.container = document.getElementById(containerId);
         if (!this.container) return;
 
+        console.log(initialData);
+
         this.templatesList = (initialData.templates || []).map(template => ({
-            id: template.id_template,
-            titre: template.nom
+            id: template.template_id,
+            titre: template.name
         }));
         this.campusList = initialData.campusList || [];
-        this.allFilieres = initialData.filieres || [];
-        this.profsList = initialData.profsList || [];
-        this.mockUEsByFiliere = initialData.uesByFiliere || {};
+        this.allPrograms = initialData.programs || [];
+        this.teachersList = initialData.teachersList || [];
+        console.log(this.teachersList);
+        this.mockUEsByProgram = initialData.uesByFiliere || {};
         this.selectedCampusId = initialData.selectedCampusId || null;
-        this.selectedFiliereId = initialData.selectedFiliereId || null;
+        this.selectedProgramId = initialData.selectedProgramId || null;
         this.selectedTemplateId = initialData.selectedTemplateId || null;
-        this.semestreAnnee = initialData.semestreAnnee || '';
-        this.anneesScolaires = initialData.anneesScolaires || [];
-        this.selectedAnneeScolaire = initialData.selectedAnneeScolaire || '';
-        this.isRprm = initialData.isRprm || false;
+        this.semesterYear = initialData.semesterYear || '';
+        this.schoolYears = initialData.schoolYears || [];
+        
+        this.selectedSchoolYear = initialData.selectedSchoolYear || '';
+        this.isProgramManager = initialData.isProgramManager || false;
         // Pour les RP-RM, afficher toutes les filières autorisées sans filtrage par campus
-        if (this.isRprm) {
-            this.filieresList = this.allFilieres;
+        if (this.isProgramManager) {
+            this.programsList = this.allPrograms;
         } else {
-            this.filieresList = this.selectedCampusId ? this.allFilieres.filter(f => f.campus_id === this.selectedCampusId) : [];
+            this.programsList = this.selectedCampusId ? this.allPrograms.filter(f => f.campus_id === this.selectedCampusId) : [];
         }
 
         this.render();
@@ -76,15 +80,15 @@ const Parametrage = {
                     <label>Semestre</label>
                     <select id="param-semestre" onchange="Parametrage.onSemestreChange(this.value)">
                         <option value="">-- Sélectionnez un semestre --</option>
-                        ${['Automne', 'Printemps'].map(s => `<option value="${s}" ${this.semestreAnnee === s ? 'selected' : ''}>${s}</option>`).join('')}
+                        ${['Automne','Printemps'].map(s => `<option value="${s}" ${this.semesterYear === s ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
                 </div>
                 <div class="pub-field">
                     <label>Année scolaire</label>
                     <div class="param-select-group" style="display: flex; gap: 10px; width: 100%;">
                         <select id="param-annee" onchange="Parametrage.onAnneeChange(this.value)" style="flex: 1;">
-                            <option value="">-- Sélectionnez --</option>
-                            ${this.anneesScolaires.map(a => `<option value="${a}" ${this.selectedAnneeScolaire === a ? 'selected' : ''}>${a}</option>`).join('')}
+                            <option value="">-- Sélectionnez -- </option>
+                            ${this.schoolYears.map(a => `<option value="${a}" ${this.selectedSchoolYear === a ? 'selected' : ''}>${a}</option>`).join('')}
                         </select>
                         <button class="btn-icon" onclick="Parametrage.addAnneeScolaire()" title="Ajouter une année scolaire" style="flex-shrink: 0; padding: 0 15px; background: linear-gradient(135deg, #1a5276, #1f6f9f); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">+</button>
                     </div>
@@ -99,16 +103,16 @@ const Parametrage = {
                     <div class="param-select-group">
                         <select id="param-campus" onchange="Parametrage.onCampusChange()">
                             <option value="">-- Sélectionnez un campus --</option>
-                            ${this.campusList.map(c => `<option value="${c.id}" ${this.selectedCampusId === c.id ? 'selected' : ''}>${c.nom}</option>`).join('')}
+                            ${this.campusList.map(c => `<option value="${c.id}" ${this.selectedCampusId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
                         </select>
                     </div>
                 </div>
                 <div class="param-field">
                     <label>Filière</label>
                     <div class="param-select-group">
-                        <select id="param-filiere" onchange="Parametrage.onFiliereChange()" ${!this.isRprm && !this.selectedCampusId ? 'disabled' : ''}>
+                        <select id="param-filiere" onchange="Parametrage.onFiliereChange()" ${!this.isProgramManager && !this.selectedCampusId ? 'disabled' : ''}>
                             <option value="">-- Sélectionnez une filière --</option>
-                            ${this.filieresList.map(f => `<option value="${f.id}" ${this.selectedFiliereId === f.id ? 'selected' : ''}>${f.nom}</option>`).join('')}
+                            ${this.programsList.map(f => `<option value="${f.id}" ${this.selectedProgramId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
                         </select>
                     </div>
                 </div>
@@ -138,7 +142,7 @@ const Parametrage = {
                 </div>
             </div>
 
-            <button class="btn-publish" onclick="Parametrage.publish()" ${!this.selectedFiliereId ? 'disabled' : ''}>Publier le sondage</button>
+            <button class="btn-publish" onclick="Parametrage.publish()" ${!this.selectedProgramId ? 'disabled' : ''}>Publier le sondage</button>
         `;
 
         this.renderUEContainer();
@@ -147,13 +151,13 @@ const Parametrage = {
 
     // ─── Semestre change ─────────────────────────────────
     onSemestreChange(value) {
-        this.semestreAnnee = value;
+        this.semesterYear = value;
         this._tryFetchModulesPrecedents();
     },
 
     // ─── Année scolaire change ───────────────────────────
     onAnneeChange(value) {
-        this.selectedAnneeScolaire = value;
+        this.selectedSchoolYear = value;
         this._tryFetchModulesPrecedents();
     },
 
@@ -161,15 +165,15 @@ const Parametrage = {
     async onCampusChange() {
         const sel = document.getElementById('param-campus');
         this.selectedCampusId = sel.value ? parseInt(sel.value) : null;
-        this.selectedFiliereId = null;
+        this.selectedProgramId = null;
 
-        if (this.isRprm) {
+        if (this.isProgramManager) {
             // RP-RM : toujours afficher toutes les filières autorisées
-            this.filieresList = this.allFilieres;
+            this.programsList = this.allPrograms;
         } else if (this.selectedCampusId) {
-            this.filieresList = this.allFilieres.filter(f => f.campus_id === this.selectedCampusId);
+            this.programsList = this.allPrograms.filter(f => f.campus_id === this.selectedCampusId);
         } else {
-            this.filieresList = [];
+            this.programsList = [];
         }
         this.render();
         await this.fetchAndUpdateData();
@@ -184,17 +188,17 @@ const Parametrage = {
             return;
         }
 
-        if (this.isLoading && !this.selectedFiliereId) {
+        if (this.isLoading && !this.selectedProgramId) {
             container.innerHTML = `<p class="param-empty">Chargement des filières...</p>`;
             return;
         }
 
-        if (!this.selectedFiliereId) {
-            if (this.isRprm) {
+        if (!this.selectedProgramId) {
+            if (this.isProgramManager) {
                 container.innerHTML = `<p class="param-empty">Sélectionnez une filière pour configurer les cours et professeurs.</p>`;
             } else if (!this.selectedCampusId) {
                 container.innerHTML = `<p class="param-empty">Sélectionnez un campus et une filière pour configurer les cours et professeurs.</p>`;
-            } else if (this.filieresList.length === 0) {
+            } else if (this.programsList.length === 0) {
                 container.innerHTML = `<p class="param-empty">Aucune filière disponible pour ce campus.</p>`;
             } else {
                 container.innerHTML = `<p class="param-empty">Sélectionnez une filière pour configurer les cours et professeurs.</p>`;
@@ -202,7 +206,7 @@ const Parametrage = {
             return;
         }
 
-        if (this.selectedFiliereId) {
+        if (this.selectedProgramId) {
             this.renderUEs();
             return;
         }
@@ -224,28 +228,31 @@ const Parametrage = {
             }
             const data = await response.json();
 
-            this.campusList = data.campusList || this.campusList;
-            this.allFilieres = data.filieres || this.allFilieres;
-            this.profsList = data.profsList || this.profsList;
-            this.templatesList = (data.templates || []).map(template => ({
-                id: template.id_template,
-                titre: template.nom
-            }));
-            this.mockUEsByFiliere = data.uesByFiliere || this.mockUEsByFiliere;
-            if (data.anneesScolaires) this.anneesScolaires = data.anneesScolaires;
-            if (data.selectedAnneeScolaire && !this.selectedAnneeScolaire) this.selectedAnneeScolaire = data.selectedAnneeScolaire;
+            console.log(data);
 
-            if (this.isRprm) {
+            this.campusList = data.campusList || this.campusList;
+            this.allPrograms = data.programs || this.allPrograms;
+            this.teachersList = data.teachersList || this.teachersList;
+            console.log(this.teachersList);
+            this.templatesList = (data.templates || []).map(template => ({
+                id: template.template_id,
+                titre: template.name
+            }));
+            this.mockUEsByProgram = data.uesByFiliere || this.mockUEsByProgram;
+            if (data.schoolYears) this.schoolYears = data.schoolYears;
+            if (data.selectedSchoolYear && !this.selectedSchoolYear) this.selectedSchoolYear = data.selectedSchoolYear;
+
+            if (this.isProgramManager) {
                 // RP-RM : toujours afficher toutes les filières autorisées
-                this.filieresList = this.allFilieres;
+                this.programsList = this.allPrograms;
             } else if (this.selectedCampusId) {
-                this.filieresList = this.allFilieres.filter(f => f.campus_id === this.selectedCampusId);
+                this.programsList = this.allPrograms.filter(f => f.campus_id === this.selectedCampusId);
             } else {
-                this.filieresList = [];
+                this.programsList = [];
             }
 
-            if (this.selectedFiliereId) {
-                this.ues = JSON.parse(JSON.stringify(this.mockUEsByFiliere[this.selectedFiliereId] || []));
+            if (this.selectedProgramId) {
+                this.ues = JSON.parse(JSON.stringify(this.mockUEsByProgram[this.selectedProgramId] || []));
             }
         } catch (error) {
             this.loadError = error.message || 'Une erreur est survenue pendant le chargement.';
@@ -260,7 +267,7 @@ const Parametrage = {
     // ─── Filière change ─────────────────────────────────
     async onFiliereChange() {
         const sel = document.getElementById('param-filiere');
-        this.selectedFiliereId = sel.value ? parseInt(sel.value) : null;
+        this.selectedProgramId = sel.value ? parseInt(sel.value) : null;
         this.ues = [];
         this.render();
         // Charger les modules de l'année précédente pour cette nouvelle filière
@@ -272,11 +279,11 @@ const Parametrage = {
     addAnneeScolaire() {
         const nouvelleAnnee = prompt("Saisissez la nouvelle année scolaire (ex: 2024-2025) :");
         if (!nouvelleAnnee || !nouvelleAnnee.trim()) return;
-        const annee = nouvelleAnnee.trim();
-        if (!this.anneesScolaires.includes(annee)) {
-            this.anneesScolaires.push(annee);
+        const school_year = nouvelleAnnee.trim();
+        if (!this.schoolYears.includes(school_year)) {
+            this.schoolYears.push(school_year);
         }
-        this.selectedAnneeScolaire = annee;
+        this.selectedSchoolYear = school_year;
         this.render();
         this._tryFetchModulesPrecedents();
     },
@@ -284,13 +291,13 @@ const Parametrage = {
     // ─── Chargement des modules de l'année précédente ───
     async _tryFetchModulesPrecedents() {
         // Résoudre le nom de la filière sélectionnée
-        const filiereNom = this.selectedFiliereId
-            ? (this.allFilieres.find(f => f.id === this.selectedFiliereId) ||
-                this.filieresList.find(f => f.id === this.selectedFiliereId))?.nom || ''
+        const filiereNom = this.selectedProgramId
+            ? (this.allPrograms.find(f => f.id === this.selectedProgramId) ||
+               this.programsList.find(f => f.id === this.selectedProgramId))?.name || ''
             : '';
 
         // On ne peut lancer la requête que si les 3 valeurs sont renseignées
-        if (!this.semestreAnnee || !filiereNom || !this.selectedAnneeScolaire) {
+        if (!this.semesterYear || !filiereNom || !this.selectedSchoolYear) {
             return;
         }
 
@@ -300,11 +307,11 @@ const Parametrage = {
 
         try {
             const params = new URLSearchParams({
-                semestre: this.semestreAnnee,
-                formation: filiereNom,
-                annee_scolaire: this.selectedAnneeScolaire,
+                semester: this.semesterYear,
+                program: filiereNom,
+                school_year: this.selectedSchoolYear,
             });
-            const response = await fetch(`/api/modules-precedents?${params}`, {
+            const response = await fetch(`/api/modules/previous?${params}`, {
                 cache: 'no-store',
             });
             if (!response.ok) {
@@ -329,21 +336,23 @@ const Parametrage = {
                 });
                 this.nextId = localId;
 
+                console.log(data.teachersList)
+
                 // Enrichir la liste des profs avec ceux du sondage précédent
-                if (data.profsList && data.profsList.length > 0) {
-                    const existingIds = new Set(this.profsList.map(p => `${(p.prenom || '').toLowerCase()}_${(p.nom || '').toLowerCase()}`));
-                    for (const prof of data.profsList) {
-                        const key = `${(prof.prenom || '').toLowerCase()}_${(prof.nom || '').toLowerCase()}`;
+                if (data.teachersList && data.teachersList.length > 0) {
+                    const existingIds = new Set(this.teachersList.map(p => `${(p.firstname||'').toLowerCase()}_${(p.name||'').toLowerCase()}`));
+                    for (const teacher of data.teachersList) {
+                        const key = `${(teacher.firstname||'').toLowerCase()}_${(teacher.name||'').toLowerCase()}`;
                         if (!existingIds.has(key)) {
                             this.nextId++;
-                            prof.id = this.nextId;
-                            this.profsList.push(prof);
+                            teacher.id = this.nextId;
+                            this.teachersList.push(teacher);
                             existingIds.add(key);
                         }
                     }
                 }
 
-                console.log(`[Parametrage] ${data.ues.length} UE(s) chargée(s) depuis le sondage ${data.annee_precedente}`);
+                console.log(`[Parametrage] ${data.ues.length} UE(s) chargée(s) depuis le sondage ${data.previousSchoolYear}`);
             } else {
                 // Aucun historique : liste vide, l'utilisateur ajoutera manuellement
                 this.ues = [];
@@ -395,14 +404,14 @@ const Parametrage = {
                 <div class="param-ue-header" onclick="Parametrage.toggleUE(${ue.id})">
                     <span class="param-chevron"></span>
                     <span class="param-ue-name">
-                        <input type="text" value="${this.esc(ue.nom)}"
+                        <input type="text" value="${this.esc(ue.name)}"
                                onclick="event.stopPropagation()"
                                onblur="Parametrage.renameUE(${ue.id}, this.value)"
                                onkeydown="if(event.key==='Enter'){this.blur();}">
                     </span>
-                    ${ue.optionnel ? '<span class="param-badge-optionnel">Optionnelle</span>' : ''}
+                    ${ue.is_optional ? '<span class="param-badge-optionnel">Optionnelle</span>' : ''}
                     <span class="param-ue-actions" onclick="event.stopPropagation()">
-                        <label><input type="checkbox" ${ue.optionnel ? 'checked' : ''} onchange="Parametrage.toggleOptional(${ue.id}, this.checked)"> Opt.</label>
+                        <label><input type="checkbox" ${ue.is_optional ? 'checked' : ''} onchange="Parametrage.toggleOptional(${ue.id}, this.checked)"> Opt.</label>
                         <button class="param-btn-remove" onclick="Parametrage.removeUE(${ue.id})" title="Supprimer l'UE">&times;</button>
                     </span>
                 </div>
@@ -418,28 +427,28 @@ const Parametrage = {
 
     // ─── Render un Module ───────────────────────────────
     renderModule(mod, ueId) {
-        const assignedIds = (mod.professeurs || []).map(p => p.id);
-        const availableProfs = this.profsList.filter(p => !assignedIds.includes(p.id));
+        const assignedIds = (mod.teachers || []).map(p => p.id);
+        const availableProfs = this.teachersList.filter(p => !assignedIds.includes(p.id));
 
         return `
             <div class="param-module" data-module-id="${mod.id}">
                 <div class="param-module-name">
-                    <input type="text" value="${this.esc(mod.nom)}" placeholder="Nom du module"
+                    <input type="text" value="${this.esc(mod.name)}" placeholder="Nom du module"
                            onblur="Parametrage.renameModule(${mod.id}, this.value, ${ueId})"
                            onkeydown="if(event.key==='Enter'){this.blur();}">
                 </div>
                 <div class="param-module-modalite">
                     <label class="param-checkbox-label">
-                        <input type="checkbox" ${mod.choix_enseignant_exclusif ? 'checked' : ''}
+                        <input type="checkbox" ${mod.one_teacher_in_list ? 'checked' : ''}
                                onchange="Parametrage.toggleChoixEnseignant(${mod.id}, this.checked, ${ueId})">
                         <span>1 seul enseignant parmi la liste</span>
                     </label>
                 </div>
                 <div class="param-module-profs">
                     <ul class="param-prof-list">
-                        ${(mod.professeurs || []).map(p => `
+                        ${(mod.teachers || []).map(p => `
                             <li class="param-prof-item">
-                                <span class="param-prof-name">${this.esc(p.prenom)} ${this.esc(p.nom)}</span>
+                                <span class="param-prof-name">${this.esc(p.firstname)} ${this.esc(p.name)}</span>
                                 <button class="param-remove-tag" onclick="Parametrage.removeProf(${mod.id}, ${p.id}, ${ueId})">&times;</button>
                             </li>
                         `).join('')}
@@ -453,7 +462,7 @@ const Parametrage = {
                             ${availableProfs.length === 0 ? '<div class="param-prof-option" style="color:#999;">Aucun prof disponible</div>' :
                 availableProfs.map(p => `
                                 <div class="param-prof-option" onclick="Parametrage.addProf(${mod.id}, ${p.id}, ${ueId})">
-                                    ${this.esc(p.prenom)} ${this.esc(p.nom)}
+                                    ${this.esc(p.firstname)} ${this.esc(p.name)}
                                 </div>
                               `).join('')}
                         </div>
@@ -474,15 +483,15 @@ const Parametrage = {
     },
 
     addUE() {
-        if (!this.selectedFiliereId) return;
+        if (!this.selectedProgramId) return;
         const nom = prompt('Nom de la nouvelle UE :');
         if (!nom || !nom.trim()) return;
         const newId = ++this.nextId;
         this.ues.push({
             id: newId,
-            nom: nom.trim(),
-            filiere_id: this.selectedFiliereId,
-            optionnel: false,
+            name: nom.trim(),
+            filiere_id: this.selectedProgramId,
+            is_optional: false,
             _open: true,
             modules: []
         });
@@ -492,13 +501,13 @@ const Parametrage = {
     renameUE(ueId, newName) {
         if (!newName || !newName.trim()) return;
         const ue = this.ues.find(u => u.id === ueId);
-        if (ue) ue.nom = newName.trim();
+        if (ue) ue.name = newName.trim();
     },
 
     toggleOptional(ueId, checked) {
         const ue = this.ues.find(u => u.id === ueId);
         if (ue) {
-            ue.optionnel = checked;
+            ue.is_optional = checked;
             this.renderUEs();
         }
     },
@@ -517,10 +526,10 @@ const Parametrage = {
         if (!ue.modules) ue.modules = [];
         ue.modules.push({
             id: newId,
-            nom: 'Nouveau module',
+            name: 'Nouveau module',
             ue_id: ueId,
-            choix_enseignant_exclusif: false,
-            professeurs: []
+            one_teacher_in_list: false,
+            teachers: []
         });
         ue._open = true;
         this.renderUEs();
@@ -531,14 +540,14 @@ const Parametrage = {
         const ue = this.ues.find(u => u.id === ueId);
         if (!ue) return;
         const mod = (ue.modules || []).find(m => m.id === modId);
-        if (mod) mod.nom = newName.trim();
+        if (mod) mod.name = newName.trim();
     },
 
     toggleChoixEnseignant(modId, checked, ueId) {
         const ue = this.ues.find(u => u.id === ueId);
         if (!ue) return;
         const mod = (ue.modules || []).find(m => m.id === modId);
-        if (mod) mod.choix_enseignant_exclusif = checked;
+        if (mod) mod.one_teacher_in_list = checked;
     },
 
     removeModule(modId, ueId) {
@@ -559,7 +568,7 @@ const Parametrage = {
         if (dd) dd.classList.toggle('show');
     },
 
-    addProf(modId, profId, ueId) {
+    addProf(modId, teacherId, ueId) {
         const dd = document.getElementById('prof-dd-' + modId);
         if (dd) dd.classList.remove('show');
 
@@ -568,10 +577,10 @@ const Parametrage = {
         const mod = (ue.modules || []).find(m => m.id === modId);
         if (!mod) return;
 
-        const prof = this.profsList.find(p => p.id === profId);
-        if (!prof) return;
-        if (!mod.professeurs) mod.professeurs = [];
-        mod.professeurs.push({ ...prof });
+        const teacher = this.teachersList.find(p => p.id === teacherId);
+        if (!teacher) return;
+        if (!mod.teachers) mod.teachers = [];
+        mod.teachers.push({ ...teacher });
         ue._open = true;
         this.renderUEs();
     },
@@ -580,23 +589,23 @@ const Parametrage = {
         const dd = document.getElementById('prof-dd-' + modId);
         if (dd) dd.classList.remove('show');
 
-        const prenom = prompt('Prénom du professeur :');
-        if (!prenom || !prenom.trim()) return;
+        const firstname = prompt('Prénom du professeur :');
+        if (!firstname || !firstname.trim()) return;
         const nom = prompt('Nom du professeur :');
         if (!nom || !nom.trim()) return;
 
         const newId = ++this.nextId;
-        const newProf = { id: newId, nom: nom.trim(), prenom: prenom.trim() };
-        this.profsList.push(newProf);
+        const newProf = { id: newId, name: nom.trim(), firstname: firstname.trim() };
+        this.teachersList.push(newProf);
         this.addProf(modId, newId, ueId);
     },
 
-    removeProf(modId, profId, ueId) {
+    removeProf(modId, teacherId, ueId) {
         const ue = this.ues.find(u => u.id === ueId);
         if (!ue) return;
         const mod = (ue.modules || []).find(m => m.id === modId);
         if (!mod) return;
-        mod.professeurs = (mod.professeurs || []).filter(p => p.id !== profId);
+        mod.teachers = (mod.teachers || []).filter(p => p.id !== teacherId);
         ue._open = true;
         this.renderUEs();
     },
@@ -703,34 +712,34 @@ const Parametrage = {
             this.selectedTemplateId = this.templatesList[0]?.id;
         }
         if (!this.selectedCampusId) return alert('Veuillez sélectionner un Campus.');
-        if (!this.selectedFiliereId) return alert('Veuillez sélectionner une Filière.');
-        if (!this.semestreAnnee || !this.semestreAnnee.trim()) return alert("Veuillez sélectionner un semestre.");
-        if (!this.selectedAnneeScolaire || !this.selectedAnneeScolaire.trim()) return alert("Veuillez sélectionner une année scolaire.");
+        if (!this.selectedProgramId) return alert('Veuillez sélectionner une Filière.');
+        if (!this.semesterYear || !this.semesterYear.trim()) return alert("Veuillez sélectionner un semestre.");
+        if (!this.selectedSchoolYear || !this.selectedSchoolYear.trim()) return alert("Veuillez sélectionner une année scolaire.");
         if (this.ues.length === 0) return alert('Le sondage doit contenir au moins une UE.');
         if (!this.importedFile) return alert('Veuillez importer la liste des étudiants (fichier .xlsx) avant de publier.');
 
-        const campusNom = this.campusList.find(c => c.id === this.selectedCampusId)?.nom || '';
-        const filiereNom = this.filieresList.find(f => f.id === this.selectedFiliereId)?.nom || '';
+        const campusNom = this.campusList.find(c => c.id === this.selectedCampusId)?.name || '';
+        const filiereNom = this.programsList.find(f => f.id === this.selectedProgramId)?.name || '';
 
         // Préparer les données du sondage en JSON
-        const sondageData = {
-            id_template: this.selectedTemplateId,
+        const surveyData = {
+            template_id: this.selectedTemplateId,
             campus: campusNom,
-            formation: filiereNom,
-            semestre: this.semestreAnnee,
-            annee_scolaire: this.selectedAnneeScolaire,
+            program: filiereNom,
+            semester: this.semesterYear,
+            school_year: this.selectedSchoolYear,
             ues: this.ues.map(ue => ({
                 id: ue.id,
-                nom: ue.nom,
-                optionnel: ue.optionnel,
+                name: ue.name,
+                is_optional: ue.is_optional,
                 modules: (ue.modules || []).map(mod => ({
                     id: mod.id,
-                    nom: mod.nom,
-                    choix_enseignant_exclusif: mod.choix_enseignant_exclusif || false,
-                    professeurs: (mod.professeurs || []).map(prof => ({
-                        id: prof.id,
-                        prenom: prof.prenom,
-                        nom: prof.nom
+                    name: mod.name,
+                    one_teacher_in_list: mod.one_teacher_in_list || false,
+                    teachers: (mod.teachers || []).map(teacher => ({
+                        id: teacher.id,
+                        firstname: teacher.firstname,
+                        name: teacher.name
                     }))
                 }))
             }))
@@ -745,13 +754,13 @@ const Parametrage = {
 
         // Construire le FormData avec le JSON + fichier optionnel
         const formData = new FormData();
-        formData.append('sondage_data', JSON.stringify(sondageData));
+        formData.append('survey_data', JSON.stringify(surveyData));
         if (this.importedFile) {
             formData.append('file', this.importedFile);
         }
 
         try {
-            const response = await fetch('/api/sondage', {
+            const response = await fetch('/api/surveys', {
                 method: 'POST',
                 body: formData,
             });

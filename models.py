@@ -5,240 +5,239 @@ from sqlmodel import Field, SQLModel
 
 
 class User(SQLModel, table=True):
-    __tablename__ = "Users"
+    __tablename__ = "users"
 
-    id_user: Optional[int] = Field(
-        default=None, sa_column=Column("Id_User", Integer, primary_key=True)
+    user_id: Optional[int] = Field(
+        default=None, sa_column=Column("user_id", Integer, primary_key=True)
     )
-    mail: Optional[str] = Field(default=None, sa_column=Column("Mail", String))
-    role: Optional[str] = Field(default=None, sa_column=Column("Role", String))
-    # Campus
+    mail: Optional[str] = Field(default=None, sa_column=Column("mail", String))
+    role: Optional[str] = Field(default=None, sa_column=Column("role", String))
 
 
 class Template(SQLModel, table=True):
-    __tablename__ = "Templates"
+    __tablename__ = "templates"
 
-    id_template: Optional[int] = Field(
-        default=None, sa_column=Column("Id_Template", Integer, primary_key=True)
+    template_id: Optional[int] = Field(
+        default=None, sa_column=Column("template_id", Integer, primary_key=True)
     )
-    nom: Optional[str] = Field(default=None, sa_column=Column("Nom", String))
-    id_user: Optional[int] = Field(
-        default=None, sa_column=Column("Id_User", Integer, ForeignKey("Users.Id_User"))
+    name: Optional[str] = Field(default=None, sa_column=Column("name", String))
+    user_id: Optional[int] = Field(
+        default=None, sa_column=Column("user_id", Integer, ForeignKey("users.user_id"))
     )
 
 
-class Sondage(SQLModel, table=True):
-    __tablename__ = "Sondages"
+class Survey(SQLModel, table=True):
+    __tablename__ = "surveys"
 
-    id_template: Optional[int] = Field(
+    template_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Template",
+            "template_id",
             Integer,
-            ForeignKey("Templates.Id_Template"),
+            ForeignKey("templates.template_id"),
             primary_key=True,
         ),
     )
-    id_sondage: Optional[int] = Field(
-        default=None, sa_column=Column("Id_Sondage", Integer, primary_key=True)
+    survey_id: Optional[int] = Field(
+        default=None, sa_column=Column("survey_id", Integer, primary_key=True)
     )
-    campus: Optional[str] = Field(default=None, sa_column=Column("Campus", String))
-    formation: Optional[str] = Field(
-        default=None, sa_column=Column("Formation", String)
+    campus: Optional[str] = Field(default=None, sa_column=Column("campus", String))
+    program: Optional[str] = Field(
+        default=None, sa_column=Column("program", String)
     )
-    semestre: Optional[str] = Field(default=None, sa_column=Column("Semestre", String))
-    url: Optional[str] = Field(default=None, sa_column=Column("URL", String))
-    statut: Optional[int] = Field(default=None, sa_column=Column("Statut", Integer))
-    annee_scolaire: Optional[str] = Field(
-        default=None, sa_column=Column("Annee_scolaire", String)
+    semester: Optional[str] = Field(default=None, sa_column=Column("semester", String))
+    url: Optional[str] = Field(default=None, sa_column=Column("url", String))
+    status: Optional[int] = Field(default=None, sa_column=Column("status", Integer))
+    school_year: Optional[str] = Field(
+        default=None, sa_column=Column("school_year", String)
     )
-    mot_de_passe: Optional[str] = Field(
-        default=None, sa_column=Column("Mot_de_passe", String)
+    password: Optional[str] = Field(
+        default=None, sa_column=Column("password", String)
     )
 
 
 class Section(SQLModel, table=True):
-    __tablename__ = "Sections"
+    __tablename__ = "sections"
 
-    id_template: Optional[int] = Field(
+    template_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Template",
+            "template_id",
             Integer,
-            ForeignKey("Templates.Id_Template"),
+            ForeignKey("templates.template_id"),
             primary_key=True,
         ),
     )
-    id_section: Optional[int] = Field(
-        default=None, sa_column=Column("Id_Section", Integer, primary_key=True)
+    section_id: Optional[int] = Field(
+        default=None, sa_column=Column("section_id", Integer, primary_key=True)
     )
-    nom: Optional[str] = Field(default=None, sa_column=Column("Nom", String))
-    ordre: Optional[int] = Field(default=None, sa_column=Column("Ordre", Integer))
-    section_type: Optional[str] = Field(default=None, sa_column=Column("Type", String))
+    name: Optional[str] = Field(default=None, sa_column=Column("name", String))
+    order: Optional[int] = Field(default=None, sa_column=Column("order", Integer))
+    section_type: Optional[str] = Field(default=None, sa_column=Column("section_type", String))
 
 
 class Question(SQLModel, table=True):
-    __tablename__ = "Questions"
+    __tablename__ = "questions"
 
-    id_template: Optional[int] = Field(
+    template_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Template",
+            "template_id",
             Integer,
-            ForeignKey("Templates.Id_Template"),
+            ForeignKey("templates.template_id"),
             primary_key=True,
         ),
     )
-    id_section: Optional[int] = Field(
+    section_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Section", Integer, ForeignKey("Sections.Id_Section"), primary_key=True
+            "section_id", Integer, ForeignKey("sections.section_id"), primary_key=True
         ),
     )
-    id_question: Optional[int] = Field(
-        default=None, sa_column=Column("Id_Question", Integer, primary_key=True)
+    question_id: Optional[int] = Field(
+        default=None, sa_column=Column("question_id", Integer, primary_key=True)
     )
-    categorie: Optional[str] = Field(
-        default=None, sa_column=Column("Catégorie", String)
+    category: Optional[str] = Field(
+        default=None, sa_column=Column("category", String)
     )
-    question_type: Optional[str] = Field(default=None, sa_column=Column("Type", String))
-    langue: Optional[str] = Field(default=None, sa_column=Column("Langue", String))
-    intitule: Optional[str] = Field(default=None, sa_column=Column("Intitulé", Text))
+    question_type: Optional[str] = Field(default=None, sa_column=Column("question_type", String))
+    language: Optional[str] = Field(default=None, sa_column=Column("language", String))
+    text: Optional[str] = Field(default=None, sa_column=Column("text", Text))
 
 
 class Option(SQLModel, table=True):
-    __tablename__ = "Options"
+    __tablename__ = "options"
 
-    id_template: Optional[int] = Field(
+    template_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Template",
+            "template_id",
             Integer,
-            ForeignKey("Templates.Id_Template"),
+            ForeignKey("templates.template_id"),
             primary_key=True,
         ),
     )
-    id_section: Optional[int] = Field(
+    section_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Section", Integer, ForeignKey("Sections.Id_Section"), primary_key=True
+            "section_id", Integer, ForeignKey("sections.section_id"), primary_key=True
         ),
     )
-    id_question: Optional[int] = Field(
+    question_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Question",
+            "question_id",
             Integer,
-            ForeignKey("Questions.Id_Question"),
+            ForeignKey("questions.question_id"),
             primary_key=True,
         ),
     )
-    id_option: Optional[int] = Field(
-        default=None, sa_column=Column("Id_Option", Integer, primary_key=True)
+    option_id: Optional[int] = Field(
+        default=None, sa_column=Column("option_id", Integer, primary_key=True)
     )
-    intitule: Optional[str] = Field(default=None, sa_column=Column("Intitulé", Text))
+    text: Optional[str] = Field(default=None, sa_column=Column("text", Text))
 
 
 class Module(SQLModel, table=True):
-    __tablename__ = "Modules"
+    __tablename__ = "modules"
 
-    id_module: Optional[int] = Field(
-        default=None, sa_column=Column("Id_Module", Integer, primary_key=True)
+    module_id: Optional[int] = Field(
+        default=None, sa_column=Column("module_id", Integer, primary_key=True)
     )
-    nom: Optional[str] = Field(default=None, sa_column=Column("Nom", String))
-    enseignant: Optional[str] = Field(
-        default=None, sa_column=Column("Enseignant", String)
+    name: Optional[str] = Field(default=None, sa_column=Column("name", String))
+    teacher: Optional[str] = Field(
+        default=None, sa_column=Column("teacher", String)
     )
-    ue: Optional[str] = Field(default=None, sa_column=Column("UE", String))
-    ue_optionnelle: Optional[bool] = Field(
-        default=False, sa_column=Column("Ue_Optionnelle", Integer)
+    ue: Optional[str] = Field(default=None, sa_column=Column("ue", String))
+    is_optional: Optional[bool] = Field(
+        default=False, sa_column=Column("is_optional", Integer)
     )
-    choix_enseignant: Optional[bool] = Field(
-        default=False, sa_column=Column("Choix_enseignants", Integer)
+    one_teacher_in_list: Optional[bool] = Field(
+        default=False, sa_column=Column("one_teacher_in_list", Integer)
     )
-    id_template: Optional[int] = Field(
+    template_id: Optional[int] = Field(
         default=None,
-        sa_column=Column("Id_Template", Integer, ForeignKey("Templates.Id_Template")),
+        sa_column=Column("template_id", Integer, ForeignKey("templates.template_id")),
     )
-    id_sondage: Optional[int] = Field(
+    survey_id: Optional[int] = Field(
         default=None,
-        sa_column=Column("Id_Sondage", Integer, ForeignKey("Sondages.Id_Sondage")),
+        sa_column=Column("survey_id", Integer, ForeignKey("surveys.survey_id")),
     )
 
 
-class Reponse(SQLModel, table=True):
-    __tablename__ = "Reponses"
+class Answer(SQLModel, table=True):
+    __tablename__ = "answers"
 
-    id_template: Optional[int] = Field(
+    template_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Template", Integer, ForeignKey("Sondages.Id_Template"), primary_key=True
+            "template_id", Integer, ForeignKey("surveys.template_id"), primary_key=True
         ),
     )
-    id_sondage: Optional[int] = Field(
+    survey_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Sondage", Integer, ForeignKey("Sondages.Id_Sondage"), primary_key=True
+            "survey_id", Integer, ForeignKey("surveys.survey_id"), primary_key=True
         ),
     )
 
-    id_section: Optional[int] = Field(
+    section_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Section", Integer, ForeignKey("Questions.Id_Section"), primary_key=True
+            "section_id", Integer, ForeignKey("questions.section_id"), primary_key=True
         ),
     )
-    id_question: Optional[int] = Field(
+    question_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Question",
+            "question_id",
             Integer,
-            ForeignKey("Questions.Id_Question"),
+            ForeignKey("questions.question_id"),
             primary_key=True,
         ),
     )
-    id_reponse: Optional[int] = Field(
-        default=None, sa_column=Column("Id_Reponse", Integer, primary_key=True)
+    answer_id: Optional[int] = Field(
+        default=None, sa_column=Column("answer_id", Integer, primary_key=True)
     )
-    valeur: Optional[str] = Field(default=None, sa_column=Column("Valeur", Text))
-    id_module: Optional[int] = Field(
+    value: Optional[str] = Field(default=None, sa_column=Column("value", Text))
+    module_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Module",
+            "module_id",
             Integer,
-            ForeignKey("Modules.Id_Module"),
+            ForeignKey("modules.module_id"),
             nullable=True,
         ),
     )
 
-    enseignant: Optional[str] = Field(
+    teacher: Optional[str] = Field(
         default=None,
-        sa_column=Column("Enseignant", String, nullable=True),
+        sa_column=Column("teacher", String, nullable=True),
     )
 
 
-class Repondre(SQLModel, table=True):
-    __tablename__ = "Repondre"
+class Respondent(SQLModel, table=True):
+    __tablename__ = "respondents"
 
-    id_template: Optional[int] = Field(
+    template_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Template", Integer, ForeignKey("Sondages.Id_Template"), primary_key=True
+            "template_id", Integer, ForeignKey("surveys.template_id"), primary_key=True
         ),
     )
-    id_sondage: Optional[int] = Field(
+    survey_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_Sondage", Integer, ForeignKey("Sondages.Id_Sondage"), primary_key=True
+            "survey_id", Integer, ForeignKey("surveys.survey_id"), primary_key=True
         ),
     )
-    id_user: Optional[int] = Field(
+    user_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "Id_User", Integer, ForeignKey("Users.Id_User"), primary_key=True
+            "user_id", Integer, ForeignKey("users.user_id"), primary_key=True
         ),
     )
-    date_soumission: Optional[str] = Field(
-        default=None, sa_column=Column("Date_soumission", String)
+    submission_date: Optional[str] = Field(
+        default=None, sa_column=Column("submission_date", String)
     )
-    repondu: Optional[bool] = Field(default=False, sa_column=Column("Repondu", Integer))
+    has_answered: Optional[bool] = Field(default=False, sa_column=Column("has_answered", Integer))

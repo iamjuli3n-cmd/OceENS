@@ -206,7 +206,7 @@ async def auth_callback(request: Request):
         )
 
     # Récupère le rôle de cet utilisateur depuis notre base de données
-    # Si l'utilisateur n'existe pas, il est créé avec le rôle "Etudiant"
+    # Si l'utilisateur n'existe pas, il est créé avec le rôle "student"
     role = get_or_create_user(email)
 
     # Construit l'objet utilisateur avec les infos Microsoft + notre rôle
@@ -224,13 +224,13 @@ async def auth_callback(request: Request):
     _user_sessions[session_token] = user
 
     # Détermine le slug de dashboard en fonction du rôle
-    # "Admin" → "admin", "RP-RM:..." → "rprm", autre → "etudiant"
-    if role == "Admin":
+    # "admin" → "admin", "program_manager:..." → "program_manager", autre → "student"
+    if role == "admin":
         dashboard_slug = "admin"
-    elif role.startswith("RP-RM"):
-        dashboard_slug = "rprm"
+    elif role.startswith("program_manager"):
+        dashboard_slug = "program_manager"
     else:
-        dashboard_slug = "etudiant"
+        dashboard_slug = "student"
 
     # Redirige vers le dashboard de l'utilisateur
     response = RedirectResponse(url=f"/dashboard/{dashboard_slug}")
@@ -290,23 +290,23 @@ def require_roles(request: Request, allowed_roles: list[str]) -> dict | None:
     1. Récupère l'utilisateur via get_current_user()
     2. Si pas connecté → retourne None
     3. Vérifie si le rôle de l'utilisateur correspond à un des rôles autorisés
-       - "Admin" → match exact avec "Admin"
-       - "RP-RM" → match si le rôle commence par "RP-RM" (couvre "RP-RM:MDE_P2027")
-       - "Etudiant" → match exact avec "Etudiant"
+       - "admin" → match exact avec "admin"
+       - "program_manager" → match si le rôle commence par "program_manager" (couvre "program_manager:MDE_P2027")
+       - "student" → match exact avec "student"
     4. Si le rôle ne correspond pas → retourne None
     5. Si le rôle correspond → retourne le dict utilisateur
 
     Args :
         request : L'objet Request FastAPI
-        allowed_roles : Liste de rôles autorisés, ex: ["Admin", "RP-RM"]
+        allowed_roles : Liste de rôles autorisés, ex: ["admin", "program_manager"]
 
     Return :
         dict avec {"name", "email", "role"} si autorisé, None sinon
 
     Exemple :
-        user = require_roles(request, ["Admin", "RP-RM"])
+        user = require_roles(request, ["admin", "program_manager"])
         if user is None:
-            return RedirectResponse(url="/dashboard/etudiant")
+            return RedirectResponse(url="/dashboard/student")
     """
     user = get_current_user(request)
     if not user:
@@ -315,11 +315,11 @@ def require_roles(request: Request, allowed_roles: list[str]) -> dict | None:
     user_role = user.get("role", "")
 
     for allowed in allowed_roles:
-        if allowed == "Admin" and user_role.startswith("Admin"):
+        if allowed == "admin" and user_role.startswith("admin"):
             return user
-        if allowed == "RP-RM" and user_role.startswith("RP-RM"):
+        if allowed == "program_manager" and user_role.startswith("program_manager"):
             return user
-        if allowed == "Etudiant" and user_role == "Etudiant":
+        if allowed == "student" and user_role == "student":
             return user
 
     # Aucun rôle autorisé ne correspond

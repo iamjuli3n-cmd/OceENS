@@ -245,10 +245,10 @@ const Questionnaire = {
 
     // ─── Toggle Prof Block (mode INCLUSIF) ──────────────
     toggleProfBlock(radio) {
-        const profBlock = radio.closest('.prof-block-optional');
+        const profBlock = radio.closest('.teacher-block-optional');
         if (!profBlock) return;
 
-        const conditionalBlock = profBlock.querySelector('.prof-conditional-block');
+        const conditionalBlock = profBlock.querySelector('.teacher-conditional-block');
         if (!conditionalBlock) return;
 
         const isYes = radio.value.toLowerCase().includes('oui') || radio.value.toLowerCase().includes('yes');
@@ -272,7 +272,7 @@ const Questionnaire = {
         document.querySelectorAll(`.exclusive-prof-block[data-module-id="${moduleId}"]`).forEach(block => {
             block.style.display = 'none';
             // Réinitialiser les réponses des profs non sélectionnés
-            if (block.dataset.prof !== selectedProf) {
+            if (block.dataset.teacher !== selectedProf) {
                 block.querySelectorAll('input[type="radio"]:checked').forEach(r => r.checked = false);
                 block.querySelectorAll('input[type="checkbox"]:checked').forEach(c => c.checked = false);
                 block.querySelectorAll('textarea').forEach(t => t.value = '');
@@ -399,9 +399,9 @@ const Questionnaire = {
 
     // ─── Collecte des réponses ──────────────────────────
     collectResponses() {
-        const reponses = [];
+        const answers = [];
         const form = document.getElementById('questionnaire-form');
-        if (!form) return reponses;
+        if (!form) return answers;
 
         // Helper : vérifier si un élément est visible
         const isVisible = (el) => {
@@ -418,13 +418,13 @@ const Questionnaire = {
             if (!isVisible(r)) return;
 
             const rep = {
-                id_section: parseInt(r.dataset.section),
-                id_question: parseInt(r.dataset.question),
-                valeur: r.value,
+                section_id: parseInt(r.dataset.section),
+                question_id: parseInt(r.dataset.question),
+                value: r.value,
             };
             if (r.dataset.module) rep.module_id = parseInt(r.dataset.module);
-            if (r.dataset.prof) rep.enseignant = r.dataset.prof;
-            reponses.push(rep);
+            if (r.dataset.teacher) rep.teacher = r.dataset.teacher;
+            answers.push(rep);
         });
 
         // Collecter les checkboxes
@@ -434,11 +434,11 @@ const Questionnaire = {
             const key = c.name;
             if (!checkboxGroups[key]) {
                 checkboxGroups[key] = {
-                    id_section: parseInt(c.dataset.section),
-                    id_question: parseInt(c.dataset.question),
+                    section_id: parseInt(c.dataset.section),
+                    question_id: parseInt(c.dataset.question),
                     values: [],
                     module_id: c.dataset.module ? parseInt(c.dataset.module) : null,
-                    enseignant: c.dataset.prof || null,
+                    teacher: c.dataset.teacher || null,
                 };
             }
             checkboxGroups[key].values.push(c.value);
@@ -448,13 +448,13 @@ const Questionnaire = {
             const group = checkboxGroups[key];
             for (const val of group.values) {
                 const rep = {
-                    id_section: group.id_section,
-                    id_question: group.id_question,
-                    valeur: val,
+                    section_id: group.section_id,
+                    question_id: group.question_id,
+                    value: val,
                 };
                 if (group.module_id) rep.module_id = group.module_id;
-                if (group.enseignant) rep.enseignant = group.enseignant;
-                reponses.push(rep);
+                if (group.teacher) rep.teacher = group.teacher;
+                answers.push(rep);
             }
         }
 
@@ -464,16 +464,16 @@ const Questionnaire = {
             const val = ta.value.trim();
             if (!val) return;
             const rep = {
-                id_section: parseInt(ta.dataset.section),
-                id_question: parseInt(ta.dataset.question),
-                valeur: val,
+                section_id: parseInt(ta.dataset.section),
+                question_id: parseInt(ta.dataset.question),
+                value: val,
             };
             if (ta.dataset.module) rep.module_id = parseInt(ta.dataset.module);
-            if (ta.dataset.prof) rep.enseignant = ta.dataset.prof;
-            reponses.push(rep);
+            if (ta.dataset.teacher) rep.teacher = ta.dataset.teacher;
+            answers.push(rep);
         });
 
-        return reponses;
+        return answers;
     },
 
     // ─── Soumission ─────────────────────────────────────
@@ -488,9 +488,9 @@ const Questionnaire = {
         // Masquer les erreurs précédentes
         this.hideValidationErrors();
 
-        const reponses = this.collectResponses();
+        const answers = this.collectResponses();
 
-        if (reponses.length === 0) {
+        if (answers.length === 0) {
             alert("Veuillez répondre à au moins une question avant d'envoyer.");
             return;
         }
@@ -501,13 +501,13 @@ const Questionnaire = {
             btn.querySelector('.btn-submit-text').textContent = 'Envoi en cours...';
         }
 
-        const { id_template, id_sondage } = window.__sondageData__;
+        const { template_id, survey_id } = window.__surveyData__;
 
-        fetch(`/api/questionnaire/${id_template}/${id_sondage}/reponses`, {
+        fetch(`/api/surveys/${survey_id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ reponses }),
+            body: JSON.stringify({ answers }),
         })
             .then(response => {
                 if (!response.ok) {
