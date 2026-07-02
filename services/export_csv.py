@@ -27,11 +27,11 @@ def _safe_filename(value: str) -> str:
     return value.strip("_")
 
 
-def generate_csv_response(sondage_obj) -> Response:
+def generate_csv_response(survey_obj) -> Response:
     """
-    Convertit l'objet SondageComplet en CSV via Pandas et retourne une FastAPI Response.
+    Convertit l'objet FullSurvey en CSV via Pandas et retourne une FastAPI Response.
     """
-    records = sondage_obj.to_flat_dataframe_records()
+    records = survey_obj.to_flat_dataframe_records()
     df = pd.DataFrame(records) if records else pd.DataFrame()
 
     # Garantit que toutes les colonnes attendues existent
@@ -45,11 +45,11 @@ def generate_csv_response(sondage_obj) -> Response:
     csv_text = df.to_csv(index=False, sep=";")
     csv_bytes = csv_text.encode("utf-8-sig")
 
-    campus = _safe_filename(getattr(sondage_obj, "campus", "campus"))
-    formation = _safe_filename(getattr(sondage_obj, "formation", "formation"))
-    semestre = _safe_filename(getattr(sondage_obj, "semestre", "semestre"))
+    campus = _safe_filename(getattr(survey_obj, "campus", "campus"))
+    formation = _safe_filename(getattr(survey_obj, "formation", "formation"))
+    semestre = _safe_filename(getattr(survey_obj, "semestre", "semestre"))
     annee_scolaire = _safe_filename(
-        getattr(sondage_obj, "annee_scolaire", "annee_scolaire")
+        getattr(survey_obj, "annee_scolaire", "annee_scolaire")
     )
 
     filename = f"export_{campus}_{formation}_{semestre}_{annee_scolaire}.csv"

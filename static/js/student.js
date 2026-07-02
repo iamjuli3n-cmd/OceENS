@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     try {
-        const response = await fetch('/api/etudiant/questionnaire', { cache: 'no-store' });
+        const response = await fetch('/api/surveys/me', { cache: 'no-store' });
         const data = await response.json();
 
         if (!response.ok) {

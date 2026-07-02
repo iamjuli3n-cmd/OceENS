@@ -1,18 +1,18 @@
 import pandas as pd
 from typing import Dict, Any
 
-def get_visualisation_context(sondage_obj) -> Dict[str, Any]:
+def get_visualisation_context(survey_obj) -> Dict[str, Any]:
     """
     Prépare les données pour le filtrage et l'agrégation côté client (Drill-down).
     Calcule les KPI globaux en backend pour garantir la robustesse.
     """
-    records = sondage_obj.to_flat_dataframe_records()
+    records = survey_obj.to_flat_dataframe_records()
     
     # Remplacement des variables non résolues dans les titres de graphes
-    campus = sondage_obj.campus or ""
-    formation = sondage_obj.formation or ""
-    module_name = sondage_obj.modules[0].nom if len(sondage_obj.modules) == 1 else "ce module"
-    enseignant_name = sondage_obj.modules[0].enseignant if len(sondage_obj.modules) == 1 else "l'enseignant"
+    campus = survey_obj.campus or ""
+    formation = survey_obj.formation or ""
+    module_name = survey_obj.modules[0].nom if len(survey_obj.modules) == 1 else "ce module"
+    enseignant_name = survey_obj.modules[0].enseignant if len(survey_obj.modules) == 1 else "l'enseignant"
 
     clean_records = []
     for r in records:
@@ -28,8 +28,8 @@ def get_visualisation_context(sondage_obj) -> Dict[str, Any]:
                     r[field] = val
             clean_records.append(r)
     
-    ues = list(set([m.ue for m in sondage_obj.modules if m.ue]))
-    modules = [{"id": m.id_module, "nom": m.nom, "ue": m.ue} for m in sondage_obj.modules]
+    ues = list(set([m.ue for m in survey_obj.modules if m.ue]))
+    modules = [{"id": m.id_module, "nom": m.nom, "ue": m.ue} for m in survey_obj.modules]
     
     df = pd.DataFrame(clean_records)
     satisfaction_pct = 0

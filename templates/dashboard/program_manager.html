@@ -231,22 +231,22 @@
       </a>
 
       <div style="text-align: right; margin-right: 12px; margin-left: 12px; min-width: 100px;">
-        <div style="font-size: 13px; font-weight: 500; color: #111;">{{ sondage['nb_repondants'] }} / {{ sondage['nb_inscrits'] }}</div>
+        <div style="font-size: 13px; font-weight: 500; color: #111;">{{ survey['answers_count'] }} / {{ survey['respondents_count'] }}</div>
         <div style="font-size: 10px; color: #aaa;">ont répondu / inscrits</div>
         <div style="height: 4px; border-radius: 99px; width: 72px; background: var(--border); margin-top: 4px; margin-left: auto;">
-          <div style="height: 100%; border-radius: 99px; background: #470a68; width: {% if sondage['nb_inscrits'] > 0 %}{{ (sondage['nb_repondants'] / sondage['nb_inscrits']) * 100 }}{% else %}0{% endif %}%;"></div>
+          <div style="height: 100%; border-radius: 99px; background: #470a68; width: {% if survey['respondents_count'] > 0 %}{{ (survey['answers_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;"></div>
         </div>
       </div>
 
       <div class="row-actions">
         <a href="/visualisation/{{ sondage['id_template'] }}/{{ sondage['id_sondage'] }}" class="row-icon"
-          title="Visualisation" onclick="return checkParticipation(event, this.href, {{ sondage['nb_repondants'] }}, {{ sondage['nb_inscrits'] }})">
+          title="Visualisation" onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
           <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
           </svg>
         </a>
         <a href="/api/export/{{ sondage['id_template'] }}/{{ sondage['id_sondage'] }}" class="row-icon"
-          title="Export CSV" onclick="return checkParticipation(event, this.href, {{ sondage['nb_repondants'] }}, {{ sondage['nb_inscrits'] }})">
+          title="Export CSV" onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
           <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>

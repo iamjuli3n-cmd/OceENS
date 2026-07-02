@@ -501,9 +501,9 @@ const Questionnaire = {
             btn.querySelector('.btn-submit-text').textContent = 'Envoi en cours...';
         }
 
-        const { id_template, id_sondage } = window.__sondageData__;
+        const { template_id, survey_id } = window.__sondageData__;
 
-        fetch(`/api/questionnaire/${id_template}/${id_sondage}/reponses`, {
+        fetch(`/api/surveys/${survey_id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',

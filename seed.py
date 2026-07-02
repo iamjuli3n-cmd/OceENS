@@ -1,83 +1,83 @@
 from sqlalchemy.orm import Session
-from models import User, Template, Section, Question, Option, Module, Sondage, Repondre, Reponse
+from models import User, Template, Section, Question, Option, Module, Survey, Respondent, Answer
 from database import UserAuth,SessionLocal
 
-def seed_user(db: Session):
-    """Remplit la table Users."""
+def seed_users(db: Session):
+    """Remplit la table users."""
 
     user_data = [
-        (1,'antoine.gademer@epf.fr','Admin'),
-        (2,'bob.leponge@epfedu.fr','Etudiant'),
-        (3,'peter.parker@epfedu.fr','Etudiant'),
-        (4,'mickey.mouse@epfedu.fr','Etudiant'),
-        (5,'naruto.uzumaki@epfedu.fr','Etudiant')
+        (1,'antoine.gademer@epf.fr','admin'),
+        (2,'bob.leponge@epfedu.fr','student'),
+        (3,'peter.parker@epfedu.fr','student'),
+        (4,'mickey.mouse@epfedu.fr','student'),
+        (5,'naruto.uzumaki@epfedu.fr','student')
     ]
     for u_data in user_data:
-        user = User(id_user=u_data[0],mail=u_data[1],role=u_data[2])
+        user = User(user_id=u_data[0],mail=u_data[1],role=u_data[2])
         db.merge(user)  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
     db.commit()
 
-def seed_template(db: Session):
-    """Remplit la table Templates."""
+def seed_templates(db: Session):
+    """Remplit la table templates."""
     template_data = {
-        "id_template": 1,
-        "nom": "Sondage_Semestriel_2025",
-        "id_user": 1
+        "template_id": 1,
+        "name": "Sondage_Semestriel_2025",
+        "user_id": 1
     }
     template = Template(**template_data)
     db.merge(template)
     db.commit()
 
-def seed_section(db: Session):
-    """Remplit la table Sections."""
+def seed_sections(db: Session):
+    """Remplit la table sections."""
     sections_data = [
-        {"id_template": 1, "id_section": 1, "nom": "Campus", "ordre": 1, "section_type": "S"},
-        {"id_template": 1, "id_section": 2, "nom": "Formation", "ordre": 2, "section_type": "S"},
-        {"id_template": 1, "id_section": 3, "nom": "Module / Enseignant", "ordre": 3, "section_type": "S"},
-        {"id_template": 1, "id_section": 4, "nom": "Recommandation", "ordre": 4, "section_type": "S"},
+        {"template_id": 1, "section_id": 1, "name": "Campus", "order": 1, "section_type": "S"},
+        {"template_id": 1, "section_id": 2, "name": "Formation", "order": 2, "section_type": "S"},
+        {"template_id": 1, "section_id": 3, "name": "Module / Enseignant", "order": 3, "section_type": "S"},
+        {"template_id": 1, "section_id": 4, "name": "Recommandation", "order": 4, "section_type": "S"},
     ]
     for data in sections_data:
         section = Section(**data)
         db.merge(section)
     db.commit()
 
-def seed_question(db: Session):
-    """Remplit la table Questions."""
+def seed_questions(db: Session):
+    """Remplit la table questions."""
     questions_data = [
         (1, 1, 1, 'Campus', 'QCU_Satisfaction', 'FR_EN', "Dans l'ensemble, par rapport à votre expérience étudiante à l'EPF sur le campus de [CAMPUS], vous êtes : / Overall, compared to your student experience at EPF on the [CAMPUS] campus, you are:"),
         (1, 1, 2, 'Campus', 'QCM_Insatisfaction', 'FR_EN', "Votre insatisfaction est liée à un ou plusieurs des éléments suivants : / Your dissatisfaction is related to one or more of the following factors:"),
         (1, 1, 3, 'Campus', 'Question_ouverte', 'FR_EN', "Expliquez précisément en quoi vous n'êtes pas satisfait de votre expérience étudiante à l'EPF. N'hésitez pas à illustrer votre avis par des exemples et à proposer des pistes d'amélioration. / Explain precisely why you might feel dissatisfied by your student experience at EPF. Don't hesitate to illustrate your opinion with examples and to suggest ways for improvement."),
         (1, 1, 4, 'Campus', 'Question_ouverte', 'FR_EN', "(Facultatif) Malgré votre réponse précédente, quels éléments positifs pouvez-vous quand même re楽しめる ? / (Optional) Despite your previous answer, what positive aspects can you still take away from this?"),
         (1, 1, 5, 'Campus', 'Question_ouverte', 'FR_EN', "(Facultatif) Expliquez précisément en quoi vous êtes satisfait de votre expérience étudiante à l'EPF. N'hésitez pas à illustrer votre avis par des exemples. / Explain precisely why you might feel satisfied by your student experience at EPF. Don't hesitate to illustrate your opinion with examples."),
-        (1, 2, 1, 'Formation', 'QCU_Satisfaction', 'FR_EN', "Dans l'ensemble, par rapport à votre expérience globale de la formation [FORMATION] sur le campus de [CAMPUS], vous êtes : / Overall, compared to your overall experience of the [FORMATION] program on the [CAMPUS] campus, you are:"),
+        (1, 2, 1, 'Formation', 'QCU_Satisfaction', 'FR_EN', "Dans l'ensemble, par rapport à votre expérience globale de la program [FORMATION] sur le campus de [CAMPUS], vous êtes : / Overall, compared to your overall experience of the [FORMATION] program on the [CAMPUS] campus, you are:"),
         (1, 2, 2, 'Formation', 'QCM_Insatisfaction', 'FR_EN', "Votre insatisfaction est liée à un ou plusieurs des éléments suivants : / Your dissatisfaction is related to one or more of the following factors:"),
         (1, 2, 3, 'Formation', 'Question_ouverte', 'FR_EN', "Expliquez précisément en quoi vous n'êtes pas satisfait de votre expérience étudiante à l'EPF. N'hésitez par exemple à illustrer votre avis par des exemples. / Explain precisely why you might feel dissatisfied by your student experience at EPF. Don't hesitate to illustrate your opinion with examples."),
         (1, 2, 4, 'Formation', 'Question_ouverte', 'FR_EN', "(Facultatif) Malgré votre réponse précédente, quels éléments positifs pouvez-vous quand même retenir ? / (Optional) Despite your previous answer, what positive aspects can you still take away from this?"),
         (1, 2, 5, 'Formation', 'Question_ouverte', 'FR_EN', "(Facultatif) Expliquez précisément en quoi vous êtes satisfait de votre expérience étudiante à l'EPF. N'hésitez pas à illustrer votre avis par des exemples. / Explain precisely why you might feel satisfied by your student experience at EPF. Don't hesitate to illustrate your opinion with examples."),
         (1, 3, 1, 'Module / Enseignant', 'QCU_Oui_Non', 'FR_EN', "Avez-vous suivi ce module ? / Did you take this module?"),
-        (1, 3, 2, 'Module / Enseignant', 'QCU_Satisfaction', 'FR_EN', "Dans l'ensemble, pour le module [MODULE] avec l'enseignant [ENSEIGNANT], en tenant compte de l'organisation, des ressources et de la pédagogie, vous êtes : / Overall, for the module [MODULE] with the teacher [ENSEIGNANT], taking into account the organization, resources and pedagogy, you are:"),
+        (1, 3, 2, 'Module / Enseignant', 'QCU_Satisfaction', 'FR_EN', "Dans l'ensemble, pour le module [MODULE] avec l'teacher [ENSEIGNANT], en tenant compte de l'organisation, des ressources et de la pédagogie, vous êtes : / Overall, for the module [MODULE] with the teacher [ENSEIGNANT], taking into account the organization, resources and pedagogy, you are:"),
         (1, 3, 3, 'Module / Enseignant', 'QCM_Insatisfaction', 'FR_EN', "Votre insatisfaction est liée à un ou plusieurs des éléments suivants : / Your dissatisfaction is related to one or more of the following factors:"),
         (1, 3, 4, 'Module / Enseignant', 'Question_ouverte', 'FR_EN', "Expliquez précisément en quoi vous n'êtes pas satisfait du ou des points choisis ci-dessus. N'hésitez pas à illustillustrer votre avis par des exemples. / Explain specifically why you are not satisfied with the point(s) chosen above. Please feel free to illustrate your opinion with examples."),
         (1, 3, 5, 'Module / Enseignant', 'Question_ouverte', 'FR_EN', "(Facultatif) Malgré votre réponse précédente, quels éléments positifs pouvez-vous quand même retenir ? / (Optional) Despite your previous answer, what positive aspects can you still take away from this?"),
-        (1, 3, 6, 'Module / Enseignant', 'Question_ouverte', 'FR_EN', "(Facultatif) Expliquez précisément en quoi vous êtes satisfait par l'expérience de ce module avec cet enseignant(e). N'hésitez pas à illustrer votre avis par des exemples. / Explain precisely why you might feel satisfied by your experience in this course with this teacher. Don't hesitate to illustrate your opinion with examples."),
-        (1, 4, 1, 'Recommandation', 'NPS', 'FR_EN', "Seriez-vous prêts à recommander la formation à un ami ? / Would you recommend this course to a friend?"),
+        (1, 3, 6, 'Module / Enseignant', 'Question_ouverte', 'FR_EN', "(Facultatif) Expliquez précisément en quoi vous êtes satisfait par l'expérience de ce module avec cet teacher(e). N'hésitez pas à illustrer votre avis par des exemples. / Explain precisely why you might feel satisfied by your experience in this course with this teacher. Don't hesitate to illustrate your opinion with examples."),
+        (1, 4, 1, 'Recommandation', 'NPS', 'FR_EN', "Seriez-vous prêts à recommander la program à un ami ? / Would you recommend this course to a friend?"),
     ]
 
     for q_data in questions_data:
         question = Question(
-            id_template=q_data[0],
-            id_section=q_data[1],
-            id_question=q_data[2],
-            categorie=q_data[3],
+            template_id=q_data[0],
+            section_id=q_data[1],
+            question_id=q_data[2],
+            category=q_data[3],
             question_type=q_data[4],
-            langue=q_data[5],
-            intitule=q_data[6]
+            language=q_data[5],
+            text=q_data[6]
         )
         db.merge(question)
     db.commit()
 
-def seed_option(db: Session):
-    """Remplit la table Options."""
+def seed_options(db: Session):
+    """Remplit la table options."""
     options_data = [
         (1, 1, 1, 1, 'Totalement satisfait / Totally satisfied'),
         (1, 1, 1, 2, 'Très satisfait / Very satisfied'),
@@ -115,9 +115,9 @@ def seed_option(db: Session):
         (1, 3, 3, 34, 'Les ressources pédagogiques mises à disposition / The teaching resources made available'),
         (1, 3, 3, 35, 'Les évaluations associées au module / The assessments associated with the module'),
         (1, 3, 3, 36, 'L\'intérêt du module dans le cursus / The relevance of the module in the program'),
-        (1, 3, 3, 37, 'Les explications et les retours de l\'enseignant / The teacher\'s explanations and feedback'),
-        (1, 3, 3, 38, 'L\'implication et la необходимость de l\'enseignant / The teacher\'s involvement and availability'),
-        (1, 3, 3, 39, 'L\'attitude professionnelle et juste de l\'enseignant / The teacher\'s professional and fair attitude'),
+        (1, 3, 3, 37, 'Les explications et les retours de l\'teacher / The teacher\'s explanations and feedback'),
+        (1, 3, 3, 38, 'L\'implication et la необходимость de l\'teacher / The teacher\'s involvement and availability'),
+        (1, 3, 3, 39, 'L\'attitude professionnelle et juste de l\'teacher / The teacher\'s professional and fair attitude'),
         (1, 4, 1, 2, '1'),
         (1, 4, 1, 3, '2'),
         (1, 4, 1, 4, '3'),
@@ -132,35 +132,35 @@ def seed_option(db: Session):
 
     for opt_data in options_data:
         option = Option(
-            id_template=opt_data[0],
-            id_section=opt_data[1],
-            id_question=opt_data[2],
-            id_option=opt_data[3],
-            intitule=opt_data[4]
+            template_id=opt_data[0],
+            section_id=opt_data[1],
+            question_id=opt_data[2],
+            option_id=opt_data[3],
+            text=opt_data[4]
         )
         db.merge(option)
     db.commit()
 
 
-def seed_sondage(db: Session):
-    """Remplit la table Sondages."""
-    sondage_data = {
-        "id_template": 1,
-        "id_sondage": 1,
+def seed_surveys(db: Session):
+    """Remplit la table surveys."""
+    survey_data = {
+        "template_id": 1,
+        "survey_id": 1,
         "campus": "Montpellier",
-        "formation": "Majeure Test",
-        "semestre": "S9",
-        "url": "/questionnaire/1/1",
-        "statut": 1,
-        "annee_scolaire": "2026-2027",
-        "mot_de_passe": None
+        "program": "Majeure Test",
+        "semester": "Automne",
+        "url": "/surveys/1",
+        "status": 1,
+        "school_year": "2026-2027",
+        "password": None
     }
-    sondage = Sondage(**sondage_data)
-    db.merge(sondage)
+    survey = Survey(**survey_data)
+    db.merge(survey)
     db.commit()
 
-def seed_module(db: Session):
-    """Remplit la table Modules."""
+def seed_modules(db: Session):
+    """Remplit la table modules."""
     modules_data = [
         (1, 'Introduction to Cloud', 'Théo B.', 'UE1 – Software as $as a Service', 0, 0, 1, 1),
         (2, 'Coding Agents Management', 'Xavier C.', 'UE1 – Software as a Service', 0, 0, 1, 1),
@@ -186,37 +186,37 @@ def seed_module(db: Session):
 
     for m_data in modules_data:
         module = Module(
-            id_module=m_data[0],
-            nom=m_data[1],
-            enseignant=m_data[2],
+            module_id=m_data[0],
+            name=m_data[1],
+            teacher=m_data[2],
             ue=m_data[3],
-            ue_optionnelle=bool(m_data[4]),
-            choix_enseignant=bool(m_data[5]),
-            id_template=m_data[6],
-            id_sondage=m_data[7]
+            is_optional=bool(m_data[4]),
+            one_teacher_in_list=bool(m_data[5]),
+            template_id=m_data[6],
+            survey_id=m_data[7]
         )
         db.merge(module)
     db.commit()
 
-def seed_repondre(db: Session):
-    """Remplit la table Repondre."""
+def seed_respondents(db: Session):
+    """Remplit la table respondents."""
 
-    repondre_data = [
+    respondent_data = [
         (1,1,1,'2026-06-30 16:24:04',1),
 (1,1,2,'2026-06-30 16:27:04',1),
 (1,1,3,'2026-06-30 16:22:04',1),
 (1,1,4,'2026-06-30 16:26:04',1),
 (1,1,5,'2026-06-30 16:32:04',1)
     ]
-    for r_data in repondre_data:
-        repondre = Repondre(id_template=r_data[0],id_sondage=r_data[1],id_user=r_data[2],date_soumission=r_data[3],repondu=r_data[4])
-        db.merge(repondre)  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
+    for r_data in respondent_data:
+        respondent = Respondent(template_id=r_data[0],survey_id=r_data[1],user_id=r_data[2],submission_date=r_data[3],has_answered=r_data[4])
+        db.merge(respondent)  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
     db.commit()
 
-def seed_reponse(db: Session):
-    """Remplit la table Reponses."""
+def seed_answers(db: Session):
+    """Remplit la table answers."""
 
-    reponse_data = [
+    answers_data = [
         (1,1,1,None,None,1,1,'Totalement satisfait / Totally satisfied'),
  (1,1,2,None,None,1,2,'Totalement satisfait / Totally satisfied'),
  (1,1,3,1,'Théo B.',1,3,'Oui / Yes'),
@@ -443,58 +443,58 @@ def seed_reponse(db: Session):
  (1,1,3,3,'Xavier C.',3,224,'L''intérêt du module dans le cursus / The relevance of the module in the program'),
  (1,1,3,4,'Thalita D.',3,225,'Les pré-requis et les objectifs du module / The prerequisites and objectives of the module'),
  (1,1,3,4,'Thalita D.',3,226,'L''intérêt du module dans le cursus / The relevance of the module in the program'),
- (1,1,3,4,'Thalita D.',3,227,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
+ (1,1,3,4,'Thalita D.',3,227,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
  (1,1,3,5,'Maksim K.',3,228,'Les pré-requis et les objectifs du module / The prerequisites and objectives of the module'),
  (1,1,3,5,'Maksim K.',3,229,'L''intérêt du module dans le cursus / The relevance of the module in the program'),
- (1,1,3,5,'Maksim K.',3,230,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
+ (1,1,3,5,'Maksim K.',3,230,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
  (1,1,3,6,'Enzo F.',3,231,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,6,'Enzo F.',3,232,'L''intérêt du module dans le cursus / The relevance of the module in the program'),
- (1,1,3,6,'Enzo F.',3,233,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
+ (1,1,3,6,'Enzo F.',3,233,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
  (1,1,3,7,'Cédrine M.',3,234,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,7,'Cédrine M.',3,235,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,7,'Cédrine M.',3,236,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
+ (1,1,3,7,'Cédrine M.',3,236,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
  (1,1,3,7,'Daniel B.',3,237,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,7,'Daniel B.',3,238,'Les ressources pédagogiques mises à disposition / The teaching resources made available'),
- (1,1,3,7,'Daniel B.',3,239,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
+ (1,1,3,7,'Daniel B.',3,239,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
  (1,1,3,8,'Florian L.',3,240,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,8,'Florian L.',3,241,'L''intérêt du module dans le cursus / The relevance of the module in the program'),
  (1,1,3,9,'Issame B.',3,242,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,9,'Issame B.',3,243,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,9,'Issame B.',3,243,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,10,'Ikram C.',3,244,'L''organisation des séances et du module / The organization of the sessions and of the module'),
- (1,1,3,10,'Ikram C.',3,245,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
+ (1,1,3,10,'Ikram C.',3,245,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
  (1,1,3,11,'Joey B. F.',3,246,'L''organisation des séances et du module / The organization of the sessions and of the module'),
- (1,1,3,11,'Joey B. F.',3,247,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,11,'Joey B. F.',3,247,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,11,'Robert R.',3,248,'L''organisation des séances et du module / The organization of the sessions and of the module'),
- (1,1,3,11,'Robert R.',3,249,'Les explications et les retours de l''enseignant / The teacher''s explanations and feedback'),
+ (1,1,3,11,'Robert R.',3,249,'Les explications et les retours de l''teacher / The teacher''s explanations and feedback'),
  (1,1,3,11,'Hannah G.',3,250,'L''organisation des séances et du module / The organization of the sessions and of the module'),
- (1,1,3,11,'Hannah G.',3,251,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
+ (1,1,3,11,'Hannah G.',3,251,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
  (1,1,3,12,'Sonia T.',3,252,'L''organisation des séances et du module / The organization of the sessions and of the module'),
- (1,1,3,12,'Sonia T.',3,253,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
+ (1,1,3,12,'Sonia T.',3,253,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
  (1,1,3,12,'Sylvie M.',3,254,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,12,'Sylvie M.',3,255,'Les évaluations associées au module / The assessments associated with the module'),
  (1,1,3,13,'Valentin B.',3,256,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,13,'Valentin B.',3,257,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,13,'Valentin B.',3,258,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
+ (1,1,3,13,'Valentin B.',3,258,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
  (1,1,3,14,'Abdoul Salam D.',3,259,'Les pré-requis et les objectifs du module / The prerequisites and objectives of the module'),
  (1,1,3,14,'Abdoul Salam D.',3,260,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,14,'Abdoul Salam D.',3,261,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,14,'Abdoul Salam D.',3,261,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,15,'Guillaume D.',3,262,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,15,'Guillaume D.',3,263,'Les pré-requis et les objectifs du module / The prerequisites and objectives of the module'),
- (1,1,3,15,'Guillaume D.',3,264,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,15,'Guillaume D.',3,264,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,16,'Domenico M.',3,265,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,16,'Domenico M.',3,266,'L''intérêt du module dans le cursus / The relevance of the module in the program'),
- (1,1,3,16,'Domenico M.',3,267,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,16,'Domenico M.',3,267,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,17,'Abelle C.',3,268,'Les pré-requis et les objectifs du module / The prerequisites and objectives of the module'),
- (1,1,3,17,'Abelle C.',3,269,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
+ (1,1,3,17,'Abelle C.',3,269,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
  (1,1,3,18,'Olivier D.',3,270,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,18,'Olivier D.',3,271,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,18,'Olivier D.',3,272,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,18,'Olivier D.',3,272,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,19,'Thalita D.',3,273,'L''organisation des séances et du module / The organization of the sessions and of the module'),
- (1,1,3,19,'Thalita D.',3,274,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
- (1,1,3,19,'Thalita D.',3,275,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,19,'Thalita D.',3,274,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
+ (1,1,3,19,'Thalita D.',3,275,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,20,'Louis G.',3,276,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,20,'Louis G.',3,277,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,20,'Louis G.',3,278,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,20,'Louis G.',3,278,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,1,None,None,3,279,'pas assez d''asso'),
  (1,1,1,None,None,4,280,'plus d''association notmaent de sport'),
  (1,1,2,None,None,3,281,'Le module manque de clarté dans l’organisation. Les notions abordées sont intéressantes, mais les explications restent parfois trop rapides et les consignes ne sont pas toujours assez précises.'),
@@ -606,70 +606,70 @@ def seed_reponse(db: Session):
  (1,1,2,None,None,2,387,'L''accompagnement du Responsable Pédagogique / Support from the Academic Advisor'),
  (1,1,3,1,'Théo B.',3,388,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,1,'Théo B.',3,389,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,1,'Théo B.',3,390,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,1,'Théo B.',3,390,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,2,'Xavier C.',3,391,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,2,'Xavier C.',3,392,'L''intérêt du module dans le cursus / The relevance of the module in the program'),
- (1,1,3,2,'Xavier C.',3,393,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,2,'Xavier C.',3,393,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,3,'Xavier C.',3,394,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,3,'Xavier C.',3,395,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,3,'Xavier C.',3,396,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,3,'Xavier C.',3,396,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,4,'Thalita D.',3,397,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,4,'Thalita D.',3,398,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,4,'Thalita D.',3,399,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,4,'Thalita D.',3,399,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,5,'Maksim K.',3,400,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,5,'Maksim K.',3,401,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,5,'Maksim K.',3,402,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,5,'Maksim K.',3,402,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,6,'Enzo F.',3,403,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,6,'Enzo F.',3,404,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,6,'Enzo F.',3,405,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,6,'Enzo F.',3,405,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,7,'Cédrine M.',3,406,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,7,'Cédrine M.',3,407,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,7,'Cédrine M.',3,408,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,7,'Cédrine M.',3,408,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,7,'Daniel B.',3,409,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,7,'Daniel B.',3,410,'L''intérêt du module dans le cursus / The relevance of the module in the program'),
- (1,1,3,7,'Daniel B.',3,411,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,7,'Daniel B.',3,411,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,8,'Florian L.',3,412,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,8,'Florian L.',3,413,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,8,'Florian L.',3,414,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,8,'Florian L.',3,414,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,9,'Issame B.',3,415,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,9,'Issame B.',3,416,'Les ressources pédagogiques mises à disposition / The teaching resources made available'),
- (1,1,3,9,'Issame B.',3,417,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,9,'Issame B.',3,417,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,10,'Ikram C.',3,418,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,10,'Ikram C.',3,419,'L''intérêt du module dans le cursus / The relevance of the module in the program'),
- (1,1,3,10,'Ikram C.',3,420,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,10,'Ikram C.',3,420,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,11,'Joey B. F.',3,421,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,11,'Joey B. F.',3,422,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,11,'Joey B. F.',3,423,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,11,'Joey B. F.',3,423,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,11,'Robert R.',3,424,'L''organisation des séances et du module / The organization of the sessions and of the module'),
- (1,1,3,11,'Robert R.',3,425,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,11,'Robert R.',3,425,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,11,'Hannah G.',3,426,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,11,'Hannah G.',3,427,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,11,'Hannah G.',3,428,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,11,'Hannah G.',3,428,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,12,'Sonia T.',3,429,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,12,'Sonia T.',3,430,'L''intérêt du module dans le cursus / The relevance of the module in the program'),
- (1,1,3,12,'Sonia T.',3,431,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,12,'Sonia T.',3,431,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,12,'Sylvie M.',3,432,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,12,'Sylvie M.',3,433,'Les ressources pédagogiques mises à disposition / The teaching resources made available'),
- (1,1,3,12,'Sylvie M.',3,434,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,12,'Sylvie M.',3,434,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,13,'Valentin B.',3,435,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,13,'Valentin B.',3,436,'Les ressources pédagogiques mises à disposition / The teaching resources made available'),
- (1,1,3,13,'Valentin B.',3,437,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,13,'Valentin B.',3,437,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,14,'Abdoul Salam D.',3,438,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,14,'Abdoul Salam D.',3,439,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,14,'Abdoul Salam D.',3,440,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,14,'Abdoul Salam D.',3,440,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,15,'Guillaume D.',3,441,'L''organisation des séances et du module / The organization of the sessions and of the module'),
- (1,1,3,15,'Guillaume D.',3,442,'L''implication et la disponibilité de l''enseignant / The teacher''s involvement and availability'),
- (1,1,3,15,'Guillaume D.',3,443,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,15,'Guillaume D.',3,442,'L''implication et la disponibilité de l''teacher / The teacher''s involvement and availability'),
+ (1,1,3,15,'Guillaume D.',3,443,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,16,'Domenico M.',3,444,'L''organisation des séances et du module / The organization of the sessions and of the module'),
- (1,1,3,16,'Domenico M.',3,445,'Les explications et les retours de l''enseignant / The teacher''s explanations and feedback'),
+ (1,1,3,16,'Domenico M.',3,445,'Les explications et les retours de l''teacher / The teacher''s explanations and feedback'),
  (1,1,3,17,'Abelle C.',3,446,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,17,'Abelle C.',3,447,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,17,'Abelle C.',3,447,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,17,'Antoine G.',3,448,'Les ressources pédagogiques mises à disposition / The teaching resources made available'),
  (1,1,3,17,'Antoine G.',3,449,'Les évaluations associées au module / The assessments associated with the module'),
  (1,1,3,18,'Olivier D.',3,450,'L''organisation des séances et du module / The organization of the sessions and of the module'),
- (1,1,3,18,'Olivier D.',3,451,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,18,'Olivier D.',3,451,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,19,'Thalita D.',3,452,'Les évaluations associées au module / The assessments associated with the module'),
- (1,1,3,19,'Thalita D.',3,453,'L''attitude professionnelle et juste de l''enseignant / The teacher''s professional and fair attitude'),
+ (1,1,3,19,'Thalita D.',3,453,'L''attitude professionnelle et juste de l''teacher / The teacher''s professional and fair attitude'),
  (1,1,3,20,'Louis G.',3,454,'L''organisation des séances et du module / The organization of the sessions and of the module'),
  (1,1,3,20,'Louis G.',3,455,'Les évaluations associées au module / The assessments associated with the module'),
  (1,1,1,None,None,3,456,'nullll'),
@@ -714,9 +714,9 @@ def seed_reponse(db: Session):
  (1,1,3,19,'Thalita D.',4,495,'Les évaluations ne correspondent pas toujours à ce qui a été réellement travaillé en cours, ce qui donne un sentiment d’injustice.'),
  (1,1,3,20,'Louis G.',4,496,'Le cours manque clairement de structure. On passe d’un sujet à l’autre sans vraie logique, ce qui rend la compréhension très difficile.')
     ]
-    for r_data in reponse_data:
-        reponse = Reponse(id_template=r_data[0],id_sondage=r_data[1],id_section=r_data[2],id_module=r_data[3],enseignant=r_data[4],id_question=r_data[5],id_reponse=r_data[6],valeur=r_data[7])
-        db.merge(reponse)  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
+    for r_data in answers_data:
+        answer = Answer(template_id=r_data[0],survey_id=r_data[1],section_id=r_data[2],module_id=r_data[3],teacher=r_data[4],question_id=r_data[5],answer_id=r_data[6],valeur=r_data[7])
+        db.merge(answer)  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
     db.commit()
 
 
@@ -724,14 +724,14 @@ def seed_all_if_necessary():
     db = SessionLocal()
     if db.query(UserAuth).first(): # Check if there is at least one user :)
         return
-    """Exécute le seeding complet dans le bon ordre de dépendance."""
-    seed_user(db)
-    seed_template(db)
-    seed_section(db)
-    seed_question(db)
-    seed_option(db)
-    seed_sondage(db)
-    seed_module(db)
-    seed_repondre(db)
-    seed_reponse(db)
+    """Exécute le seeding complet dans le bon order de dépendance."""
+    seed_users(db)
+    seed_templates(db)
+    seed_sections(db)
+    seed_questions(db)
+    seed_options(db)
+    seed_surveys(db)
+    seed_modules(db)
+    seed_respondents(db)
+    seed_answers(db)
     print("Database seeding completed successfully!")

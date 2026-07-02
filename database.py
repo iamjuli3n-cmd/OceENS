@@ -7,7 +7,7 @@ Ce module configure :
 - SQLite : Base de données fichier léger (database/db_oceens.db)
 - Fonction get_or_create_user : Récupère ou crée un utilisateur dans la table Users
 
-Rôles supportés : "Etudiant" (défaut), "Admin", "RP-RM:..." (responsable pédagogique)
+Rôles supportés : "student" (défaut), "admin", "program_manager:..." (responsable pédagogique)
 """
 
 from sqlalchemy import create_engine, Column, Integer, String
@@ -32,20 +32,20 @@ class UserAuth(Base):
     Modèle SQLAlchemy miroir de la table Users existante dans db_oceens.db
 
     Colonnes :
-    - Id_User (INTEGER, PK, auto-increment) : Identifiant unique
-    - Mail (STRING) : Adresse email de l'utilisateur
-    - Role (STRING) : Rôle de l'utilisateur (défaut: "Etudiant")
+    - user_id (INTEGER, PK, auto-increment) : Identifiant unique
+    - mail (STRING) : Adresse email de l'utilisateur
+    - role (STRING) : Rôle de l'utilisateur (défaut: "student")
 
     Exemple :
-        julien@epfedu.fr   →  Etudiant
-        admin@epfedu.fr    →  Admin
-        prof@epfedu.fr     →  RP-RM:MDE_P2027;MIN_P2027
+        julien@epfedu.fr   →  student
+        admin@epfedu.fr    →  admin
+        prof@epfedu.fr     →  program_manager:MDE_P2027;MIN_P2027
     """
-    __tablename__ = "Users"
+    __tablename__ = "users"
 
-    id_user = Column("Id_User", Integer, primary_key=True, autoincrement=True)
-    mail = Column("Mail", String)
-    role = Column("Role", String, default="Etudiant")
+    id_user = Column("user_id", Integer, primary_key=True, autoincrement=True)
+    mail = Column("mail", String)
+    role = Column("role", String, default="student")
 # └───────────────────────────────────────────────────────────────────────────┘
 
 # ┌─ Session factory pour les requêtes à la BDD ──────────────────────────────┐
@@ -61,18 +61,18 @@ def get_or_create_user(email: str) -> str:
     1. Ouvre une connexion à la BDD (database/db_oceens.db)
     2. Cherche l'utilisateur par email (case-insensitive) dans la table Users
     3. Si trouvé → retourne son rôle
-    4. Si non trouvé → insère un nouvel utilisateur avec le rôle "Etudiant"
+    4. Si non trouvé → insère un nouvel utilisateur avec le rôle "student"
     5. Retourne le rôle
 
     Args :
         email : Adresse email de l'utilisateur (provenant de Microsoft Graph)
 
     Return :
-        String : "Admin", "Etudiant", "RP-RM:...", ou "Etudiant" (si créé)
+        String : "admin", "student", "program_manager:...", ou "student" (si créé)
 
     Exemple :
-        role = get_or_create_user("julien@epfedu.fr")  # → "Etudiant" (créé)
-        role = get_or_create_user("admin@epfedu.fr")    # → "Admin" (existant)
+        role = get_or_create_user("julien@epfedu.fr")  # → "student" (créé)
+        role = get_or_create_user("admin@epfedu.fr")    # → "admin" (existant)
     """
     db = SessionLocal()
 
@@ -84,17 +84,17 @@ def get_or_create_user(email: str) -> str:
 
         if user:
             # Utilisateur trouvé → retourne son rôle
-            return user.role if user.role else "Etudiant"
+            return user.role if user.role else "student"
 
         # Utilisateur non trouvé → auto-inscription avec rôle par défaut
         new_user = UserAuth(
             mail=email.lower(),
-            role="Etudiant"
+            role="student"
         )
         db.add(new_user)
         db.commit()
 
-        return "Etudiant"
+        return "student"
 
     finally:
         # Ferme proprement la connexion

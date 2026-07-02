@@ -24,11 +24,11 @@ L'application **OcéEns II** permet à l'administration et à la scolarité de c
 | Route | Page | Description |
 |-------|------|-------------|
 | `/` | Accueil | Hub principal avec la charte graphique EPF. Accès à l'authentification. |
-| `/parametrage` | Paramétrage | Interface de création de sondage : sélection année, campus, filière, configuration des UE, modules et professeurs. |
-| `/questionnaire/{id_template}/{id_sondage}` | Questionnaire | Interface de réponse au sondage avec affichage dynamique des sections et questions (choix unique, multiple, ouverte). |
+| `/dasboard/survey_create` | Paramétrage | Interface de création de sondage : sélection année, campus, filière, configuration des UE, modules et professeurs. |
+| `/survey/{id_sondage}` | Questionnaire | Interface de réponse au sondage avec affichage dynamique des sections et questions (choix unique, multiple, ouverte). |
 | `/dashboard/admin` | Dashboard Admin | Tableau de bord administrateur. |
-| `/dashboard/etudiant` | Dashboard Étudiant | Tableau de bord étudiant. |
-| `/dashboard/RPRM` | Dashboard RP/RM | Tableau de bord responsable pédagogique / responsable de module. |
+| `/dashboard/student` | Dashboard Étudiant | Tableau de bord étudiant. |
+| `/dashboard/program_manager` | Dashboard RP/RM | Tableau de bord responsable pédagogique / responsable de module. |
 
 ---
 
@@ -126,8 +126,8 @@ OceENS/
 │   ├── questionnaire.html       # Réponse au sondage
 │   └── dashboard/
 │       ├── admin.html           # Dashboard administrateur
-│       ├── etudiant.html        # Dashboard étudiant
-│       └── RPRM.html            # Dashboard RP/RM
+│       ├── student.html        # Dashboard étudiant
+│       └── program_manager.html            # Dashboard RP/RM
 │
 ├── static/                 # Fichiers statiques
 │   ├── css/

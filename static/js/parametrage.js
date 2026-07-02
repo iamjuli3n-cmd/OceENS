@@ -7,26 +7,26 @@ const Parametrage = {
     container: null,
 
     campusList: [],
-    allFilieres: [],
-    profsList: [],
+    allPrograms: [],
+    teachersList: [],
     templatesList: [],
-    mockUEsByFiliere: {},
+    mockUEsByProgram: {},
 
     // ─── État courant ───────────────────────────────────
-    filieresList: [],
+    programsList: [],
     selectedCampusId: null,
-    selectedFiliereId: null,
+    selectedProgramId: null,
     selectedTemplateId: null,
-    semestreAnnee: '',
-    anneesScolaires: [],
-    selectedAnneeScolaire: '',
+    semesterYear: '',
+    schoolYear: [],
+    selectedSchoolYear: '',
     ues: [],
     nextId: 9000,
     isLoading: false,
     loadError: null,
     importedFile: null,     // Fichier .xlsx sélectionné (pas encore envoyé)
     _notifTimer: null,      // Timer pour auto-dismiss de la notification
-    isRprm: false,           // True si l'utilisateur est RP-RM (pas de création de filière)
+    isProgramManager: false,           // True si l'utilisateur est RP-RM (pas de création de filière)
 
     // ─── Init ───────────────────────────────────────────
     init(containerId, initialData = {}) {
@@ -38,21 +38,21 @@ const Parametrage = {
             titre: template.nom
         }));
         this.campusList = initialData.campusList || [];
-        this.allFilieres = initialData.filieres || [];
-        this.profsList = initialData.profsList || [];
-        this.mockUEsByFiliere = initialData.uesByFiliere || {};
+        this.allPrograms = initialData.filieres || [];
+        this.teachersList = initialData.teachersList || [];
+        this.mockUEsByProgram = initialData.uesByFiliere || {};
         this.selectedCampusId = initialData.selectedCampusId || null;
-        this.selectedFiliereId = initialData.selectedFiliereId || null;
+        this.selectedProgramId = initialData.selectedProgramId || null;
         this.selectedTemplateId = initialData.selectedTemplateId || null;
-        this.semestreAnnee = initialData.semestreAnnee || '';
-        this.anneesScolaires = initialData.anneesScolaires || [];
-        this.selectedAnneeScolaire = initialData.selectedAnneeScolaire || '';
-        this.isRprm = initialData.isRprm || false;
+        this.semesterYear = initialData.semesterYear || '';
+        this.schoolYear = initialData.schoolYear || [];
+        this.selectedSchoolYear = initialData.selectedSchoolYear || '';
+        this.isProgramManager = initialData.isProgramManager || false;
         // Pour les RP-RM, afficher toutes les filières autorisées sans filtrage par campus
-        if (this.isRprm) {
-            this.filieresList = this.allFilieres;
+        if (this.isProgramManager) {
+            this.programsList = this.allPrograms;
         } else {
-            this.filieresList = this.selectedCampusId ? this.allFilieres.filter(f => f.campus_id === this.selectedCampusId) : [];
+            this.programsList = this.selectedCampusId ? this.allPrograms.filter(f => f.campus_id === this.selectedCampusId) : [];
         }
 
         this.render();
@@ -76,7 +76,7 @@ const Parametrage = {
                     <label>Semestre</label>
                     <select id="param-semestre" onchange="Parametrage.onSemestreChange(this.value)">
                         <option value="">-- Sélectionnez un semestre --</option>
-                        ${['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10'].map(s => `<option value="${s}" ${this.semestreAnnee === s ? 'selected' : ''}>${s}</option>`).join('')}
+                        ${['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10'].map(s => `<option value="${s}" ${this.semesterYear === s ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
                 </div>
                 <div class="pub-field">
@@ -84,7 +84,7 @@ const Parametrage = {
                     <div class="param-select-group" style="display: flex; gap: 10px; width: 100%;">
                         <select id="param-annee" onchange="Parametrage.onAnneeChange(this.value)" style="flex: 1;">
                             <option value="">-- Sélectionnez --</option>
-                            ${this.anneesScolaires.map(a => `<option value="${a}" ${this.selectedAnneeScolaire === a ? 'selected' : ''}>${a}</option>`).join('')}
+                            ${this.schoolYear.map(a => `<option value="${a}" ${this.selectedSchoolYear === a ? 'selected' : ''}>${a}</option>`).join('')}
                         </select>
                         <button class="btn-icon" onclick="Parametrage.addAnneeScolaire()" title="Ajouter une année scolaire" style="flex-shrink: 0; padding: 0 15px; background: linear-gradient(135deg, #1a5276, #1f6f9f); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">+</button>
                     </div>
@@ -106,9 +106,9 @@ const Parametrage = {
                 <div class="param-field">
                     <label>Filière</label>
                     <div class="param-select-group">
-                        <select id="param-filiere" onchange="Parametrage.onFiliereChange()" ${!this.isRprm && !this.selectedCampusId ? 'disabled' : ''}>
+                        <select id="param-filiere" onchange="Parametrage.onFiliereChange()" ${!this.isProgramManager && !this.selectedCampusId ? 'disabled' : ''}>
                             <option value="">-- Sélectionnez une filière --</option>
-                            ${this.filieresList.map(f => `<option value="${f.id}" ${this.selectedFiliereId === f.id ? 'selected' : ''}>${f.nom}</option>`).join('')}
+                            ${this.programsList.map(f => `<option value="${f.id}" ${this.selectedProgramId === f.id ? 'selected' : ''}>${f.nom}</option>`).join('')}
                         </select>
                     </div>
                 </div>
@@ -138,7 +138,7 @@ const Parametrage = {
                 </div>
             </div>
 
-            <button class="btn-publish" onclick="Parametrage.publish()" ${!this.selectedFiliereId ? 'disabled' : ''}>Publier le sondage</button>
+            <button class="btn-publish" onclick="Parametrage.publish()" ${!this.selectedProgramId ? 'disabled' : ''}>Publier le sondage</button>
         `;
 
         this.renderUEContainer();
@@ -147,13 +147,13 @@ const Parametrage = {
 
     // ─── Semestre change ─────────────────────────────────
     onSemestreChange(value) {
-        this.semestreAnnee = value;
+        this.semesterYear = value;
         this._tryFetchModulesPrecedents();
     },
 
     // ─── Année scolaire change ───────────────────────────
     onAnneeChange(value) {
-        this.selectedAnneeScolaire = value;
+        this.selectedSchoolYear = value;
         this._tryFetchModulesPrecedents();
     },
 
@@ -161,15 +161,15 @@ const Parametrage = {
     async onCampusChange() {
         const sel = document.getElementById('param-campus');
         this.selectedCampusId = sel.value ? parseInt(sel.value) : null;
-        this.selectedFiliereId = null;
+        this.selectedProgramId = null;
 
-        if (this.isRprm) {
+        if (this.isProgramManager) {
             // RP-RM : toujours afficher toutes les filières autorisées
-            this.filieresList = this.allFilieres;
+            this.programsList = this.allPrograms;
         } else if (this.selectedCampusId) {
-            this.filieresList = this.allFilieres.filter(f => f.campus_id === this.selectedCampusId);
+            this.programsList = this.allPrograms.filter(f => f.campus_id === this.selectedCampusId);
         } else {
-            this.filieresList = [];
+            this.programsList = [];
         }
         this.render();
         await this.fetchAndUpdateData();
@@ -184,17 +184,17 @@ const Parametrage = {
             return;
         }
 
-        if (this.isLoading && !this.selectedFiliereId) {
+        if (this.isLoading && !this.selectedProgramId) {
             container.innerHTML = `<p class="param-empty">Chargement des filières...</p>`;
             return;
         }
 
-        if (!this.selectedFiliereId) {
-            if (this.isRprm) {
+        if (!this.selectedProgramId) {
+            if (this.isProgramManager) {
                 container.innerHTML = `<p class="param-empty">Sélectionnez une filière pour configurer les cours et professeurs.</p>`;
             } else if (!this.selectedCampusId) {
                 container.innerHTML = `<p class="param-empty">Sélectionnez un campus et une filière pour configurer les cours et professeurs.</p>`;
-            } else if (this.filieresList.length === 0) {
+            } else if (this.programsList.length === 0) {
                 container.innerHTML = `<p class="param-empty">Aucune filière disponible pour ce campus.</p>`;
             } else {
                 container.innerHTML = `<p class="param-empty">Sélectionnez une filière pour configurer les cours et professeurs.</p>`;
@@ -202,7 +202,7 @@ const Parametrage = {
             return;
         }
 
-        if (this.selectedFiliereId) {
+        if (this.selectedProgramId) {
             this.renderUEs();
             return;
         }
@@ -225,27 +225,27 @@ const Parametrage = {
             const data = await response.json();
 
             this.campusList = data.campusList || this.campusList;
-            this.allFilieres = data.filieres || this.allFilieres;
-            this.profsList = data.profsList || this.profsList;
+            this.allPrograms = data.filieres || this.allPrograms;
+            this.teachersList = data.teachersList || this.teachersList;
             this.templatesList = (data.templates || []).map(template => ({
                 id: template.id_template,
                 titre: template.nom
             }));
-            this.mockUEsByFiliere = data.uesByFiliere || this.mockUEsByFiliere;
-            if (data.anneesScolaires) this.anneesScolaires = data.anneesScolaires;
-            if (data.selectedAnneeScolaire && !this.selectedAnneeScolaire) this.selectedAnneeScolaire = data.selectedAnneeScolaire;
+            this.mockUEsByProgram = data.uesByFiliere || this.mockUEsByProgram;
+            if (data.schoolYear) this.schoolYear = data.schoolYear;
+            if (data.selectedSchoolYear && !this.selectedSchoolYear) this.selectedSchoolYear = data.selectedSchoolYear;
 
-            if (this.isRprm) {
+            if (this.isProgramManager) {
                 // RP-RM : toujours afficher toutes les filières autorisées
-                this.filieresList = this.allFilieres;
+                this.programsList = this.allPrograms;
             } else if (this.selectedCampusId) {
-                this.filieresList = this.allFilieres.filter(f => f.campus_id === this.selectedCampusId);
+                this.programsList = this.allPrograms.filter(f => f.campus_id === this.selectedCampusId);
             } else {
-                this.filieresList = [];
+                this.programsList = [];
             }
 
-            if (this.selectedFiliereId) {
-                this.ues = JSON.parse(JSON.stringify(this.mockUEsByFiliere[this.selectedFiliereId] || []));
+            if (this.selectedProgramId) {
+                this.ues = JSON.parse(JSON.stringify(this.mockUEsByProgram[this.selectedProgramId] || []));
             }
         } catch (error) {
             this.loadError = error.message || 'Une erreur est survenue pendant le chargement.';
@@ -260,7 +260,7 @@ const Parametrage = {
     // ─── Filière change ─────────────────────────────────
     async onFiliereChange() {
         const sel = document.getElementById('param-filiere');
-        this.selectedFiliereId = sel.value ? parseInt(sel.value) : null;
+        this.selectedProgramId = sel.value ? parseInt(sel.value) : null;
         this.ues = [];
         this.render();
         // Charger les modules de l'année précédente pour cette nouvelle filière
@@ -273,10 +273,10 @@ const Parametrage = {
         const nouvelleAnnee = prompt("Saisissez la nouvelle année scolaire (ex: 2024-2025) :");
         if (!nouvelleAnnee || !nouvelleAnnee.trim()) return;
         const annee = nouvelleAnnee.trim();
-        if (!this.anneesScolaires.includes(annee)) {
-            this.anneesScolaires.push(annee);
+        if (!this.schoolYear.includes(annee)) {
+            this.schoolYear.push(annee);
         }
-        this.selectedAnneeScolaire = annee;
+        this.selectedSchoolYear = annee;
         this.render();
         this._tryFetchModulesPrecedents();
     },
@@ -284,13 +284,13 @@ const Parametrage = {
     // ─── Chargement des modules de l'année précédente ───
     async _tryFetchModulesPrecedents() {
         // Résoudre le nom de la filière sélectionnée
-        const filiereNom = this.selectedFiliereId
-            ? (this.allFilieres.find(f => f.id === this.selectedFiliereId) ||
-               this.filieresList.find(f => f.id === this.selectedFiliereId))?.nom || ''
+        const filiereNom = this.selectedProgramId
+            ? (this.allPrograms.find(f => f.id === this.selectedProgramId) ||
+               this.programsList.find(f => f.id === this.selectedProgramId))?.nom || ''
             : '';
 
         // On ne peut lancer la requête que si les 3 valeurs sont renseignées
-        if (!this.semestreAnnee || !filiereNom || !this.selectedAnneeScolaire) {
+        if (!this.semesterYear || !filiereNom || !this.selectedSchoolYear) {
             return;
         }
 
@@ -300,9 +300,9 @@ const Parametrage = {
 
         try {
             const params = new URLSearchParams({
-                semestre: this.semestreAnnee,
+                semestre: this.semesterYear,
                 formation: filiereNom,
-                annee_scolaire: this.selectedAnneeScolaire,
+                annee_scolaire: this.selectedSchoolYear,
             });
             const response = await fetch(`/api/modules-precedents?${params}`, {
                 cache: 'no-store',
@@ -330,14 +330,14 @@ const Parametrage = {
                 this.nextId = localId;
 
                 // Enrichir la liste des profs avec ceux du sondage précédent
-                if (data.profsList && data.profsList.length > 0) {
-                    const existingIds = new Set(this.profsList.map(p => `${(p.prenom||'').toLowerCase()}_${(p.nom||'').toLowerCase()}`));
-                    for (const prof of data.profsList) {
+                if (data.teachersList && data.teachersList.length > 0) {
+                    const existingIds = new Set(this.teachersList.map(p => `${(p.prenom||'').toLowerCase()}_${(p.nom||'').toLowerCase()}`));
+                    for (const prof of data.teachersList) {
                         const key = `${(prof.prenom||'').toLowerCase()}_${(prof.nom||'').toLowerCase()}`;
                         if (!existingIds.has(key)) {
                             this.nextId++;
                             prof.id = this.nextId;
-                            this.profsList.push(prof);
+                            this.teachersList.push(prof);
                             existingIds.add(key);
                         }
                     }
@@ -419,7 +419,7 @@ const Parametrage = {
     // ─── Render un Module ───────────────────────────────
     renderModule(mod, ueId) {
         const assignedIds = (mod.professeurs || []).map(p => p.id);
-        const availableProfs = this.profsList.filter(p => !assignedIds.includes(p.id));
+        const availableProfs = this.teachersList.filter(p => !assignedIds.includes(p.id));
 
         return `
             <div class="param-module" data-module-id="${mod.id}">
@@ -474,14 +474,14 @@ const Parametrage = {
     },
 
     addUE() {
-        if (!this.selectedFiliereId) return;
+        if (!this.selectedProgramId) return;
         const nom = prompt('Nom de la nouvelle UE :');
         if (!nom || !nom.trim()) return;
         const newId = ++this.nextId;
         this.ues.push({
             id: newId,
             nom: nom.trim(),
-            filiere_id: this.selectedFiliereId,
+            filiere_id: this.selectedProgramId,
             optionnel: false,
             _open: true,
             modules: []
@@ -568,7 +568,7 @@ const Parametrage = {
         const mod = (ue.modules || []).find(m => m.id === modId);
         if (!mod) return;
 
-        const prof = this.profsList.find(p => p.id === profId);
+        const prof = this.teachersList.find(p => p.id === profId);
         if (!prof) return;
         if (!mod.professeurs) mod.professeurs = [];
         mod.professeurs.push({ ...prof });
@@ -587,7 +587,7 @@ const Parametrage = {
 
         const newId = ++this.nextId;
         const newProf = { id: newId, nom: nom.trim(), prenom: prenom.trim() };
-        this.profsList.push(newProf);
+        this.teachersList.push(newProf);
         this.addProf(modId, newId, ueId);
     },
 
@@ -703,22 +703,22 @@ const Parametrage = {
             this.selectedTemplateId = this.templatesList[0]?.id;
         }
         if (!this.selectedCampusId) return alert('Veuillez sélectionner un Campus.');
-        if (!this.selectedFiliereId) return alert('Veuillez sélectionner une Filière.');
-        if (!this.semestreAnnee || !this.semestreAnnee.trim()) return alert("Veuillez sélectionner un semestre.");
-        if (!this.selectedAnneeScolaire || !this.selectedAnneeScolaire.trim()) return alert("Veuillez sélectionner une année scolaire.");
+        if (!this.selectedProgramId) return alert('Veuillez sélectionner une Filière.');
+        if (!this.semesterYear || !this.semesterYear.trim()) return alert("Veuillez sélectionner un semestre.");
+        if (!this.selectedSchoolYear || !this.selectedSchoolYear.trim()) return alert("Veuillez sélectionner une année scolaire.");
         if (this.ues.length === 0) return alert('Le sondage doit contenir au moins une UE.');
         if (!this.importedFile) return alert('Veuillez importer la liste des étudiants (fichier .xlsx) avant de publier.');
 
         const campusNom = this.campusList.find(c => c.id === this.selectedCampusId)?.nom || '';
-        const filiereNom = this.filieresList.find(f => f.id === this.selectedFiliereId)?.nom || '';
+        const filiereNom = this.programsList.find(f => f.id === this.selectedProgramId)?.nom || '';
 
         // Préparer les données du sondage en JSON
-        const sondageData = {
+        const surveyData = {
             id_template: this.selectedTemplateId,
             campus: campusNom,
             formation: filiereNom,
-            semestre: this.semestreAnnee,
-            annee_scolaire: this.selectedAnneeScolaire,
+            semestre: this.semesterYear,
+            annee_scolaire: this.selectedSchoolYear,
             ues: this.ues.map(ue => ({
                 id: ue.id,
                 nom: ue.nom,
@@ -745,7 +745,7 @@ const Parametrage = {
 
         // Construire le FormData avec le JSON + fichier optionnel
         const formData = new FormData();
-        formData.append('sondage_data', JSON.stringify(sondageData));
+        formData.append('sondage_data', JSON.stringify(surveyData));
         if (this.importedFile) {
             formData.append('file', this.importedFile);
         }
