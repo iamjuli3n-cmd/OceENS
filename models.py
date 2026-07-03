@@ -39,23 +39,18 @@ class Survey(SQLModel, table=True):
             "template_id",
             Integer,
             ForeignKey("templates.template_id"),
-            
         ),
     )
-    
+
     campus: Optional[str] = Field(default=None, sa_column=Column("campus", String))
-    program: Optional[str] = Field(
-        default=None, sa_column=Column("program", String)
-    )
+    program: Optional[str] = Field(default=None, sa_column=Column("program", String))
     semester: Optional[str] = Field(default=None, sa_column=Column("semester", String))
     # 1 : Active / 0 : Closed
     status: Optional[int] = Field(default=None, sa_column=Column("status", Integer))
     school_year: Optional[str] = Field(
         default=None, sa_column=Column("school_year", String)
     )
-    password: Optional[str] = Field(
-        default=None, sa_column=Column("password", String)
-    )
+    password: Optional[str] = Field(default=None, sa_column=Column("password", String))
 
 
 class Section(SQLModel, table=True):
@@ -73,10 +68,12 @@ class Section(SQLModel, table=True):
             ForeignKey("templates.template_id"),
         ),
     )
-    
+
     name: Optional[str] = Field(default=None, sa_column=Column("name", String))
     order: Optional[int] = Field(default=None, sa_column=Column("order", Integer))
-    section_type: Optional[str] = Field(default=None, sa_column=Column("section_type", String))
+    section_type: Optional[str] = Field(
+        default=None, sa_column=Column("section_type", String)
+    )
 
 
 class Question(SQLModel, table=True):
@@ -101,10 +98,10 @@ class Question(SQLModel, table=True):
     question_id: Optional[int] = Field(
         default=None, sa_column=Column("question_id", Integer, primary_key=True)
     )
-    category: Optional[str] = Field(
-        default=None, sa_column=Column("category", String)
+    category: Optional[str] = Field(default=None, sa_column=Column("category", String))
+    question_type: Optional[str] = Field(
+        default=None, sa_column=Column("question_type", String)
     )
-    question_type: Optional[str] = Field(default=None, sa_column=Column("question_type", String))
     language: Optional[str] = Field(default=None, sa_column=Column("language", String))
     text: Optional[str] = Field(default=None, sa_column=Column("text", Text))
 
@@ -149,9 +146,7 @@ class Module(SQLModel, table=True):
         default=None, sa_column=Column("module_id", Integer, primary_key=True)
     )
     name: Optional[str] = Field(default=None, sa_column=Column("name", String))
-    teacher: Optional[str] = Field(
-        default=None, sa_column=Column("teacher", String)
-    )
+    teacher: Optional[str] = Field(default=None, sa_column=Column("teacher", String))
     ue: Optional[str] = Field(default=None, sa_column=Column("ue", String))
     is_optional: Optional[bool] = Field(
         default=False, sa_column=Column("is_optional", Integer)
@@ -210,6 +205,7 @@ class Answer(SQLModel, table=True):
 
     value: Optional[str] = Field(default=None, sa_column=Column("value", Text))
 
+
 class Respondent(SQLModel, table=True):
     __tablename__ = "respondents"
 
@@ -232,4 +228,3 @@ class Respondent(SQLModel, table=True):
     submission_date: Optional[str] = Field(
         default=None, sa_column=Column("submission_date", String)
     )
-
