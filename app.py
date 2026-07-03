@@ -9,8 +9,6 @@ Combine :
 - Les dashboards par rôle
 """
 
-from uuid import uuid4
-
 from dotenv import load_dotenv
 
 
@@ -39,6 +37,7 @@ from models import (
     Template,
     Option,
     User,
+    Submission,
 )
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
@@ -1034,11 +1033,16 @@ def create_app():
         #    transaction implicite ouverte par le générateur get_session().
         try:
             with session.begin_nested():
-                # Calculer le prochain submission_id
+                # Création d'une soumission anonyme.
+                # SQLite génère automatiquement submission_id via l'autoincrement.
+                new_submission = Submission(
+                    survey_id=survey_id,
+                    created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                )
+                session.add(new_submission)
+                session.flush()  # Pour obtenir submission_id généré
 
-                submission_id = str(uuid4())
-
-                # TODO Mettre un lock / transaction pour éviter d'avoir le même submission_id par utilisateur
+                submission_id = new_submission.submission_id
 
                 # Insérer chaque réponse individuelle dans la table answers
                 for rep in submission.answers:
