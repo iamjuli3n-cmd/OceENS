@@ -739,7 +739,6 @@ def create_app():
                         program=survey.program,
                         semester=survey.semester,
                         school_year=survey.school_year,
-                        url=survey_url,
                         status=1,
                     )
                     session.add(new_survey)
@@ -842,7 +841,7 @@ def create_app():
         result = {
             "message": "Survey créé avec succès",
             "survey_id": next_survey_id,
-            "survey_url": survey_url,
+            "survey_url": f"/api/surveys/{next_survey_id}",
         }
         if emails:
             result.update(

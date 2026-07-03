@@ -44,7 +44,6 @@ class Survey(SQLModel, table=True):
 
     campus: Optional[str] = Field(default=None, sa_column=Column("campus", String))
     program: Optional[str] = Field(default=None, sa_column=Column("program", String))
-    url: Optional[str] = Field(default=None, sa_column=Column("url", String))
     semester: Optional[str] = Field(default=None, sa_column=Column("semester", String))
     status: Optional[int] = Field(default=None, sa_column=Column("status", Integer))
     school_year: Optional[str] = Field(
