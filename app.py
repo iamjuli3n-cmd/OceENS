@@ -151,7 +151,7 @@ class SurveyFullCreate(BaseModel):
     ues: List[UECreate]
 
 
-class ReponseItem(BaseModel):
+class AnswerItem(BaseModel):
     section_id: int
     question_id: int
     value: str
@@ -159,8 +159,8 @@ class ReponseItem(BaseModel):
     teacher: Optional[str] = None
 
 
-class QuestionnaireSubmission(BaseModel):
-    answers: List[ReponseItem]
+class SurveySubmission(BaseModel):
+    answers: List[AnswerItem]
 
 
 class RoleUpdate(BaseModel):
@@ -968,7 +968,7 @@ def create_app():
     def submit_reponses(
         request: Request,
         survey_id: int,
-        submission: QuestionnaireSubmission,
+        submission: SurveySubmission,
         session: SessionDep,
     ):
         # 1. Authentification : récupérer l'utilisateur connecté (Azure Entra ID)
@@ -1046,7 +1046,6 @@ def create_app():
                 # Insérer chaque réponse individuelle dans la table answers
                 for rep in submission.answers:
                     new_reponse = Answer(
-                        template_id=survey.template_id,
                         survey_id=survey_id,
                         section_id=rep.section_id,
                         module_id=rep.module_id,

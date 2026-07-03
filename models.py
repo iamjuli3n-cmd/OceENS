@@ -183,11 +183,6 @@ class Answer(SQLModel, table=True):
         sa_column=Column("survey_id", Integer, ForeignKey("surveys.survey_id")),
     )
 
-    template_id: Optional[int] = Field(
-        default=None,
-        sa_column=Column("template_id", Integer, ForeignKey("surveys.template_id")),
-    )
-
     section_id: Optional[int] = Field(
         default=None,
         sa_column=Column("section_id", Integer, ForeignKey("questions.section_id")),
