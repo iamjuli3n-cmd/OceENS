@@ -1033,12 +1033,6 @@ def create_app():
         #    transaction implicite ouverte par le générateur get_session().
         try:
             with session.begin_nested():
-                # Calculer le prochain Id_Reponse
-                existing_reponses = session.exec(select(Answer)).all()
-                next_id_reponse = (
-                    max([r.answer_id for r in existing_reponses] + [0]) + 1
-                )
-
                 # Calculer le prochain submission_id
                 existing_submission_ids = [
                     r.submission_id
@@ -1046,6 +1040,7 @@ def create_app():
                     if r.submission_id is not None
                 ]
                 submission_id = max(existing_submission_ids + [0]) + 1
+                # TODO Mettre un lock / transaction pour éviter d'avoir le même submission_id par utilisateur
 
                 # Insérer chaque réponse individuelle dans la table answers
                 for rep in submission.answers:
@@ -1056,12 +1051,10 @@ def create_app():
                         module_id=rep.module_id,
                         teacher=rep.teacher,
                         question_id=rep.question_id,
-                        answer_id=next_id_reponse,
                         submission_id=submission_id,
                         value=rep.value,
                     )
                     session.add(new_reponse)
-                    next_id_reponse += 1
 
                 # UPDATE de la ligne Respondent : marquer comme répondu
                 respondent.has_answered = True

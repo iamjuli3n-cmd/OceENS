@@ -166,39 +166,29 @@ class Answer(SQLModel, table=True):
 
     template_id: Optional[int] = Field(
         default=None,
-        sa_column=Column(
-            "template_id", Integer, ForeignKey("surveys.template_id"), primary_key=True
-        ),
+        sa_column=Column("template_id", Integer, ForeignKey("surveys.template_id")),
     )
     survey_id: Optional[int] = Field(
         default=None,
-        sa_column=Column(
-            "survey_id", Integer, ForeignKey("surveys.survey_id"), primary_key=True
-        ),
+        sa_column=Column("survey_id", Integer, ForeignKey("surveys.survey_id")),
     )
 
     section_id: Optional[int] = Field(
         default=None,
-        sa_column=Column(
-            "section_id", Integer, ForeignKey("questions.section_id"), primary_key=True
-        ),
+        sa_column=Column("section_id", Integer, ForeignKey("questions.section_id")),
     )
     question_id: Optional[int] = Field(
         default=None,
-        sa_column=Column(
-            "question_id",
-            Integer,
-            ForeignKey("questions.question_id"),
-            primary_key=True,
-        ),
+        sa_column=Column("question_id", Integer, ForeignKey("questions.question_id")),
     )
     answer_id: Optional[int] = Field(
-        default=None, sa_column=Column("answer_id", Integer, primary_key=True)
+        default=None,
+        sa_column=Column("answer_id", Integer, primary_key=True, autoincrement=True),
     )
 
     submission_id: Optional[str] = Field(
         default=None,
-        sa_column=Column("submission_id", String, nullable=True),
+        sa_column=Column("submission_id", Integer, nullable=False),
     )
     value: Optional[str] = Field(default=None, sa_column=Column("value", Text))
     module_id: Optional[int] = Field(
