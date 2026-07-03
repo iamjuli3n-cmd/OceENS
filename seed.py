@@ -349,7 +349,7 @@ def seed_options(db: Session):
             3,
             3,
             38,
-            "L'implication et la необходимость de l'teacher / The teacher's involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             1,
