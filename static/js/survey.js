@@ -245,10 +245,10 @@ const Questionnaire = {
 
     // ─── Toggle Prof Block (mode INCLUSIF) ──────────────
     toggleProfBlock(radio) {
-        const profBlock = radio.closest('.teacher-block-optional');
+        const profBlock = radio.closest('.prof-block-optional');
         if (!profBlock) return;
 
-        const conditionalBlock = profBlock.querySelector('.teacher-conditional-block');
+        const conditionalBlock = profBlock.querySelector('.prof-conditional-block');
         if (!conditionalBlock) return;
 
         const isYes = radio.value.toLowerCase().includes('oui') || radio.value.toLowerCase().includes('yes');
