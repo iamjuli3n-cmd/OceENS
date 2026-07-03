@@ -37,6 +37,7 @@ from models import (
     Template,
     Option,
     User,
+    Submission,
 )
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
@@ -151,7 +152,7 @@ class SurveyFullCreate(BaseModel):
     ues: List[UECreate]
 
 
-class ReponseItem(BaseModel):
+class AnswerItem(BaseModel):
     section_id: int
     question_id: int
     value: str
@@ -159,8 +160,8 @@ class ReponseItem(BaseModel):
     teacher: Optional[str] = None
 
 
-class QuestionnaireSubmission(BaseModel):
-    answers: List[ReponseItem]
+class SurveySubmission(BaseModel):
+    answers: List[AnswerItem]
 
 
 class RoleUpdate(BaseModel):
@@ -737,7 +738,6 @@ def create_app():
                         program=survey.program,
                         semester=survey.semester,
                         school_year=survey.school_year,
-                        url=survey_url,
                         status=1,
                     )
                     session.add(new_survey)
@@ -841,7 +841,7 @@ def create_app():
         result = {
             "message": "Survey créé avec succès",
             "survey_id": next_survey_id,
-            "survey_url": survey_url,
+            "survey_url": f"/api/surveys/{next_survey_id}",
         }
         if emails:
             result.update(
@@ -968,7 +968,7 @@ def create_app():
     def submit_reponses(
         request: Request,
         survey_id: int,
-        submission: QuestionnaireSubmission,
+        submission: SurveySubmission,
         session: SessionDep,
     ):
         # 1. Authentification : récupérer l'utilisateur connecté (Azure Entra ID)
@@ -1033,19 +1033,20 @@ def create_app():
         #    transaction implicite ouverte par le générateur get_session().
         try:
             with session.begin_nested():
-                # Calculer le prochain submission_id
-                existing_submission_ids = [
-                    r.submission_id
-                    for r in existing_reponses
-                    if r.submission_id is not None
-                ]
-                submission_id = max(existing_submission_ids + [0]) + 1
-                # TODO Mettre un lock / transaction pour éviter d'avoir le même submission_id par utilisateur
+                # Création d'une soumission anonyme.
+                # SQLite génère automatiquement submission_id via l'autoincrement.
+                new_submission = Submission(
+                    survey_id=survey_id,
+                    created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                )
+                session.add(new_submission)
+                session.flush()  # Pour obtenir submission_id généré
+
+                submission_id = new_submission.submission_id
 
                 # Insérer chaque réponse individuelle dans la table answers
                 for rep in submission.answers:
                     new_reponse = Answer(
-                        template_id=survey.template_id,
                         survey_id=survey_id,
                         section_id=rep.section_id,
                         module_id=rep.module_id,
@@ -1153,7 +1154,6 @@ def create_app():
                         "program": s.program,
                         "semester": s.semester,
                         "school_year": s.school_year,
-                        "url": s.url,
                         "respondents_count": respondents_count,
                         "answers_count": answers_count,
                     }
