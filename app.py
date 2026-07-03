@@ -18,7 +18,7 @@ from typing import Annotated, Dict, List, Optional
 from datetime import datetime
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, File, Form, Request, UploadFile,APIRouter
+from fastapi import Depends, FastAPI, File, Form, Request, UploadFile, APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -101,7 +101,6 @@ engine = create_engine(sqlite_url, connect_args=connect_args)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
-    
 
 
 def get_session():
@@ -242,7 +241,9 @@ def build_parametrage_data(
     for module in modules:
         if not module.teacher:
             continue
-        teachers_list_as_string = [p.strip() for p in module.teacher.split(",") if p.strip()]
+        teachers_list_as_string = [
+            p.strip() for p in module.teacher.split(",") if p.strip()
+        ]
         for teacher_as_string in teachers_list_as_string:
             teacher = parse_name(teacher_as_string, teacher_index)
             if not teacher["firstname"] and not teacher["name"]:
@@ -370,7 +371,9 @@ def create_app():
     # SessionMiddleware (authentification)
     app.add_middleware(
         SessionMiddleware,
-        secret_key=os.environ.get("SECRET_KEY", "Y3mNqRjGQixkKjF9GXBCbOw2fHyC1wA3wqbJcQoIxt0="),
+        secret_key=os.environ.get(
+            "SECRET_KEY", "Y3mNqRjGQixkKjF9GXBCbOw2fHyC1wA3wqbJcQoIxt0="
+        ),
         https_only=True,
         same_site="lax",
     )
@@ -397,17 +400,9 @@ def create_app():
 
     # └────────────────────────────────────────────────────────────────┘
 
-    dashboard_router = APIRouter(
-        tags=["Dashboard"],
-        prefix="/dashboard"
-    )
+    dashboard_router = APIRouter(tags=["Dashboard"], prefix="/dashboard")
 
-    api_router = APIRouter(
-        tags=["API"],
-        prefix="/api"
-    )
-
-
+    api_router = APIRouter(tags=["API"], prefix="/api")
 
     # ┌─ Route : Paramétrage (accès restreint Admin + RP-RM) ──────────────┐
     @dashboard_router.get("/survey-create", response_class=HTMLResponse)
@@ -475,13 +470,11 @@ def create_app():
         allowed_programs = None
         role = user.get("role", "") or ""
 
-        if ':' in role: #RP-RM or Admin with formations
+        if ":" in role:  # RP-RM or Admin with formations
             allowed_programs = parse_rprm_formations(role)
 
         return JSONResponse(
-            content=build_parametrage_data(
-                session, allowed_programs=allowed_programs
-            )
+            content=build_parametrage_data(session, allowed_programs=allowed_programs)
         )
 
     # └────────────────────────────────────────────────────────────────┘
@@ -633,7 +626,7 @@ def create_app():
 
         # ── Sécurité : vérifier que la program est autorisée pour le RP-RM ──
         role = user.get("role", "")
-        if ':' in role: # RM-RP or Admin with formations
+        if ":" in role:  # RM-RP or Admin with formations
             allowed = parse_rprm_formations(role)
             if survey.program not in allowed:
                 return JSONResponse(
@@ -729,17 +722,13 @@ def create_app():
                 with session.no_autoflush:
                     # ── Étape 1 : Créer le survey ──
                     existing_survey = session.exec(
-                        select(Survey).where(
-                            Survey.template_id == survey.template_id
-                        )
+                        select(Survey).where(Survey.template_id == survey.template_id)
                     ).all()
                     next_survey_id = (
                         max([s.survey_id for s in existing_survey] + [0]) + 1
                     )
 
-                    survey_url = (
-                        f"/api/surveys/{next_survey_id}"
-                    )
+                    survey_url = f"/api/surveys/{next_survey_id}"
 
                     new_survey = Survey(
                         template_id=survey.template_id,
@@ -869,9 +858,7 @@ def create_app():
 
     # ┌─ Page questionnaire ─────────────────────────────────────────────┐
     @api_router.get("/surveys/{survey_id}", response_class=HTMLResponse)
-    def questionnaire_page(
-        request: Request, survey_id: int, session: SessionDep
-    ):
+    def questionnaire_page(request: Request, survey_id: int, session: SessionDep):
         survey = session.exec(
             select(Survey).where(
                 Survey.survey_id == survey_id,
@@ -894,8 +881,6 @@ def create_app():
         modules = session.exec(
             select(Module).where(Module.survey_id == survey_id)
         ).all()
-
-        
 
         sections_data = []
         for sec in sections:
@@ -929,7 +914,6 @@ def create_app():
                 }
             )
 
-        
         modules_data = []
         for mod in modules:
             teachers = []
@@ -1001,7 +985,11 @@ def create_app():
         ).first()
         if not db_user:
             return JSONResponse(
-                content={"error": "Utilisateur "+user["email"]+"non trouvé dans la base de données."},
+                content={
+                    "error": "Utilisateur "
+                    + user["email"]
+                    + "non trouvé dans la base de données."
+                },
                 status_code=403,
             )
 
@@ -1036,9 +1024,7 @@ def create_app():
         # 5. Vérifier que l'élève n'a pas déjà soumis ses réponses
         if respondent.has_answered:
             return JSONResponse(
-                content={
-                    "error": "Vous avez déjà soumis vos réponses pour ce survey."
-                },
+                content={"error": "Vous avez déjà soumis vos réponses pour ce survey."},
                 status_code=409,
             )
 
@@ -1047,13 +1033,16 @@ def create_app():
         #    transaction implicite ouverte par le générateur get_session().
         try:
             with session.begin_nested():
-                # Calculer le prochain Id_Reponse
-                existing_reponses = session.exec(select(Answer)).all()
-                next_id_reponse = (
-                    max([r.answer_id for r in existing_reponses] + [0]) + 1
-                )
+                # Calculer le prochain submission_id
+                existing_submission_ids = [
+                    r.submission_id
+                    for r in existing_reponses
+                    if r.submission_id is not None
+                ]
+                submission_id = max(existing_submission_ids + [0]) + 1
+                # TODO Mettre un lock / transaction pour éviter d'avoir le même submission_id par utilisateur
 
-                # Insérer chaque réponse individuelle dans la table Reponses
+                # Insérer chaque réponse individuelle dans la table answers
                 for rep in submission.answers:
                     new_reponse = Answer(
                         template_id=survey.template_id,
@@ -1062,15 +1051,16 @@ def create_app():
                         module_id=rep.module_id,
                         teacher=rep.teacher,
                         question_id=rep.question_id,
-                        answer_id=next_id_reponse,
+                        submission_id=submission_id,
                         value=rep.value,
                     )
                     session.add(new_reponse)
-                    next_id_reponse += 1
 
                 # UPDATE de la ligne Respondent : marquer comme répondu
                 respondent.has_answered = True
-                respondent.submission_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                respondent.submission_date = datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
                 session.add(respondent)
 
             # Commit de la transaction principale
@@ -1085,7 +1075,7 @@ def create_app():
 
         return {
             "message": "Réponses enregistrées avec succès",
-            "user_id": db_user.user_id,
+            # "user_id": db_user.user_id,
         }
 
     # └────────────────────────────────────────────────────────────────┘
@@ -1101,7 +1091,7 @@ def create_app():
             return RedirectResponse(url="/")
 
         user_slug = role_to_dashboard_slug(user.get("role", ""))
-        if user_slug != "admin" and user_slug != role: # Admin can see all the pages
+        if user_slug != "admin" and user_slug != role:  # Admin can see all the pages
             return RedirectResponse(url=f"/dashboard/{user_slug}")
 
         template_map = {
@@ -1113,7 +1103,9 @@ def create_app():
         programs = []
         full_role = user.get("role", "")
         if ":" in full_role:
-            programs = [f.strip() for f in full_role.split(":", 1)[1].split(";") if f.strip()]
+            programs = [
+                f.strip() for f in full_role.split(":", 1)[1].split(";") if f.strip()
+            ]
 
         context = {"user": user, "programs": programs}
 
@@ -1197,7 +1189,11 @@ def create_app():
         ).first()
         if not db_user:
             return JSONResponse(
-                content={"error": "Utilisateur "+user["email"]+" non trouvé en base de données."},
+                content={
+                    "error": "Utilisateur "
+                    + user["email"]
+                    + " non trouvé en base de données."
+                },
                 status_code=404,
             )
 
@@ -1301,18 +1297,26 @@ def create_app():
     ):
         """Helper pour vérifier les accès et le statut de participation"""
         survey = session.exec(
-            select(Survey).where(
-                Survey.survey_id == survey_id
-            )
+            select(Survey).where(Survey.survey_id == survey_id)
         ).first()
         if not survey:
-            return None, {"error": "Survey introuvable.", "status_code": 404}, None, None
+            return (
+                None,
+                {"error": "Survey introuvable.", "status_code": 404},
+                None,
+                None,
+            )
 
         if role != "admin" and survey.program not in allowed_programs:
-            return None, {
-                "error": f"Formation '{survey.program}' non autorisée pour votre rôle.",
-                "status_code": 403,
-            }, None, None
+            return (
+                None,
+                {
+                    "error": f"Formation '{survey.program}' non autorisée pour votre rôle.",
+                    "status_code": 403,
+                },
+                None,
+                None,
+            )
 
         respondents_count = (
             session.exec(
@@ -1341,17 +1345,13 @@ def create_app():
         return survey, warning_msg, respondents_count, answers_count
 
     @api_router.get("/surveys/{survey_id}/export")
-    def export_sondage_csv(
-        request: Request, survey_id: int, session: SessionDep
-    ):
+    def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
         user = require_roles(request, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
 
         role = user.get("role", "") or ""
-        allowed_programs = (
-            parse_rprm_formations(role) if ":" in role else []
-        )
+        allowed_programs = parse_rprm_formations(role) if ":" in role else []
         admin_role = "admin" if role == "admin" else "program_manager"
 
         survey, error_or_warning, _, _ = _check_sondage_access_and_status(
@@ -1364,9 +1364,7 @@ def create_app():
             )
 
         # Utilisation de la BDD locale pour le loader sqlite3 natif
-        survey_obj = load_sondage_complet(
-            "database/db_oceens.db", survey_id
-        )
+        survey_obj = load_sondage_complet("database/db_oceens.db", survey_id)
 
         resp = generate_csv_response(survey_obj)
         if isinstance(error_or_warning, str):
@@ -1375,22 +1373,18 @@ def create_app():
         return resp
 
     @api_router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
-    def visualisation_page(
-        request: Request, survey_id: int, session: SessionDep
-    ):
+    def visualisation_page(request: Request, survey_id: int, session: SessionDep):
         user = require_roles(request, ["admin", "program_manager"])
         if user is None:
             return RedirectResponse(url="/")
 
         role = user.get("role", "") or ""
-        allowed_programs = (
-            parse_rprm_formations(role) if ":" in role else []
-        )
+        allowed_programs = parse_rprm_formations(role) if ":" in role else []
         admin_role = "admin" if role == "admin" else "program_manager"
 
         survey, error_or_warning, respondents_count, answers_count = (
             _check_sondage_access_and_status(
-                session,  survey_id, admin_role, allowed_programs
+                session, survey_id, admin_role, allowed_programs
             )
         )
         if not survey:
@@ -1400,9 +1394,7 @@ def create_app():
             )
 
         # Utilisation de la BDD locale pour le loader sqlite3 natif
-        survey_obj = load_sondage_complet(
-            "database/db_oceens.db",  survey_id
-        )
+        survey_obj = load_sondage_complet("database/db_oceens.db", survey_id)
 
         viz_context = get_visualisation_context(survey_obj)
 
@@ -1420,8 +1412,6 @@ def create_app():
         return templates.TemplateResponse(
             request=request, name="visualisation.html", context=context
         )
-
-
 
     # └───────────────────────────────────────────────────────────────────┘
 
