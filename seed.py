@@ -390,7 +390,6 @@ def seed_surveys(db: Session):
         "campus": "Montpellier",
         "program": "Majeure Test",
         "semester": "Automne",
-        "url": "/api/surveys/1",
         "status": 1,
         "school_year": "2026-2027",
         "password": None,
@@ -1685,7 +1684,6 @@ def seed_answers(db: Session):
         ),
         (
             5,
-            5,
             1,
             1,
             3,
@@ -2961,7 +2959,7 @@ def seed_answers(db: Session):
             334,
             "Totalement insatisfait / Totally dissatisfied",
         ),
-        (5, 5, 1, 1, 3, 2, "Xavier C.", 1, 335, "Oui / Yes"),
+        (5, 1, 1, 3, 2, "Xavier C.", 1, 335, "Oui / Yes"),
         (
             5,
             1,
@@ -3107,7 +3105,6 @@ def seed_answers(db: Session):
         ),
         (5, 1, 1, 3, 11, "Hannah G.", 1, 359, "Oui / Yes"),
         (
-            5,
             5,
             1,
             1,

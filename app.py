@@ -1034,6 +1034,7 @@ def create_app():
         try:
             with session.begin_nested():
                 # Calculer le prochain submission_id
+                existing_reponses = session.exec(select(Answer)).all()
                 existing_submission_ids = [
                     r.submission_id
                     for r in existing_reponses
@@ -1153,7 +1154,6 @@ def create_app():
                         "program": s.program,
                         "semester": s.semester,
                         "school_year": s.school_year,
-                        "url": s.url,
                         "respondents_count": respondents_count,
                         "answers_count": answers_count,
                     }
