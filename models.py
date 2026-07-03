@@ -167,9 +167,14 @@ class Answer(SQLModel, table=True):
         sa_column=Column("answer_id", Integer, primary_key=True, autoincrement=True),
     )
 
-    submission_id: Optional[str] = Field(
+    submission_id: Optional[int] = Field(
         default=None,
-        sa_column=Column("submission_id", Integer, nullable=False),
+        sa_column=Column(
+            "submission_id",
+            Integer,
+            ForeignKey("submissions.submission_id"),
+            nullable=False,
+        ),
     )
 
     survey_id: Optional[int] = Field(
@@ -226,4 +231,33 @@ class Respondent(SQLModel, table=True):
     # If submission_date is NULL --> Not yet answered
     submission_date: Optional[str] = Field(
         default=None, sa_column=Column("submission_date", String)
+    )
+
+
+class Submission(SQLModel, table=True):
+    __tablename__ = "submissions"
+
+    submission_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            "submission_id",
+            Integer,
+            primary_key=True,
+            autoincrement=True,
+        ),
+    )
+
+    survey_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            "survey_id",
+            Integer,
+            ForeignKey("surveys.survey_id"),
+            nullable=False,
+        ),
+    )
+
+    created_at: Optional[str] = Field(
+        default=None,
+        sa_column=Column("created_at", String),
     )
