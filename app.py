@@ -9,6 +9,8 @@ Combine :
 - Les dashboards par rôle
 """
 
+from uuid import uuid4
+
 from dotenv import load_dotenv
 
 
@@ -1034,12 +1036,10 @@ def create_app():
         try:
             with session.begin_nested():
                 # Calculer le prochain submission_id
-                existing_submission_ids = [
-                    r.submission_id
-                    for r in existing_reponses
-                    if r.submission_id is not None
-                ]
-                submission_id = max(existing_submission_ids + [0]) + 1
+                
+                submission_id = str(uuid4())
+
+                
                 # TODO Mettre un lock / transaction pour éviter d'avoir le même submission_id par utilisateur
 
                 # Insérer chaque réponse individuelle dans la table answers
