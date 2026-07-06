@@ -44,22 +44,17 @@
       <section class="questionnaire-section-with-incentive">
 
         <div class="incentive-text">
-          <p class="welcome" id="incentive-message">Chargement de votre questionnaire...</p>
+          <p class="welcome" id="incentive-message">Chargement de vos questionnaires...</p>
         </div>
 
-        <div class="questionnaire-section">
-          <!-- Carte d'identité du questionnaire (formation / semestre) -->
-          <div id="questionnaire-card" class="questionnaire-card" style="display:none;">
-            <div id="questionnaire-card-icon" class="questionnaire-card-icon">📋</div>
-            <div class="questionnaire-card-text">
-              <div id="questionnaire-card-formation" class="questionnaire-card-formation"></div>
-              <div id="questionnaire-card-meta" class="questionnaire-card-meta"></div>
-            </div>
+        <div class="student-questionnaires-card">
+          <div class="student-questionnaires-header">
+            <h2>Mes questionnaires</h2>
           </div>
 
-          <button id="questionnaire-btn" class="questionnaire-btn loading" disabled>
-            Chargement...
-          </button>
+          <div id="questionnaires-list">
+            <div class="student-empty-state">Chargement...</div>
+          </div>
         </div>
 
       </section>

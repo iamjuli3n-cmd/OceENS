@@ -22,7 +22,7 @@ from fastapi import Depends, FastAPI, File, Form, Request, UploadFile, APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session, SQLModel, create_engine, select, delete, func
+from sqlmodel import Session, SQLModel, create_engine, select, func
 import uvicorn
 from seed import seed_all_if_necessary
 
@@ -83,7 +83,9 @@ def parse_rprm_formations(role: str) -> list[str]:
     if not role or not isinstance(role, str):
         return []
     role_upper = role.strip()
-    if not (role_upper.startswith("program_manager:") or role_upper.startswith("admin:")):
+    if not (
+        role_upper.startswith("program_manager:") or role_upper.startswith("admin:")
+    ):
         return []
     after_colon = role_upper.split(":", 1)[1]
     return [f.strip() for f in after_colon.split(";") if f.strip()]
@@ -799,18 +801,25 @@ def create_app():
 
                         user_ids = list(email_to_user_id.values())
                         if user_ids:
-                            # Nettoyage préalable (DELETE) : Supprime toutes les lignes de la table Respondent
-                            # où la value user_id correspond à un des élèves présents
-                            stmt = delete(Respondent).where(
-                                Respondent.user_id.in_(user_ids)
-                            )
-                            res = session.exec(stmt)
-                            print(
-                                f"[SONDAGE+IMPORT] Nettoyage préalable : {res.rowcount} anciennes lignes supprimées de Respondent."
+                            # On ne supprime PAS les anciennes affectations.
+                            # Un étudiant peut être affecté à plusieurs sondages sur plusieurs années.
+                            # On vérifie seulement si l'affectation existe déjà pour CE sondage.
+                            existing_respondent_user_ids = session.exec(
+                                select(Respondent.user_id).where(
+                                    # Respondent.template_id == survey.template_id,
+                                    Respondent.survey_id == next_survey_id,
+                                    Respondent.user_id.in_(user_ids),
+                                )
+                            ).all()
+
+                            existing_respondent_user_ids = set(
+                                existing_respondent_user_ids
                             )
 
-                            # Insertion (INSERT) : Uniquement après le nettoyage
+                            # Insertion (INSERT) : ajouter uniquement les nouvelles affectations
                             for user_id in user_ids:
+                                if user_id in existing_respondent_user_ids:
+                                    continue  # Déjà affecté à ce survey, on ne fait rien
                                 new_repondre = Respondent(
                                     template_id=survey.template_id,
                                     survey_id=next_survey_id,
@@ -821,7 +830,7 @@ def create_app():
                                 nb_repondre_inseres += 1
 
                         print(
-                            f"[SONDAGE+IMPORT] Respondent : {nb_repondre_inseres} inséré(s) (et nettoyés des conflits)"
+                            f"[SONDAGE+IMPORT] Respondent : {nb_repondre_inseres} affectation(s) ajoutée(s)."
                         )
 
             # Si on arrive ici, le COMMIT a été fait par le context manager
@@ -1020,7 +1029,9 @@ def create_app():
             )
 
         # 5. Vérifier que l'élève n'a pas déjà soumis ses réponses
-        if respondent.submission_date != None: # submission_date NOT NULL = has_answered
+        if (
+            respondent.submission_date != None
+        ):  # submission_date NOT NULL = has_answered
             return JSONResponse(
                 content={"error": "Vous avez déjà soumis vos réponses pour ce survey."},
                 status_code=409,
@@ -1135,7 +1146,8 @@ def create_app():
                     session.exec(
                         select(func.count(Respondent.user_id)).where(
                             Respondent.survey_id == s.survey_id,
-                            Respondent.submission_date != None, # submission_date NOT NULL = has_answered
+                            Respondent.submission_date
+                            != None,  # submission_date NOT NULL = has_answered
                         )
                     ).first()
                     or 0
@@ -1163,13 +1175,13 @@ def create_app():
 
     # └────────────────────────────────────────────────────────────────┘
 
-    # ┌─ API : Questionnaire assigné à l'étudiant connecté ──────────────┐
+    # ┌─ API : Questionnaire(s) assigné à l'étudiant connecté ──────────────┐
     @api_router.get("/surveys/my/")
     def get_connected_user_surveys(request: Request, session: SessionDep):
         """
-        Retourne le questionnaire assigné à l'étudiant connecté.
-        Interroge la table Respondent pour récupérer survey_id, template_id
-        et le statut Repondu (0=False, 1=True).
+        Retourne tous les questionnaires assignés à l'étudiant connecté.
+        Interroge la table Respondent pour récupérer les couples survey_id/template_id
+        associés à l'étudiant, ainsi que son statut de réponse pour chaque sondage.
         """
         user = get_current_user(request)
         if not user:
@@ -1178,10 +1190,11 @@ def create_app():
                 status_code=401,
             )
 
-        # Résoudre l'user_id depuis l'email
+        # Résoudre l'user_id depuis l'email de l'utilisateur connecté
         db_user = session.exec(
             select(User).where(User.mail == user["email"].casefold())
         ).first()
+
         if not db_user:
             return JSONResponse(
                 content={
@@ -1192,7 +1205,9 @@ def create_app():
                 status_code=404,
             )
 
-        # Chercher les entrées Respondent pour cet utilisateur
+        # Chercher toutes les entrées Respondent pour cet utilisateur
+        # Un étudiant peut être affecté à plusieurs sondages, par exemple
+        # sur plusieurs semestres ou plusieurs années scolaires.
         respondent_entries = session.exec(
             select(Respondent).where(Respondent.user_id == db_user.user_id)
         ).all()
@@ -1200,31 +1215,52 @@ def create_app():
         if not respondent_entries:
             return JSONResponse(
                 content={
-                    "survey": None,
+                    "surveys": [],
                     "message": "Aucun questionnaire assigné.",
                 },
                 status_code=200,
             )
 
-        # Prendre le premier questionnaire non répondu, sinon le dernier
-        not_answered = [r for r in respondent_entries if not r.submission_date]
-        entry = not_answered[0] if not_answered else respondent_entries[-1]
+        # Construire la liste des questionnaires assignés à l'étudiant
+        surveys = []
 
-        # Récupérer les infos du survey pour le contexte
-        survey = session.exec(
-            select(Survey).where(
-                Survey.survey_id == entry.survey_id,
+        for entry in respondent_entries:
+            # Récupérer les infos du survey pour le contexte d'affichage
+            survey = session.exec(
+                select(Survey).where(
+                    Survey.survey_id == entry.survey_id,
+                )
+            ).first()
+
+            # Sécurité : si la ligne Respondent pointe vers un survey inexistant,
+            # on l'ignore pour éviter de casser la réponse API.
+            if not survey:
+                continue
+
+            # submission_date NOT NULL = l'étudiant a déjà répondu
+            has_answered = entry.submission_date is not None
+
+            # status = 0 signifie que le sondage est fermé
+            is_closed = survey.status == 0
+
+            surveys.append(
+                {
+                    "template_id": survey.template_id,
+                    "survey_id": survey.survey_id,
+                    "has_answered": has_answered,
+                    "url": f"/api/surveys/{survey.survey_id}",
+                    "campus": survey.campus,
+                    "program": survey.program,
+                    "semester": survey.semester,
+                    "school_year": survey.school_year,
+                    "status": survey.status,
+                    "is_closed": is_closed,
+                    "can_answer": not has_answered and not is_closed,
+                }
             )
-        ).first()
 
         return {
-            "survey": {
-                "survey_id": entry.survey_id,
-                "has_answered": bool(entry.submission_date != None), # submission_date NOT NULL = has_answered
-                "url": f"/api/surveys/{entry.survey_id}",
-                "program": survey.program if survey else None,
-                "semester": survey.semester if survey else None,
-            }
+            "surveys": surveys,
         }
 
     # └────────────────────────────────────────────────────────────────┘
@@ -1323,7 +1359,8 @@ def create_app():
             session.exec(
                 select(func.count(Respondent.user_id)).where(
                     Respondent.survey_id == survey_id,
-                    Respondent.submission_date != None, # submission_date NOT NULL = has_answered
+                    Respondent.submission_date
+                    != None,  # submission_date NOT NULL = has_answered
                 )
             ).first()
             or 0

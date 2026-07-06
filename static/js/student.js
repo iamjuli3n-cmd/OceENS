@@ -1,17 +1,61 @@
 document.addEventListener('DOMContentLoaded', async function () {
-    const btn = document.getElementById('questionnaire-btn');
     const incentiveMsg = document.getElementById('incentive-message');
-    const card = document.getElementById('questionnaire-card');
-    const cardIcon = document.getElementById('questionnaire-card-icon');
-    const cardFormation = document.getElementById('questionnaire-card-formation');
-    const cardMeta = document.getElementById('questionnaire-card-meta');
+    const list = document.getElementById('questionnaires-list');
 
-    function showCard({ formation, meta, done }) {
-        cardFormation.textContent = formation;
-        cardMeta.textContent = meta;
-        cardIcon.textContent = done ? '✓' : '📋';
-        card.classList.toggle('status-done', done);
-        card.style.display = 'inline-flex';
+    function createSurveyRow(survey) {
+        const row = document.createElement('div');
+        row.className = 'student-survey-row';
+
+        const info = document.createElement('div');
+        info.className = 'student-survey-info';
+
+        const title = document.createElement('div');
+        title.className = 'student-survey-title';
+        title.textContent = `${survey.program || 'Questionnaire'} — ${survey.semester || ''}`;
+
+        const meta = document.createElement('div');
+        meta.className = 'student-survey-meta';
+
+        const metaParts = [];
+        if (survey.campus) metaParts.push(survey.campus);
+        if (survey.school_year) metaParts.push(survey.school_year);
+        meta.textContent = metaParts.join(' · ');
+
+        info.appendChild(title);
+        info.appendChild(meta);
+
+        const action = document.createElement('div');
+        action.className = 'student-survey-action';
+
+        console.log('Survey:', survey);
+
+        const hasAnswered = survey.has_answered === true;
+        const isClosed = survey.is_closed === true;
+
+        if (hasAnswered) {
+            const btn = document.createElement('button');
+            btn.className = 'student-survey-btn done';
+            btn.disabled = true;
+            btn.textContent = 'Questionnaire déjà complété';
+            action.appendChild(btn);
+        } else if (isClosed) {
+            const btn = document.createElement('button');
+            btn.className = 'student-survey-btn closed';
+            btn.disabled = true;
+            btn.textContent = 'Sondage fermé';
+            action.appendChild(btn);
+        } else {
+            const link = document.createElement('a');
+            link.className = 'student-survey-btn answer';
+            link.href = survey.url;
+            link.textContent = 'Répondre au questionnaire';
+            action.appendChild(link);
+        }
+
+        row.appendChild(info);
+        row.appendChild(action);
+
+        return row;
     }
 
     try {
@@ -19,57 +63,57 @@ document.addEventListener('DOMContentLoaded', async function () {
         const data = await response.json();
 
         if (!response.ok) {
-            btn.textContent = 'Questionnaire indisponible';
-            btn.classList.remove('loading');
-            btn.disabled = true;
-            incentiveMsg.textContent = data.error || 'Une erreur est survenue.';
+            list.innerHTML = '';
+
+            const error = document.createElement('div');
+            error.className = 'student-empty-state';
+            error.textContent = data.error || 'Une erreur est survenue.';
+
+            list.appendChild(error);
+            incentiveMsg.textContent = 'Impossible de charger vos questionnaires.';
             return;
         }
 
-        if (!data.survey) {
-            btn.textContent = 'Aucun questionnaire assigné';
-            btn.classList.remove('loading');
-            btn.disabled = true;
+        const surveys = data.surveys || [];
+
+        if (surveys.length === 0) {
+            list.innerHTML = '';
+
+            const empty = document.createElement('div');
+            empty.className = 'student-empty-state';
+            empty.textContent = "Vous n'avez aucun questionnaire assigné pour le moment.";
+
+            list.appendChild(empty);
             incentiveMsg.textContent = "Vous n'avez aucun questionnaire à compléter pour le moment.";
             return;
         }
 
-        const q = data.survey;
+        list.innerHTML = '';
 
-        // Carte d'identité du questionnaire (formation + semestre/année)
-        const metaParts = [];
-        if (q.semester) metaParts.push(q.semester);
-        if (q.school_year) metaParts.push(q.school_year);
+        surveys.forEach((survey) => {
+            list.appendChild(createSurveyRow(survey));
+        });
 
-        if (q.program || metaParts.length) {
-            showCard({
-                program: q.program || 'Questionnaire',
-                meta: metaParts.join(' · '),
-                done: !!q.has_answered,
-            });
-        }
+        const remainingCount = surveys.filter((survey) => survey.can_answer).length;
 
-
-        if (q.has_answered) {
-            btn.textContent = 'Questionnaire déjà complété ✓';
-            btn.classList.remove('loading');
-            btn.classList.add('done');
-            btn.disabled = true;
-            incentiveMsg.textContent = 'Vous avez déjà soumis vos réponses. Merci pour votre participation !';
+        if (remainingCount > 0) {
+            incentiveMsg.textContent =
+                'Merci de compléter les questionnaires de fin de semestre pour les cours suivants :';
         } else {
-            btn.textContent = 'Répondre au questionnaire';
-            btn.classList.remove('loading');
-            btn.disabled = false;
-            btn.onclick = function () {
-                window.location.href = q.url;
-            };
-            incentiveMsg.textContent = 'Merci de compléter le questionnaire de fin de semestre pour le cours suivant :';
+            incentiveMsg.textContent =
+                'Merci, vous avez complété tous les questionnaires disponibles.';
         }
+
     } catch (err) {
-        console.error('Erreur chargement questionnaire:', err);
-        btn.textContent = 'Erreur de chargement';
-        btn.classList.remove('loading');
-        btn.disabled = true;
-        incentiveMsg.textContent = 'Impossible de charger votre questionnaire. Veuillez réessayer.';
+        console.error('Erreur chargement questionnaires:', err);
+
+        list.innerHTML = '';
+
+        const error = document.createElement('div');
+        error.className = 'student-empty-state';
+        error.textContent = 'Impossible de charger vos questionnaires. Veuillez réessayer.';
+
+        list.appendChild(error);
+        incentiveMsg.textContent = 'Erreur de chargement.';
     }
 });

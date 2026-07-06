@@ -342,4 +342,108 @@ main {
     .questionnaire-card-text {
         text-align: center;
     }
+
+    .student-survey-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .student-survey-action,
+    .student-survey-btn {
+        width: 100%;
+        min-width: unset;
+    }
+}
+
+/* === Liste des questionnaires étudiant === */
+.student-questionnaires-card {
+    width: 100%;
+    max-width: 900px;
+    margin: 24px auto 0;
+    text-align: left;
+}
+
+.student-questionnaires-header {
+    margin-bottom: 18px;
+}
+
+.student-questionnaires-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111;
+}
+
+.student-survey-row {
+    display: grid;
+    grid-template-columns: 1fr 250px;
+    align-items: center;
+    column-gap: 24px;
+    padding: 14px 0;
+}
+
+.student-survey-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.student-survey-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111;
+}
+
+.student-survey-meta {
+    font-size: 15px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+.student-survey-action {
+    width: 250px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.student-survey-btn {
+    width: 250px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 24px;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.student-survey-btn.answer {
+    background: #df231d;
+    color: white;
+}
+
+.student-survey-btn.done {
+    background: #2e7d32;
+    color: white;
+    cursor: default;
+}
+
+.student-survey-btn.closed {
+    background: rgb(141, 141, 141);
+    color: white;
+    cursor: default;
+}
+
+.student-empty-state {
+    color: #777;
+    font-size: 15px;
+    padding: 18px 0;
 }
