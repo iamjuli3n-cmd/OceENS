@@ -57,7 +57,7 @@ def role_to_dashboard_slug(role: str) -> str:
 
     "admin"              → "admin"
     "program_manager"              → "program_manager"
-    "RP-RM:MDE_P2027"    → "program_manager"
+    "program_manager:MDE_P2027"    → "program_manager"
     "student" (ou autre) → "student"
     """
     if role.startswith("admin"):
@@ -72,17 +72,17 @@ def parse_rprm_formations(role: str) -> list[str]:
     """
     Extrait la liste des formations autorisées depuis une chaîne de rôle RP-RM.
 
-    "RP-RM:FORMATION1;FORMATION2" → ["FORMATION1", "FORMATION2"]
-    "RP-RM:FORMATION1"            → ["FORMATION1"]
+    "program_manager:PROGRAM1;PROGRAM2" → ["PROGRAM1", "PROGRAM2"]
+    "program_manager:PROGRAM1"            → ["PROGRAM1"]
     "program_manager"                       → []
     "admin"                       → []
-    "Admin:FORMATION1;FORMATION2" → ["FORMATION1", "FORMATION2"]
-    "Admin:FORMATION1"            → ["FORMATION1"]
+    "admin:PROGRAM1;PROGRAM2" → ["PROGRAM1", "PROGRAM2"]
+    "admin:PROGRAM1"            → ["PROGRAM1"]
     """
     if not role or not isinstance(role, str):
         return []
     role_upper = role.strip()
-    if not (role_upper.startswith("RP-RM:") or role_upper.startswith("Admin:")):
+    if not (role_upper.startswith("program_manager:") or role_upper.startswith("admin:")):
         return []
     after_colon = role_upper.split(":", 1)[1]
     return [f.strip() for f in after_colon.split(";") if f.strip()]
@@ -422,10 +422,10 @@ def create_app():
         is_program_manager = False
         role = user.get("role", "") or ""
 
-        if role.startswith("Admin:"):
+        if role.startswith("admin:"):
             allowed_programs = parse_rprm_formations(role)
             is_program_manager = True
-        if role.startswith("RP-RM:"):
+        if role.startswith("program_manager:"):
             allowed_programs = parse_rprm_formations(role)
             is_program_manager = True
         elif role.startswith("program_manager"):
@@ -815,7 +815,6 @@ def create_app():
                                     template_id=survey.template_id,
                                     survey_id=next_survey_id,
                                     user_id=user_id,
-                                    has_answered=False,
                                     submission_date=None,
                                 )
                                 session.add(new_repondre)
@@ -1008,7 +1007,6 @@ def create_app():
         #    Règle stricte : pas de INSERT, UPDATE uniquement
         respondent = session.exec(
             select(Respondent).where(
-                Respondent.template_id == survey.template_id,
                 Respondent.survey_id == survey_id,
                 Respondent.user_id == db_user.user_id,
             )
@@ -1022,7 +1020,7 @@ def create_app():
             )
 
         # 5. Vérifier que l'élève n'a pas déjà soumis ses réponses
-        if respondent.has_answered:
+        if respondent.submission_date != None: # submission_date NOT NULL = has_answered
             return JSONResponse(
                 content={"error": "Vous avez déjà soumis vos réponses pour ce survey."},
                 status_code=409,
@@ -1057,7 +1055,6 @@ def create_app():
                     session.add(new_reponse)
 
                 # UPDATE de la ligne Respondent : marquer comme répondu
-                respondent.has_answered = True
                 respondent.submission_date = datetime.now().strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
@@ -1127,7 +1124,6 @@ def create_app():
                 respondents_count = (
                     session.exec(
                         select(func.count(Respondent.user_id)).where(
-                            Respondent.template_id == s.template_id,
                             Respondent.survey_id == s.survey_id,
                         )
                     ).first()
@@ -1137,9 +1133,8 @@ def create_app():
                 answers_count = (
                     session.exec(
                         select(func.count(Respondent.user_id)).where(
-                            Respondent.template_id == s.template_id,
                             Respondent.survey_id == s.survey_id,
-                            Respondent.has_answered == True,
+                            Respondent.submission_date != None, # submission_date NOT NULL = has_answered
                         )
                     ).first()
                     or 0
@@ -1211,22 +1206,20 @@ def create_app():
             )
 
         # Prendre le premier questionnaire non répondu, sinon le dernier
-        not_answered = [r for r in respondent_entries if not r.has_answered]
+        not_answered = [r for r in respondent_entries if not r.submission_date]
         entry = not_answered[0] if not_answered else respondent_entries[-1]
 
         # Récupérer les infos du survey pour le contexte
         survey = session.exec(
             select(Survey).where(
-                Survey.template_id == entry.template_id,
                 Survey.survey_id == entry.survey_id,
             )
         ).first()
 
         return {
             "survey": {
-                "template_id": entry.template_id,
                 "survey_id": entry.survey_id,
-                "has_answered": bool(entry.has_answered),
+                "has_answered": bool(entry.submission_date != None), # submission_date NOT NULL = has_answered
                 "url": f"/api/surveys/{entry.survey_id}",
                 "program": survey.program if survey else None,
                 "semester": survey.semester if survey else None,
@@ -1320,7 +1313,6 @@ def create_app():
         respondents_count = (
             session.exec(
                 select(func.count(Respondent.user_id)).where(
-                    Respondent.template_id == survey.template_id,
                     Respondent.survey_id == survey_id,
                 )
             ).first()
@@ -1329,9 +1321,8 @@ def create_app():
         answers_count = (
             session.exec(
                 select(func.count(Respondent.user_id)).where(
-                    Respondent.template_id == survey.template_id,
                     Respondent.survey_id == survey_id,
-                    Respondent.has_answered == True,
+                    Respondent.submission_date != None, # submission_date NOT NULL = has_answered
                 )
             ).first()
             or 0

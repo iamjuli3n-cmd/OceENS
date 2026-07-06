@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             });
         }
 
-        if (q.repondu) {
+
+        if (q.has_answered) {
             btn.textContent = 'Questionnaire déjà complété ✓';
             btn.classList.remove('loading');
             btn.classList.add('done');

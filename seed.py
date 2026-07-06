@@ -17,7 +17,7 @@ def seed_users(db: Session):
     """Remplit la table users."""
 
     user_data = [
-        (1, "antoine.gademer@epf.fr", "admin"),
+        (1, "antoine.gademer@epf.fr", "admin:Majeure Test"),
         (2, "bob.leponge@epfedu.fr", "student"),
         (3, "peter.parker@epfedu.fr", "student"),
         (4, "mickey.mouse@epfedu.fr", "student"),
@@ -623,12 +623,12 @@ def seed_respondents(db: Session):
     """Remplit la table respondents."""
 
     respondent_data = [
-        (1, 1, 1, "2026-06-30 16:24:04", 1),
-        (1, 1, 2, "2026-06-30 16:27:04", 1),
-        (1, 1, 3, "2026-06-30 16:22:04", 1),
-        (1, 1, 4, "2026-06-30 16:26:04", 1),
-        (1, 1, 5, "2026-06-30 16:32:04", 1),
-        (1, 1, 6, "2026-06-30 16:32:04", 1),
+        (1, 1, 1, "2026-06-30 16:24:04"),
+        (1, 1, 2, "2026-06-30 16:27:04"),
+        (1, 1, 3, "2026-06-30 16:22:04"),
+        (1, 1, 4, "2026-06-30 16:26:04"),
+        (1, 1, 5, "2026-06-30 16:32:04"),
+        (1, 1, 6, "2026-06-30 16:32:04"),
     ]
     for r_data in respondent_data:
         respondent = Respondent(
@@ -636,7 +636,6 @@ def seed_respondents(db: Session):
             survey_id=r_data[1],
             user_id=r_data[2],
             submission_date=r_data[3],
-            has_answered=r_data[4],
         )
         db.merge(
             respondent
