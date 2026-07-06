@@ -648,4 +648,9 @@
 
 .import-notification__close:hover {
     opacity: 1;
-}
+}
+
+.student-list-area {
+    width:100%;
+    text-align: left;
+}

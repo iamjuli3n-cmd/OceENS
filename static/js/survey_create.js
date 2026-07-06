@@ -120,8 +120,15 @@ const Parametrage = {
             
             <div id="param-ue-container"></div>
 
+            <div class="dropzone-section" id="student-list">
+            <h3>📋 Liste des étudiant.e.s</h3>
+            <p><i>Un mail par ligne</i></p>
+            <textarea class="student-list-area">mickey.mouse@epfedu.fr\nnaruto.uzumaki@epfedu.fr</textarea>
+            </div>
+
             <div class="dropzone-section">
                 <h3>📋 Importer la liste des étudiants</h3>
+                
                 <div class="dropzone" id="dropzone-etudiants">
                     <input type="file" id="dropzone-file-input" accept=".xlsx">
                     ${this.importedFile ? `
@@ -668,6 +675,7 @@ const Parametrage = {
             this.showNotification('Format invalide. Seuls les fichiers .xlsx sont acceptés.', 'error');
             return;
         }
+        //TODO XLSX.read()
         this.importedFile = file;
         this.render();
         this.showNotification(`Fichier "${file.name}" prêt pour l'import.`, 'info');
