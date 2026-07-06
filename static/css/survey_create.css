@@ -458,19 +458,19 @@
 }
 
 .dropzone {
-    position: relative;
+    position: absolute;
     border: 2px dashed #470a68;
     border-radius: 10px;
     padding: 36px 24px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: rgba(71, 10, 104, 0.02);
+    background: rgba(255, 255, 255, 1);
 }
 
 .dropzone:hover {
     border-color: #5c1a7a;
-    background: rgba(71, 10, 104, 0.05);
+    background: rgb(236, 219, 245);
     box-shadow: 0 0 0 4px rgba(71, 10, 104, 0.06);
 }
 
@@ -478,7 +478,7 @@
 .dropzone--dragover {
     border-style: solid;
     border-color: #5c1a7a;
-    background: rgba(71, 10, 104, 0.08);
+    background: rgb(236, 219, 245);
     box-shadow: 0 0 0 4px rgba(71, 10, 104, 0.12);
     transform: scale(1.005);
 }
@@ -653,4 +653,33 @@
 .student-list-area {
     width:100%;
     text-align: left;
+}
+
+/* ── Bouton publier ──────────────────────── */
+.btn-import {
+    display: block;
+    padding: 5px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #470a68, #5c1a7a);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 30px;
+    transition: all 0.25s;
+    letter-spacing: 0.3px;
+    
+}
+
+.btn-import:hover {
+    background: linear-gradient(135deg, #5c1a7a, #7b2fa0);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(71, 10, 104, 0.35);
+}
+
+.btn-import:disabled {
+    background: #c5d0db;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }

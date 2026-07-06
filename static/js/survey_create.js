@@ -21,6 +21,7 @@ const Parametrage = {
     schoolYear: [],
     selectedSchoolYear: '',
     ues: [],
+    students:[],
     nextId: 9000,
     isLoading: false,
     loadError: null,
@@ -49,7 +50,7 @@ const Parametrage = {
         this.selectedTemplateId = initialData.selectedTemplateId || null;
         this.semesterYear = initialData.semesterYear || '';
         this.schoolYears = initialData.schoolYears || [];
-        
+
         this.selectedSchoolYear = initialData.selectedSchoolYear || '';
         this.isProgramManager = initialData.isProgramManager || false;
         // Pour les RP-RM, afficher toutes les filières autorisées sans filtrage par campus
@@ -80,7 +81,7 @@ const Parametrage = {
                     <label>Semestre</label>
                     <select id="param-semestre" onchange="Parametrage.onSemestreChange(this.value)">
                         <option value="">-- Sélectionnez un semestre --</option>
-                        ${['Automne','Printemps'].map(s => `<option value="${s}" ${this.semesterYear === s ? 'selected' : ''}>${s}</option>`).join('')}
+                        ${['Automne', 'Printemps'].map(s => `<option value="${s}" ${this.semesterYear === s ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
                 </div>
                 <div class="pub-field">
@@ -121,15 +122,12 @@ const Parametrage = {
             <div id="param-ue-container"></div>
 
             <div class="dropzone-section" id="student-list">
-            <h3>📋 Liste des étudiant.e.s</h3>
+            <div style="width:50%; float:left;">
+            <h3>📋 Liste des étudiant.e.s </h3> 
             <p><i>Un mail par ligne</i></p>
-            <textarea class="student-list-area">mickey.mouse@epfedu.fr\nnaruto.uzumaki@epfedu.fr</textarea>
-            </div>
-
-            <div class="dropzone-section">
-                <h3>📋 Importer la liste des étudiants</h3>
-                
-                <div class="dropzone" id="dropzone-etudiants">
+            </div><div style="width:50%; float:left;">
+            <button class="btn-import" onclick="Parametrage.toggleDropZone()">Importer la liste depuis Excel (un mail par ligne)</button>
+            <div class="dropzone" id="dropzone-etudiants" style="display:none; float:right;">
                     <input type="file" id="dropzone-file-input" accept=".xlsx">
                     ${this.importedFile ? `
                         <span class="dropzone__icon">✅</span>
@@ -147,6 +145,14 @@ const Parametrage = {
                         </div>
                     `}
                 </div>
+            </div>
+            <textarea class="student-list-area" id="student-list-area">mickey.mouse@epfedu.fr\nnaruto.uzumaki@epfedu.fr</textarea>
+            </div>
+
+            <div class="dropzone-section">
+                
+                
+                
             </div>
 
             <button class="btn-publish" onclick="Parametrage.publish()" ${!this.selectedProgramId ? 'disabled' : ''}>Publier le sondage</button>
@@ -300,7 +306,7 @@ const Parametrage = {
         // Résoudre le nom de la filière sélectionnée
         const filiereNom = this.selectedProgramId
             ? (this.allPrograms.find(f => f.id === this.selectedProgramId) ||
-               this.programsList.find(f => f.id === this.selectedProgramId))?.name || ''
+                this.programsList.find(f => f.id === this.selectedProgramId))?.name || ''
             : '';
 
         // On ne peut lancer la requête que si les 3 valeurs sont renseignées
@@ -347,9 +353,9 @@ const Parametrage = {
 
                 // Enrichir la liste des profs avec ceux du sondage précédent
                 if (data.teachersList && data.teachersList.length > 0) {
-                    const existingIds = new Set(this.teachersList.map(p => `${(p.firstname||'').toLowerCase()}_${(p.name||'').toLowerCase()}`));
+                    const existingIds = new Set(this.teachersList.map(p => `${(p.firstname || '').toLowerCase()}_${(p.name || '').toLowerCase()}`));
                     for (const teacher of data.teachersList) {
-                        const key = `${(teacher.firstname||'').toLowerCase()}_${(teacher.name||'').toLowerCase()}`;
+                        const key = `${(teacher.firstname || '').toLowerCase()}_${(teacher.name || '').toLowerCase()}`;
                         if (!existingIds.has(key)) {
                             this.nextId++;
                             teacher.id = this.nextId;
@@ -676,14 +682,74 @@ const Parametrage = {
             return;
         }
         //TODO XLSX.read()
-        this.importedFile = file;
+
+        /* From https://stackoverflow.com/questions/16215771/how-to-open-select-file-dialog-via-js */
+
+        // setting up the reader
+        var reader = new FileReader();
+
+
+        // here we tell the reader what to do when it's done reading...
+        reader.onload = readerEvent => {
+            var content = readerEvent.target.result; // this is the content!
+
+            /*
+            * From https://stackoverflow.com/questions/28782074/excel-to-json-javascript-code
+            * and https://cdn.sheetjs.com/
+            */
+
+            try {
+
+
+
+                workbook = XLSX.read(content, { type: 'binary', cellStyles: true });
+                console.log(workbook);
+                list = document.getElementById('student-list-area');
+                list_txt=""
+                workbook.Strings.forEach((mail)=>
+                    {
+                        if (mail.t.includes("@")) {
+                            if (list_txt != "") {
+                                list_txt += ('\n');
+                            }
+                            list_txt += (mail.t);
+                        }
+                    })
+                list.value = list_txt;
+                list.style.height = "auto";
+                list.style.height = list.scrollHeight+'px';
+                
+            } catch (error) {
+                console.log("error", error);
+            }
+        }
+        reader.readAsArrayBuffer(file); // Actually read the file
+
+
+
+
+
+
+
+
+
+        //this.importedFile = file;
         this.render();
-        this.showNotification(`Fichier "${file.name}" prêt pour l'import.`, 'info');
+        this.showNotification(`Fichier "${file.name}" a été chargé.`, 'info');
     },
 
     removeFile() {
         this.importedFile = null;
         this.render();
+    },
+
+    toggleDropZone() {
+        dropzone = document.getElementById('dropzone-etudiants');
+        if(dropzone.style.display=='none') {
+            dropzone.style.display='block';
+        } else {
+            dropzone.style.display='none';
+        }
     },
 
     // ─── Notification (banner en bas de l'écran) ─────────
@@ -714,6 +780,26 @@ const Parametrage = {
         }, 6000);
     },
 
+    validateEmail(email) {
+        const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        const allowedDomains = ["epf.fr", "epfedu.fr"];
+
+        // First, check if the email format is valid according to the regex
+        if (!regex.test(email)) {
+            return "Email '"+email+"' invalide";
+        }
+
+        // Extract the domain part (everything after the '@')
+        const domain = email.split('@')[1];
+
+        // Check if the extracted domain is in our allowed list
+        if (allowedDomains.includes(domain)) {
+            return "Valide"
+        } else {
+            return "Domaine du mail '"+email+"' invalide ("+allowedDomains+")"
+        }
+    },
+
     // ─── Publication (atomique : sondage + import en une seule requête) ──
     async publish() {
         if (!this.selectedTemplateId) {
@@ -724,10 +810,36 @@ const Parametrage = {
         if (!this.semesterYear || !this.semesterYear.trim()) return alert("Veuillez sélectionner un semestre.");
         if (!this.selectedSchoolYear || !this.selectedSchoolYear.trim()) return alert("Veuillez sélectionner une année scolaire.");
         if (this.ues.length === 0) return alert('Le sondage doit contenir au moins une UE.');
-        if (!this.importedFile) return alert('Veuillez importer la liste des étudiants (fichier .xlsx) avant de publier.');
+
+        this.students = document.getElementById('student-list-area').value.split(/\s+/);
+
+        student_count=0;
+        invalid_emails=[];
+        this.students.forEach(student=> {
+            if (student.length > 1) { // If not empty line
+                rep = this.validateEmail(student);
+                if (rep != "Valide") {
+                    invalid_emails.push(rep);
+                } else { // Valide 
+                    student_count=student_count+1;
+                }
+            }
+
+        })
+
+        if (invalid_emails.length > 0) {
+            return alert('Certains email sont invalides : '+invalid_emails);
+        }
+
+        if (student_count < 1 ) return alert('Le sondage doit contenir au moins un mail étudiant.');
+
+        
+        
+        
 
         const campusNom = this.campusList.find(c => c.id === this.selectedCampusId)?.name || '';
         const filiereNom = this.programsList.find(f => f.id === this.selectedProgramId)?.name || '';
+
 
         // Préparer les données du sondage en JSON
         const surveyData = {
@@ -750,7 +862,8 @@ const Parametrage = {
                         name: teacher.name
                     }))
                 }))
-            }))
+            })),
+            students: this.students 
         };
 
         // Désactiver le bouton pendant le traitement
@@ -760,17 +873,12 @@ const Parametrage = {
             btn.textContent = 'Publication en cours...';
         }
 
-        // Construire le FormData avec le JSON + fichier optionnel
-        const formData = new FormData();
-        formData.append('survey_data', JSON.stringify(surveyData));
-        if (this.importedFile) {
-            formData.append('file', this.importedFile);
-        }
-
         try {
             const response = await fetch('/api/surveys', {
                 method: 'POST',
-                body: formData,
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(surveyData),
             });
 
             const result = await response.json();
