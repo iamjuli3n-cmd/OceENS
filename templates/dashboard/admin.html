@@ -18,6 +18,7 @@
       --border-accent: #b3d4ff;
       --border: #eee;
     }
+
     .questionnaires-header {
       display: flex;
       align-items: center;
@@ -70,6 +71,39 @@
       align-items: center;
       justify-content: center;
       text-decoration: none;
+    }
+
+    .status-toggle-form {
+      display: flex;
+    }
+
+    .survey-toggle {
+      min-width: 92px;
+      height: 28px;
+      border: none;
+      border-radius: 999px;
+      padding: 0 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .survey-toggle.open {
+      background: #2e7d32;
+    }
+
+    .survey-toggle.closed {
+      background: #c62828;
+    }
+
+    .survey-toggle svg {
+      width: 13px;
+      height: 13px;
     }
 
     /* Tabs */
@@ -225,17 +259,35 @@
                 </div>
               </div>
             </div>
-
+            <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
+              {% if survey['status'] == 0 %}
+              <input type="hidden" name="status" value="1">
+              <button type="submit" class="survey-toggle closed" title="Ouvrir le sondage">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                  <path d="M8 11V7a4 4 0 0 1 7.5-2"></path>
+                </svg>
+                Fermé
+              </button>
+              {% else %}
+              <input type="hidden" name="status" value="0">
+              <button type="submit" class="survey-toggle open" title="Fermer le sondage">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+                </svg>
+                Ouvert
+              </button>
+              {% endif %}
+            </form>
             <div class="row-actions">
-              <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon"
-                title="Visualisation"
+              <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
                 onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
                 <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
               </a>
-              <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon"
-                title="Export CSV"
+              <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon" title="Export CSV"
                 onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
                 <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>

@@ -1000,6 +1000,58 @@ def create_app():
             # "user_id": db_user.user_id,
         }
 
+    @api_router.post("/surveys/{survey_id}/status")
+    def update_survey_status(
+        survey_id: int,
+        request: Request,
+        session: SessionDep,
+        status: int = Form(...),
+    ):
+        user = require_roles(request, ["admin", "program_manager"])
+        if user is None:
+            return JSONResponse(
+                content={"error": "Accès refusé."},
+                status_code=403,
+            )
+
+        if status not in (0, 1):
+            return JSONResponse(
+                content={"error": "Statut invalide."},
+                status_code=400,
+            )
+
+        survey = session.exec(
+            select(Survey).where(Survey.survey_id == survey_id)
+        ).first()
+
+        if not survey:
+            return JSONResponse(
+                content={"error": "Sondage introuvable."},
+                status_code=404,
+            )
+
+        role = user.get("role", "") or ""
+        allowed_programs = parse_rprm_formations(role)
+
+        if (
+            not role.startswith("admin")
+            and allowed_programs
+            and survey.program not in allowed_programs
+        ):
+            return JSONResponse(
+                content={"error": "Formation non autorisée pour votre rôle."},
+                status_code=403,
+            )
+
+        survey.status = status
+        session.add(survey)
+        session.commit()
+
+        return RedirectResponse(
+            url=request.headers.get("referer", "/dashboard/admin"),
+            status_code=303,
+        )
+
     # └────────────────────────────────────────────────────────────────┘
 
     # ┌─ Route : Dashboards par rôle ────────────────────────────────────┐
@@ -1074,6 +1126,7 @@ def create_app():
                         "program": s.program,
                         "semester": s.semester,
                         "school_year": s.school_year,
+                        "status": s.status,
                         "respondents_count": respondents_count,
                         "answers_count": answers_count,
                     }
