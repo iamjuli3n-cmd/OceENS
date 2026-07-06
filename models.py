@@ -213,14 +213,8 @@ class Answer(SQLModel, table=True):
 class Respondent(SQLModel, table=True):
     __tablename__ = "respondents"
 
-    # Composite Primary Key (template_id,survey_id,user_id)
+    # Composite Primary Key (survey_id,user_id)
 
-    template_id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            "template_id", Integer, ForeignKey("surveys.template_id"), primary_key=True
-        ),
-    )
     survey_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
@@ -233,7 +227,9 @@ class Respondent(SQLModel, table=True):
             "user_id", Integer, ForeignKey("users.user_id"), primary_key=True
         ),
     )
+    
+    # If submission_date is NULL --> Not yet answered
     submission_date: Optional[str] = Field(
         default=None, sa_column=Column("submission_date", String)
     )
-    has_answered: Optional[bool] = Field(default=False, sa_column=Column("has_answered", Integer))
+
