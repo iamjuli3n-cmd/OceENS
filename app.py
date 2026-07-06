@@ -82,7 +82,9 @@ def parse_rprm_formations(role: str) -> list[str]:
     if not role or not isinstance(role, str):
         return []
     role_upper = role.strip()
-    if not (role_upper.startswith("program_manager:") or role_upper.startswith("admin:")):
+    if not (
+        role_upper.startswith("program_manager:") or role_upper.startswith("admin:")
+    ):
         return []
     after_colon = role_upper.split(":", 1)[1]
     return [f.strip() for f in after_colon.split(";") if f.strip()]
@@ -799,14 +801,19 @@ def create_app():
 
                         user_ids = list(email_to_user_id.values())
                         if user_ids:
-                            # Nettoyage préalable (DELETE) : Supprime toutes les lignes de la table Respondent
-                            # où la value user_id correspond à un des élèves présents
-                            stmt = delete(Respondent).where(
-                                Respondent.user_id.in_(user_ids)
-                            )
-                            res = session.exec(stmt)
-                            print(
-                                f"[SONDAGE+IMPORT] Nettoyage préalable : {res.rowcount} anciennes lignes supprimées de Respondent."
+                            # On ne supprime PAS les anciennes affectations.
+                            # Un étudiant peut être affecté à plusieurs sondages sur plusieurs années.
+                            # On vérifie seulement si l'affectation existe déjà pour CE sondage.
+                            existing_respondent_user_ids = session.exec(
+                                select(Respondent.user_id).where(
+                                    Respondent.template_id == survey.template_id,
+                                    Respondent.survey_id == next_survey_id,
+                                    Respondent.user_id.in_(user_ids),
+                                )
+                            ).all()
+
+                            existing_respondent_user_ids = set(
+                                existing_respondent_user_ids
                             )
 
                             # Insertion (INSERT) : Uniquement après le nettoyage
@@ -815,13 +822,14 @@ def create_app():
                                     template_id=survey.template_id,
                                     survey_id=next_survey_id,
                                     user_id=user_id,
+                                    has_answered=False,
                                     submission_date=None,
                                 )
                                 session.add(new_repondre)
                                 nb_repondre_inseres += 1
 
                         print(
-                            f"[SONDAGE+IMPORT] Respondent : {nb_repondre_inseres} inséré(s) (et nettoyés des conflits)"
+                            f"[SONDAGE+IMPORT] Respondent : {nb_repondre_inseres} affectation(s) ajoutée(s)."
                         )
 
             # Si on arrive ici, le COMMIT a été fait par le context manager
@@ -1020,7 +1028,9 @@ def create_app():
             )
 
         # 5. Vérifier que l'élève n'a pas déjà soumis ses réponses
-        if respondent.submission_date != None: # submission_date NOT NULL = has_answered
+        if (
+            respondent.submission_date != None
+        ):  # submission_date NOT NULL = has_answered
             return JSONResponse(
                 content={"error": "Vous avez déjà soumis vos réponses pour ce survey."},
                 status_code=409,
@@ -1134,7 +1144,8 @@ def create_app():
                     session.exec(
                         select(func.count(Respondent.user_id)).where(
                             Respondent.survey_id == s.survey_id,
-                            Respondent.submission_date != None, # submission_date NOT NULL = has_answered
+                            Respondent.submission_date
+                            != None,  # submission_date NOT NULL = has_answered
                         )
                     ).first()
                     or 0
@@ -1219,7 +1230,9 @@ def create_app():
         return {
             "survey": {
                 "survey_id": entry.survey_id,
-                "has_answered": bool(entry.submission_date != None), # submission_date NOT NULL = has_answered
+                "has_answered": bool(
+                    entry.submission_date != None
+                ),  # submission_date NOT NULL = has_answered
                 "url": f"/api/surveys/{entry.survey_id}",
                 "program": survey.program if survey else None,
                 "semester": survey.semester if survey else None,
@@ -1322,7 +1335,8 @@ def create_app():
             session.exec(
                 select(func.count(Respondent.user_id)).where(
                     Respondent.survey_id == survey_id,
-                    Respondent.submission_date != None, # submission_date NOT NULL = has_answered
+                    Respondent.submission_date
+                    != None,  # submission_date NOT NULL = has_answered
                 )
             ).first()
             or 0
