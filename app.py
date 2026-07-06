@@ -152,6 +152,7 @@ class SurveyFullCreate(BaseModel):
     semester: str
     school_year: str
     ues: List[UECreate]
+    students: List[str]
 
 
 class AnswerItem(BaseModel):
@@ -528,7 +529,6 @@ def create_app():
         modules = session.exec(
             select(Module).where(
                 Module.survey_id == previous_survey.survey_id,
-                Module.template_id == previous_survey.template_id,
             )
         ).all()
 
@@ -602,8 +602,7 @@ def create_app():
     async def create_survey(
         request: Request,
         session: SessionDep,
-        survey_data: str = Form(...),
-        file: Optional[UploadFile] = File(None),
+        survey: SurveyFullCreate,
     ):
         """
         Crée un survey ET importe les étudiants en une seule transaction.
@@ -617,16 +616,6 @@ def create_app():
                 status_code=403,
             )
 
-        # ── Parse le JSON du survey envoyé en FormData ──
-        try:
-            survey_dict = json.loads(survey_data)
-            survey = SurveyFullCreate(**survey_dict)
-        except Exception as e:
-            return JSONResponse(
-                content={"error": f"Données du survey invalides : {str(e)}"},
-                status_code=400,
-            )
-
         # ── Sécurité : vérifier que la program est autorisée pour le RP-RM ──
         role = user.get("role", "")
         if ":" in role:  # RM-RP or Admin with formations
@@ -637,82 +626,6 @@ def create_app():
                         "error": f"Formation '{survey.program}' non autorisée pour votre rôle."
                     },
                     status_code=403,
-                )
-
-        # ── Pré-lecture du fichier Excel (avant la transaction) ──
-        emails = []
-        has_file = (
-            file is not None
-            and file.filename
-            and file.filename.lower().endswith(".xlsx")
-        )
-
-        if file is not None and file.filename:
-            if not file.filename.lower().endswith(".xlsx"):
-                return JSONResponse(
-                    content={
-                        "error": "Format invalide. Seuls les fichiers .xlsx sont acceptés."
-                    },
-                    status_code=400,
-                )
-
-        if has_file:
-            try:
-                from openpyxl import load_workbook
-
-                contents = await file.read()
-                print(
-                    f"[SONDAGE+IMPORT] Fichier reçu : {file.filename} ({len(contents)} octets)"
-                )
-
-                if len(contents) == 0:
-                    return JSONResponse(
-                        content={"error": "Le fichier Excel est vide."},
-                        status_code=400,
-                    )
-
-                wb = load_workbook(filename=io.BytesIO(contents), read_only=True)
-                ws = wb.active
-                print(f"[SONDAGE+IMPORT] Feuille active : {ws.title}")
-
-                row_count = 0
-                for row in ws.iter_rows(min_col=1, max_col=1, values_only=True):
-                    row_count += 1
-                    cell_value = row[0]
-                    if cell_value is None:
-                        continue
-                    cell_str = str(cell_value).strip()
-                    if cell_str and "@" in cell_str:
-                        emails.append(cell_str.lower())
-                    elif cell_str and row_count <= 3:
-                        print(
-                            f"[SONDAGE+IMPORT] Ligne {row_count} ignorée (pas d'email) : '{cell_str}'"
-                        )
-
-                wb.close()
-                print(
-                    f"[SONDAGE+IMPORT] {row_count} ligne(s) lues, {len(emails)} email(s) valide(s)"
-                )
-
-                if not emails:
-                    return JSONResponse(
-                        content={
-                            "error": f"Aucun email valide trouvé dans le fichier ({row_count} ligne(s) lue(s)). Vérifiez que les emails sont dans la première colonne."
-                        },
-                        status_code=400,
-                    )
-
-                # Dédupliquer
-                emails = list(dict.fromkeys(emails))
-                print(f"[SONDAGE+IMPORT] {len(emails)} email(s) unique(s) à traiter")
-
-            except Exception as e:
-                print(
-                    f"[SONDAGE+IMPORT] Erreur lecture Excel : {type(e).__name__}: {e}"
-                )
-                return JSONResponse(
-                    content={"error": f"Erreur de lecture du fichier Excel : {str(e)}"},
-                    status_code=400,
                 )
 
         # ── Transaction unique : Survey + Modules + Users + Respondent ──
@@ -766,7 +679,7 @@ def create_app():
                             session.add(new_module)
 
                     # ── Étape 3 : Importer les étudiants (si fichier fourni) ──
-                    if emails:
+                    if survey.students:
                         email_to_user_id: Dict[str, int] = {}
 
                         existing_users = session.exec(select(User)).all()
@@ -779,7 +692,7 @@ def create_app():
 
                         max_id = max([u.user_id for u in existing_users] + [0])
 
-                        for email in emails:
+                        for email in survey.students:
                             if email in existing_email_map:
                                 email_to_user_id[email] = existing_email_map[email]
                                 nb_existants += 1
@@ -851,10 +764,10 @@ def create_app():
             "survey_id": next_survey_id,
             "survey_url": f"/api/surveys/{next_survey_id}",
         }
-        if emails:
+        if survey.students:
             result.update(
                 {
-                    "nb_emails_lus": len(emails),
+                    "nb_emails_lus": len(survey.students),
                     "nb_users_crees": nb_crees,
                     "nb_users_existants": nb_existants,
                     "nb_repondre_inseres": nb_repondre_inseres,
