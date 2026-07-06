@@ -1078,7 +1078,7 @@ def create_app():
                         "answers_count": answers_count,
                     }
                 )
-            context["surveys"] = surveys_list
+            context["surveys"] = surveys_list[::-1]
 
         return templates.TemplateResponse(
             request=request,

@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         list.innerHTML = '';
 
-        surveys.forEach((survey) => {
+        surveys.slice().reverse().forEach((survey) => {
             list.appendChild(createSurveyRow(survey));
         });
 
