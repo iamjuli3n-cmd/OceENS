@@ -527,7 +527,6 @@ def create_app():
         modules = session.exec(
             select(Module).where(
                 Module.survey_id == previous_survey.survey_id,
-                Module.template_id == previous_survey.template_id,
             )
         ).all()
 
