@@ -27,13 +27,18 @@ document.addEventListener('DOMContentLoaded', async function () {
         const action = document.createElement('div');
         action.className = 'student-survey-action';
 
-        if (survey.has_answered) {
+        console.log('Survey:', survey);
+
+        const hasAnswered = survey.has_answered === true;
+        const isClosed = survey.is_closed === true;
+
+        if (hasAnswered) {
             const btn = document.createElement('button');
             btn.className = 'student-survey-btn done';
             btn.disabled = true;
             btn.textContent = 'Questionnaire déjà complété';
             action.appendChild(btn);
-        } else if (survey.is_closed) {
+        } else if (isClosed) {
             const btn = document.createElement('button');
             btn.className = 'student-survey-btn closed';
             btn.disabled = true;

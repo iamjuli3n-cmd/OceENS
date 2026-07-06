@@ -375,9 +375,10 @@ main {
 }
 
 .student-survey-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 250px;
     align-items: center;
-    gap: 24px;
+    column-gap: 24px;
     padding: 14px 0;
 }
 
@@ -399,20 +400,25 @@ main {
 }
 
 .student-survey-action {
-    min-width: 250px;
+    width: 250px;
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
 .student-survey-btn {
-    display: inline-block;
+    width: 250px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: none;
     border-radius: 999px;
-    padding: 14px 34px;
-    min-width: 250px;
+    padding: 12px 24px;
     font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 15px;
     font-weight: 700;
+    line-height: 1.2;
     text-align: center;
     text-decoration: none;
     cursor: pointer;
@@ -420,18 +426,18 @@ main {
 }
 
 .student-survey-btn.answer {
-    background: #2e7d32;
+    background: #df231d;
     color: white;
 }
 
 .student-survey-btn.done {
-    background: #9ca3af;
+    background: #2e7d32;
     color: white;
     cursor: default;
 }
 
 .student-survey-btn.closed {
-    background: #9ca3af;
+    background: rgb(141, 141, 141);
     color: white;
     cursor: default;
 }

@@ -806,7 +806,7 @@ def create_app():
                             # On vérifie seulement si l'affectation existe déjà pour CE sondage.
                             existing_respondent_user_ids = session.exec(
                                 select(Respondent.user_id).where(
-                                    Respondent.template_id == survey.template_id,
+                                    # Respondent.template_id == survey.template_id,
                                     Respondent.survey_id == next_survey_id,
                                     Respondent.user_id.in_(user_ids),
                                 )
@@ -824,7 +824,6 @@ def create_app():
                                     template_id=survey.template_id,
                                     survey_id=next_survey_id,
                                     user_id=user_id,
-                                    has_answered=False,
                                     submission_date=None,
                                 )
                                 session.add(new_repondre)
