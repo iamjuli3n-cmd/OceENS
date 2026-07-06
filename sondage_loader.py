@@ -54,6 +54,7 @@ class OptionData:
 class AnswerData:
     answer_id: int
     value: str
+    submission_id: int | None = None
     module_id: int | None = None
     ue: str = ""
     module: str = ""
@@ -114,6 +115,7 @@ class FullSurvey:
                             "program": self.program,
                             "semester": self.semester,
                             "school_year": self.school_year,
+                            "submission_id": answer.submission_id,
                             "ue": answer.ue,
                             "module": answer.module,
                             "teacher": answer.teacher,
@@ -134,9 +136,7 @@ class FullSurvey:
 # -----------------------------------------------------------------------------
 
 
-def load_sondage_complet(
-    db_path: str, survey_id: int
-) -> FullSurvey:
+def load_sondage_complet(db_path: str, survey_id: int) -> FullSurvey:
     """
     Se connecte à la base SQLite, extrait les données du survey cible,
     nettoie les chaînes de caractères et structure le tout sous forme d'objet.
@@ -160,9 +160,7 @@ def load_sondage_complet(
     survey_row = cursor.fetchone()
     if not survey_row:
         conn.close()
-        raise ValueError(
-            f"Sondage introuvable ( Sondage: {survey_id})"
-        )
+        raise ValueError(f"Sondage introuvable ( Sondage: {survey_id})")
 
     survey = FullSurvey(
         template_id=survey_row["template_id"],
@@ -176,7 +174,7 @@ def load_sondage_complet(
     # --- B. Récupération des Modules ---
     cursor.execute(
         "SELECT * FROM Modules WHERE survey_id = ?",
-        ( survey_id,),
+        (survey_id,),
     )
     for row in cursor.fetchall():
         survey.modules.append(
@@ -191,7 +189,8 @@ def load_sondage_complet(
 
     # --- C. Récupération des Sections ---
     cursor.execute(
-        "SELECT * FROM Sections WHERE template_id = ? ORDER BY 'order'", (survey.template_id,)
+        "SELECT * FROM Sections WHERE template_id = ? ORDER BY 'order'",
+        (survey.template_id,),
     )
     sections_dict = {}
     for row in cursor.fetchall():
@@ -204,7 +203,9 @@ def load_sondage_complet(
         survey.sections.append(sec)
 
     # --- D. Récupération des Questions ---
-    cursor.execute("SELECT * FROM questions WHERE template_id = ?", (survey.template_id,))
+    cursor.execute(
+        "SELECT * FROM questions WHERE template_id = ?", (survey.template_id,)
+    )
     questions_dict = {}
     for row in cursor.fetchall():
         q = QuestionData(
@@ -228,28 +229,44 @@ def load_sondage_complet(
         if q_key in questions_dict:
             questions_dict[q_key].options.append(opt)
 
-    # --- F. Récupération des Réponses soumises ---
+    # --- F. Récupération des Réponses soumises avec contexte module / UE ---
 
     cursor.execute(
-        "SELECT * FROM Answers WHERE survey_id = ?",
+        """
+        SELECT
+            a.answer_id,
+            a.value,
+            a.submission_id,
+            a.section_id,
+            a.question_id,
+            a.module_id,
+            a.teacher AS answer_teacher,
+
+            m.name AS module_name,
+            m.ue AS module_ue,
+            m.teacher AS module_teacher
+        FROM Answers a
+        LEFT JOIN Modules m
+            ON m.module_id = a.module_id
+            AND m.survey_id = a.survey_id
+        WHERE a.survey_id = ?
+        """,
         (survey_id,),
     )
 
     for row in cursor.fetchall():
         module_id = row["module_id"]
-        module = modules_by_id.get(module_id)
 
-        #teacher_answer = row["teacher"]
-        teacher_answer = row["teacher"] if "teacher" in row.keys() else ""
-
-        module_teacher = module.teacher if module else ""
+        teacher_answer = row["answer_teacher"] if "answer_teacher" in row.keys() else ""
+        module_teacher = row["module_teacher"] if "module_teacher" in row.keys() else ""
 
         rep = AnswerData(
             answer_id=row["answer_id"],
             value=clean_mojibake(row["value"]),
+            submission_id=row["submission_id"] if "submission_id" in row.keys() else None,
             module_id=module_id,
-            ue=clean_mojibake(module.ue) if module else "",
-            module=clean_mojibake(module.nom) if module else "",
+            ue=clean_mojibake(row["module_ue"]),
+            module=clean_mojibake(row["module_name"]),
             teacher=clean_mojibake(teacher_answer or module_teacher),
         )
 
