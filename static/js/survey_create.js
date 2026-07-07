@@ -805,7 +805,6 @@ const Parametrage = {
         if (!this.selectedTemplateId) {
             this.selectedTemplateId = this.templatesList[0]?.id;
         }
-        if (!this.selectedCampusId) return alert('Veuillez sélectionner un Campus.');
         if (!this.selectedProgramId) return alert('Veuillez sélectionner une Filière.');
         if (!this.semesterYear || !this.semesterYear.trim()) return alert("Veuillez sélectionner un semestre.");
         if (!this.selectedSchoolYear || !this.selectedSchoolYear.trim()) return alert("Veuillez sélectionner une année scolaire.");
@@ -837,8 +836,12 @@ const Parametrage = {
 
 
 
-        const campusNom = this.campusList.find(c => c.id === this.selectedCampusId)?.name || '';
-        const programCode = this.selectedProgramId || '';
+        const selectedProgram =
+            this.allPrograms.find(f => f.id === this.selectedProgramId) ||
+            this.programsList.find(f => f.id === this.selectedProgramId);
+
+        const programCode = selectedProgram?.code || this.selectedProgramId || '';
+        const campusNom = selectedProgram?.campus || '';
 
 
         // Préparer les données du sondage en JSON
