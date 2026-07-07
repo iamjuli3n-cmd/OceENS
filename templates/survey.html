@@ -47,13 +47,13 @@
     </header>
 
     <main>
-        {% if survey_is_closed %}
-        <div class="survey-status-banner closed">
-            Sondage fermé
-        </div>
-        {% elif user_has_answered %}
+        {% if user_has_answered %}
         <div class="survey-status-banner answered">
             Déjà répondu
+        </div>
+        {% elif survey_is_closed %}
+        <div class="survey-status-banner closed">
+            Sondage fermé
         </div>
         {% endif %}
         <!-- En-tête du sondage -->
