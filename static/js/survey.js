@@ -33,7 +33,7 @@ const Questionnaire = {
 
         const btnText = btn.querySelector('.btn-submit-text');
         if (btnText) {
-            btnText.textContent = isClosed ? 'Sondage fermé' : 'Déjà répondu';
+            btnText.textContent = hasAnswered ? 'Déjà répondu' : 'Sondage fermé' ;
         }
 
         const btnIcon = btn.querySelector('.btn-submit-icon');
