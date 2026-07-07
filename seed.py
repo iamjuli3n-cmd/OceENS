@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from models import (
+    Program,
     User,
     Template,
     Section,
@@ -17,7 +18,7 @@ def seed_users(db: Session):
     """Remplit la table users."""
 
     user_data = [
-        (1, "antoine.gademer@epf.fr", "admin:Majeure Test"),
+        (1, "antoine.gademer@epf.fr", "admin:Majeure MMDE"),
         (2, "bob.leponge@epfedu.fr", "student"),
         (3, "peter.parker@epfedu.fr", "student"),
         (4, "mickey.mouse@epfedu.fr", "student"),
@@ -384,13 +385,34 @@ def seed_options(db: Session):
     db.commit()
 
 
+def seed_programs(db: Session):
+    """Remplit la table programs."""
+
+    programs_data = [
+        ("MMDE", "Majeure Data and AI", "Montpellier"),
+        ("MFGE2", "FGE2", "Montpellier"),
+        ("CFGE2", "FGE2", "Cachan"),
+        ("MFGE1", "FGE1", "Montpellier"),
+    ]
+
+    for code, name, campus in programs_data:
+        program = Program(
+            code=code,
+            name=name,
+            campus=campus,
+        )
+        db.merge(program)
+
+    db.commit()
+
+
 def seed_surveys(db: Session):
     """Remplit la table surveys."""
     survey_data = {
         "template_id": 1,
         "survey_id": 1,
         "campus": "Montpellier",
-        "program": "Majeure Test",
+        "program": "MMDE",
         "semester": "Automne",
         "status": 1,
         "school_year": "2026-2027",
@@ -4569,6 +4591,7 @@ def seed_all_if_necessary():
     seed_sections(db)
     seed_questions(db)
     seed_options(db)
+    seed_programs(db)
     seed_surveys(db)
     seed_modules(db)
     seed_respondents(db)

@@ -38,6 +38,7 @@ from models import (
     Option,
     User,
     Submission,
+    Program,
 )
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
@@ -193,30 +194,25 @@ def build_parametrage_data(
     surveys = session.exec(select(Survey)).all()
     modules = session.exec(select(Module)).all()
     users = session.exec(select(User)).all()
+    programs_db = session.exec(select(Program)).all()
 
+    # ── Campus / semestres / années ─────────────────────
     campus_names = []
-    program_names = []
     semesters = []
     school_years = []
-    formation_to_campus: Dict[str, str] = {}
+
+    for program in programs_db:
+        if program.campus and program.campus not in campus_names:
+            campus_names.append(program.campus)
+
+    # Sécurité pendant la migration : on garde aussi les campus présents dans surveys
     for survey in surveys:
         if survey.campus and survey.campus not in campus_names:
             campus_names.append(survey.campus)
-        if survey.program and survey.program not in program_names:
-            program_names.append(survey.program)
-            formation_to_campus[survey.program] = survey.campus or ""
         if survey.semester and survey.semester not in semesters:
             semesters.append(survey.semester)
         if survey.school_year and survey.school_year not in school_years:
             school_years.append(survey.school_year)
-
-    # Filtrer les filières si l'utilisateur RP-RM n'a accès qu'à certaines formations
-    if allowed_programs is not None:
-        program_names = [f for f in program_names if f in allowed_programs]
-        # Ajouter les formations autorisées absentes des surveys existants
-        for ap in allowed_programs:
-            if ap not in program_names:
-                program_names.append(ap)
 
     default_campuses = ["Paris-Cachan", "Montpellier", "Troyes", "St-Nazaire"]
     for dc in default_campuses:
@@ -226,32 +222,54 @@ def build_parametrage_data(
     campus_list = [
         {"id": index + 1, "name": campus} for index, campus in enumerate(campus_names)
     ]
+
     campus_index = {campus["name"]: campus["id"] for campus in campus_list}
-    programs = []
-    for index, program in enumerate(program_names):
-        programs.append(
+
+    # ── Programmes depuis la nouvelle table programs ─────
+    allowed_program_codes = (
+        set(allowed_programs) if allowed_programs is not None else None
+    )
+
+    program_options = []
+    for program in programs_db:
+        if (
+            allowed_program_codes is not None
+            and program.code not in allowed_program_codes
+        ):
+            continue
+
+        label = f"{program.name} ({program.campus})"
+
+        program_options.append(
             {
-                "id": index + 1,
-                "name": program,
-                "campus_id": campus_index.get(
-                    formation_to_campus.get(program, ""), None
-                ),
+                "id": program.code,  # valeur sauvegardée côté survey
+                "code": program.code,  # code métier
+                "name": label,  # affichage dropdown
+                "label": label,
+                "title": program.name,  # intitulé seul
+                "campus": program.campus,
+                "campus_id": campus_index.get(program.campus),
             }
         )
 
+    # ── Enseignants ──────────────────────────────────────
     teachers = []
     teacher_index = 1
     teachers_seen = {}
+
     for module in modules:
         if not module.teacher:
             continue
+
         teachers_list_as_string = [
             p.strip() for p in module.teacher.split(",") if p.strip()
         ]
+
         for teacher_as_string in teachers_list_as_string:
             teacher = parse_name(teacher_as_string, teacher_index)
             if not teacher["firstname"] and not teacher["name"]:
                 continue
+
             key = (teacher["firstname"].lower(), teacher["name"].lower())
             if key not in teachers_seen:
                 teachers_seen[key] = teacher_index
@@ -266,6 +284,7 @@ def build_parametrage_data(
             )
             parsed["name"] = parsed["name"] or ""
             parsed["firstname"] = parsed["firstname"] or ""
+
             key = (parsed["firstname"].lower(), parsed["name"].lower())
             if key and key not in teachers_seen:
                 teachers_seen[key] = teacher_index
@@ -273,39 +292,68 @@ def build_parametrage_data(
                 teachers.append(parsed)
                 teacher_index += 1
 
+    # ── UE / modules par programme ───────────────────────
     ues_by_program = {}
-    if modules and programs:
-        default_program_id = programs[0]["id"]
+
+    survey_program_by_id = {
+        survey.survey_id: survey.program
+        for survey in surveys
+        if survey.survey_id is not None and survey.program
+    }
+
+    visible_program_codes = {program["id"] for program in program_options}
+    default_program_code = program_options[0]["id"] if program_options else None
+
+    if modules and default_program_code:
         for module in modules:
-            program_id = default_program_id
-            ue_name = module.ue or "Sans UE"
-            ues_by_program.setdefault(program_id, [])
-            ue_entry = next(
-                (ue for ue in ues_by_program[program_id] if ue["name"] == ue_name), None
+            program_code = survey_program_by_id.get(
+                module.survey_id, default_program_code
             )
+
+            if program_code not in visible_program_codes:
+                continue
+
+            ue_name = module.ue or "Sans UE"
+
+            ues_by_program.setdefault(program_code, [])
+
+            ue_entry = next(
+                (ue for ue in ues_by_program[program_code] if ue["name"] == ue_name),
+                None,
+            )
+
             if ue_entry is None:
                 ue_entry = {
-                    "id": len(ues_by_program[program_id]) + 1,
+                    "id": len(ues_by_program[program_code]) + 1,
                     "name": ue_name,
                     "is_optional": module.is_optional or False,
                     "_open": True,
                     "modules": [],
                 }
-                ues_by_program[program_id].append(ue_entry)
+                ues_by_program[program_code].append(ue_entry)
+
             teachers_list = []
+
             if module.teacher:
                 teachers_list_as_string = [
                     p.strip() for p in module.teacher.split(",") if p.strip()
                 ]
+
                 for teacher_as_string in teachers_list_as_string:
                     parsed = parse_name(teacher_as_string, 0)
+
                     if parsed["firstname"] or parsed["name"]:
-                        key = (parsed["firstname"].lower(), parsed["name"].lower())
+                        key = (
+                            parsed["firstname"].lower(),
+                            parsed["name"].lower(),
+                        )
+
                         if key not in teachers_seen:
                             teachers_seen[key] = teacher_index
                             parsed["id"] = teacher_index
                             teachers.append(parsed)
                             teacher_index += 1
+
                         teachers_list.append(
                             {
                                 "id": teachers_seen[key],
@@ -313,6 +361,7 @@ def build_parametrage_data(
                                 "name": parsed["name"],
                             }
                         )
+
             ue_entry["modules"].append(
                 {
                     "id": int(module.module_id or 0),
@@ -327,7 +376,7 @@ def build_parametrage_data(
     return {
         "templates": template_dicts,
         "campus_list": campus_list,
-        "programs": programs,
+        "programs": program_options,
         "semesters": semesters,
         "school_years": school_years,
         "teachers_list": teachers,
@@ -336,7 +385,7 @@ def build_parametrage_data(
         if template_dicts
         else None,
         "selected_campus_id": campus_list[0]["id"] if campus_list else None,
-        "selected_program_id": programs[0]["id"] if programs else None,
+        "selected_program_id": program_options[0]["id"] if program_options else None,
         "semester_year": semesters[0] if semesters else "",
         "selected_school_year": school_years[0] if school_years else "",
         "questions": [
@@ -616,6 +665,16 @@ def create_app():
                 status_code=403,
             )
 
+        program = session.exec(
+            select(Program).where(Program.code == survey.program)
+        ).first()
+
+        if not program:
+            return JSONResponse(
+                content={"error": f"Programme '{survey.program}' introuvable."},
+                status_code=400,
+            )
+
         # ── Sécurité : vérifier que la program est autorisée pour le RP-RM ──
         role = user.get("role", "")
         if ":" in role:  # RM-RP or Admin with formations
@@ -634,7 +693,7 @@ def create_app():
         nb_repondre_inseres = 0
 
         try:
-            with session.begin():
+            with session.begin_nested():
                 with session.no_autoflush:
                     # ── Étape 1 : Créer le survey ──
                     existing_survey = session.exec(
@@ -649,8 +708,8 @@ def create_app():
                     new_survey = Survey(
                         template_id=survey.template_id,
                         survey_id=next_survey_id,
-                        campus=survey.campus,
-                        program=survey.program,
+                        campus=program.campus,
+                        program=program.code,
                         semester=survey.semester,
                         school_year=survey.school_year,
                         status=0,
@@ -747,9 +806,11 @@ def create_app():
                         )
 
             # Si on arrive ici, le COMMIT a été fait par le context manager
+            session.commit()
             print(f"[SONDAGE+IMPORT] Transaction COMMIT réussie !")
 
         except Exception as e:
+            session.rollback()
             print(f"[SONDAGE+IMPORT] ERREUR — ROLLBACK : {type(e).__name__}: {e}")
             import traceback
 

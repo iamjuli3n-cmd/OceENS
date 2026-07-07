@@ -21,7 +21,7 @@ const Parametrage = {
     schoolYear: [],
     selectedSchoolYear: '',
     ues: [],
-    students:[],
+    students: [],
     nextId: 9000,
     isLoading: false,
     loadError: null,
@@ -44,7 +44,7 @@ const Parametrage = {
         this.allPrograms = initialData.programs || [];
         this.teachersList = initialData.teachersList || [];
         console.log(this.teachersList);
-        this.mockUEsByProgram = initialData.uesByFiliere || {};
+        this.mockUEsByProgram = initialData.uesByProgram || {};
         this.selectedCampusId = initialData.selectedCampusId || null;
         this.selectedProgramId = initialData.selectedProgramId || null;
         this.selectedTemplateId = initialData.selectedTemplateId || null;
@@ -243,17 +243,21 @@ const Parametrage = {
 
             console.log(data);
 
-            this.campusList = data.campusList || this.campusList;
+            this.campusList = data.campus_list || this.campusList;
             this.allPrograms = data.programs || this.allPrograms;
-            this.teachersList = data.teachersList || this.teachersList;
-            console.log(this.teachersList);
+            this.teachersList = data.teachers_list || this.teachersList;
+
             this.templatesList = (data.templates || []).map(template => ({
                 id: template.template_id,
                 titre: template.name
             }));
-            this.mockUEsByProgram = data.uesByFiliere || this.mockUEsByProgram;
-            if (data.schoolYears) this.schoolYears = data.schoolYears;
-            if (data.selectedSchoolYear && !this.selectedSchoolYear) this.selectedSchoolYear = data.selectedSchoolYear;
+
+            this.mockUEsByProgram = data.ues_by_program || this.mockUEsByProgram;
+
+            if (data.school_years) this.schoolYears = data.school_years;
+            if (data.selected_school_year && !this.selectedSchoolYear) {
+                this.selectedSchoolYear = data.selected_school_year;
+            }
 
             if (this.isProgramManager) {
                 // RP-RM : toujours afficher toutes les filières autorisées
@@ -280,7 +284,7 @@ const Parametrage = {
     // ─── Filière change ─────────────────────────────────
     async onFiliereChange() {
         const sel = document.getElementById('param-filiere');
-        this.selectedProgramId = sel.value ? parseInt(sel.value) : null;
+        this.selectedProgramId = sel.value || null;
         this.ues = [];
         this.render();
         // Charger les modules de l'année précédente pour cette nouvelle filière
@@ -304,13 +308,10 @@ const Parametrage = {
     // ─── Chargement des modules de l'année précédente ───
     async _tryFetchModulesPrecedents() {
         // Résoudre le nom de la filière sélectionnée
-        const filiereNom = this.selectedProgramId
-            ? (this.allPrograms.find(f => f.id === this.selectedProgramId) ||
-                this.programsList.find(f => f.id === this.selectedProgramId))?.name || ''
-            : '';
+        const programCode = this.selectedProgramId || '';
 
         // On ne peut lancer la requête que si les 3 valeurs sont renseignées
-        if (!this.semesterYear || !filiereNom || !this.selectedSchoolYear) {
+        if (!this.semesterYear || !programCode || !this.selectedSchoolYear) {
             return;
         }
 
@@ -321,7 +322,7 @@ const Parametrage = {
         try {
             const params = new URLSearchParams({
                 semester: this.semesterYear,
-                program: filiereNom,
+                program: programCode,
                 school_year: this.selectedSchoolYear,
             });
             const response = await fetch(`/api/modules/previous?${params}`, {
@@ -705,20 +706,19 @@ const Parametrage = {
                 workbook = XLSX.read(content, { type: 'binary', cellStyles: true });
                 console.log(workbook);
                 list = document.getElementById('student-list-area');
-                list_txt=""
-                workbook.Strings.forEach((mail)=>
-                    {
-                        if (mail.t.includes("@")) {
-                            if (list_txt != "") {
-                                list_txt += ('\n');
-                            }
-                            list_txt += (mail.t);
+                list_txt = ""
+                workbook.Strings.forEach((mail) => {
+                    if (mail.t.includes("@")) {
+                        if (list_txt != "") {
+                            list_txt += ('\n');
                         }
-                    })
+                        list_txt += (mail.t);
+                    }
+                })
                 list.value = list_txt;
                 list.style.height = "auto";
-                list.style.height = list.scrollHeight+'px';
-                
+                list.style.height = list.scrollHeight + 'px';
+
             } catch (error) {
                 console.log("error", error);
             }
@@ -745,10 +745,10 @@ const Parametrage = {
 
     toggleDropZone() {
         dropzone = document.getElementById('dropzone-etudiants');
-        if(dropzone.style.display=='none') {
-            dropzone.style.display='block';
+        if (dropzone.style.display == 'none') {
+            dropzone.style.display = 'block';
         } else {
-            dropzone.style.display='none';
+            dropzone.style.display = 'none';
         }
     },
 
@@ -786,7 +786,7 @@ const Parametrage = {
 
         // First, check if the email format is valid according to the regex
         if (!regex.test(email)) {
-            return "Email '"+email+"' invalide";
+            return "Email '" + email + "' invalide";
         }
 
         // Extract the domain part (everything after the '@')
@@ -796,7 +796,7 @@ const Parametrage = {
         if (allowedDomains.includes(domain)) {
             return "Valide"
         } else {
-            return "Domaine du mail '"+email+"' invalide ("+allowedDomains+")"
+            return "Domaine du mail '" + email + "' invalide (" + allowedDomains + ")"
         }
     },
 
@@ -813,39 +813,39 @@ const Parametrage = {
 
         this.students = document.getElementById('student-list-area').value.split(/\s+/);
 
-        student_count=0;
-        invalid_emails=[];
-        this.students.forEach(student=> {
+        student_count = 0;
+        invalid_emails = [];
+        this.students.forEach(student => {
             if (student.length > 1) { // If not empty line
                 rep = this.validateEmail(student);
                 if (rep != "Valide") {
                     invalid_emails.push(rep);
                 } else { // Valide 
-                    student_count=student_count+1;
+                    student_count = student_count + 1;
                 }
             }
 
         })
 
         if (invalid_emails.length > 0) {
-            return alert('Certains email sont invalides : '+invalid_emails);
+            return alert('Certains email sont invalides : ' + invalid_emails);
         }
 
-        if (student_count < 1 ) return alert('Le sondage doit contenir au moins un mail étudiant.');
+        if (student_count < 1) return alert('Le sondage doit contenir au moins un mail étudiant.');
 
-        
-        
-        
+
+
+
 
         const campusNom = this.campusList.find(c => c.id === this.selectedCampusId)?.name || '';
-        const filiereNom = this.programsList.find(f => f.id === this.selectedProgramId)?.name || '';
+        const programCode = this.selectedProgramId || '';
 
 
         // Préparer les données du sondage en JSON
         const surveyData = {
             template_id: this.selectedTemplateId,
             campus: campusNom,
-            program: filiereNom,
+            program: programCode,
             semester: this.semesterYear,
             school_year: this.selectedSchoolYear,
             ues: this.ues.map(ue => ({
@@ -863,7 +863,7 @@ const Parametrage = {
                     }))
                 }))
             })),
-            students: this.students 
+            students: this.students
         };
 
         // Désactiver le bouton pendant le traitement
