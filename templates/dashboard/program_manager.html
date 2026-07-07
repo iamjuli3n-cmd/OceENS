@@ -185,6 +185,31 @@
       justify-content: center;
       text-decoration: none;
     }
+
+    .status-toggle-form {
+      display: flex;
+    }
+
+    .status-toggle-form .row-icon {
+      padding: 0;
+    }
+
+    .status-toggle-form .row-icon img {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+
+    .survey-toggle svg {
+      width: 13px;
+      height: 13px;
+    }
+
+
+    .survey-toggle img {
+      width: 14px;
+      height: 14px;
+    }
   </style>
 </head>
 
@@ -224,29 +249,50 @@
         </div>
         <div class="sondage-row-meta">{{ survey['campus'] }} · {{ survey['school_year'] }}</div>
       </div>
-      
-      <a href="/api/surveys/{{ survey['survey_id'] }}" style="background: var(--bg-accent); color: var(--text-accent); border: 0.5px solid var(--border-accent); border-radius: 8px; padding: 5px 11px; text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+
+      <a href="/api/surveys/{{ survey['survey_id'] }}"
+        style="background: var(--bg-accent); color: var(--text-accent); border: 0.5px solid var(--border-accent); border-radius: 8px; padding: 5px 11px; text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
         Lien questionnaire
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+          <polyline points="15 3 21 3 21 9" />
+          <line x1="10" y1="14" x2="21" y2="3" />
+        </svg>
       </a>
 
       <div style="text-align: right; margin-right: 12px; margin-left: 12px; min-width: 100px;">
-        <div style="font-size: 13px; font-weight: 500; color: #111;">{{ survey['answers_count'] }} / {{ survey['respondents_count'] }}</div>
+        <div style="font-size: 13px; font-weight: 500; color: #111;">{{ survey['answers_count'] }} / {{
+          survey['respondents_count'] }}</div>
         <div style="font-size: 10px; color: #aaa;">ont répondu / inscrits</div>
-        <div style="height: 4px; border-radius: 99px; width: 72px; background: var(--border); margin-top: 4px; margin-left: auto;">
-          <div style="height: 100%; border-radius: 99px; background: #470a68; width: {% if survey['respondents_count'] > 0 %}{{ (survey['answers_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;"></div>
+        <div
+          style="height: 4px; border-radius: 99px; width: 72px; background: var(--border); margin-top: 4px; margin-left: auto;">
+          <div
+            style="height: 100%; border-radius: 99px; background: #470a68; width: {% if survey['respondents_count'] > 0 %}{{ (survey['answers_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
+          </div>
         </div>
       </div>
-
+      <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
+        {% if survey['status'] == 0 %}
+        <input type="hidden" name="status" value="1">
+        <button type="submit" class="row-icon" title="Ouvrir le sondage">
+          <img src="https://skilled.mde.epf.fr/images/locked_red.svg" alt="Ouvrir le sondage">
+        </button>
+        {% else %}
+        <input type="hidden" name="status" value="0">
+        <button type="submit" class="row-icon" title="Fermer le sondage">
+          <img src="https://skilled.mde.epf.fr/images/unlocked_green.svg" alt="Fermer le sondage">
+        </button>
+        {% endif %}
+      </form>
       <div class="row-actions">
-        <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon"
-          title="Visualisation" onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
+        <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
+          onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
           <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
           </svg>
         </a>
-        <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon"
-          title="Export CSV" onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
+        <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon" title="Export CSV"
+          onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
           <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
@@ -279,16 +325,25 @@
     {% endfor %}
   </div>
 
-  <div id="safeguard-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-    <div style="background:white; padding:32px; border-radius:16px; max-width:450px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+  <div id="safeguard-modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div
+      style="background:white; padding:32px; border-radius:16px; max-width:450px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
       <div style="margin-bottom:16px; color:#df231d;">
-        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
       </div>
       <h3 style="margin-bottom:12px; font-size:20px; color:#111;">Sondage potentiellement en cours</h3>
       <p id="safeguard-msg" style="color:#555; font-size:15px; margin-bottom:28px; line-height:1.5;"></p>
       <div style="display:flex; gap:12px; justify-content:center;">
-        <button onclick="closeModal()" style="padding:10px 24px; border-radius:24px; border:1px solid #ccc; background:white; font-size:14px; font-weight:600; color:#555; cursor:pointer;">Annuler</button>
-        <button id="safeguard-continue" style="padding:10px 24px; border-radius:24px; border:none; background:#df231d; color:white; font-size:14px; font-weight:600; cursor:pointer;">Continuer quand même</button>
+        <button onclick="closeModal()"
+          style="padding:10px 24px; border-radius:24px; border:1px solid #ccc; background:white; font-size:14px; font-weight:600; color:#555; cursor:pointer;">Annuler</button>
+        <button id="safeguard-continue"
+          style="padding:10px 24px; border-radius:24px; border:none; background:#df231d; color:white; font-size:14px; font-weight:600; cursor:pointer;">Continuer
+          quand même</button>
       </div>
     </div>
   </div>
@@ -301,23 +356,23 @@
 
     let pendingUrl = "";
     function checkParticipation(event, url, repondants, inscrits) {
-        if (repondants < inscrits) {
-            event.preventDefault();
-            pendingUrl = url;
-            document.getElementById('safeguard-msg').innerText = `Seulement ${repondants} élèves ont répondu sur ${inscrits} inscrits. Les données risquent d'être partielles.`;
-            document.getElementById('safeguard-modal').style.display = 'flex';
-            return false;
-        }
-        return true;
+      if (repondants < inscrits) {
+        event.preventDefault();
+        pendingUrl = url;
+        document.getElementById('safeguard-msg').innerText = `Seulement ${repondants} élèves ont répondu sur ${inscrits} inscrits. Les données risquent d'être partielles.`;
+        document.getElementById('safeguard-modal').style.display = 'flex';
+        return false;
+      }
+      return true;
     }
-    
+
     function closeModal() {
-        document.getElementById('safeguard-modal').style.display = 'none';
-        pendingUrl = "";
+      document.getElementById('safeguard-modal').style.display = 'none';
+      pendingUrl = "";
     }
-    
+
     document.getElementById('safeguard-continue').addEventListener('click', () => {
-        if(pendingUrl) window.location.href = pendingUrl;
+      if (pendingUrl) window.location.href = pendingUrl;
     });
   </script>
 

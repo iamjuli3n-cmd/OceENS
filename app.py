@@ -653,7 +653,7 @@ def create_app():
                         program=survey.program,
                         semester=survey.semester,
                         school_year=survey.school_year,
-                        status=1,
+                        status=0,
                     )
                     session.add(new_survey)
 
@@ -785,29 +785,60 @@ def create_app():
                 Survey.survey_id == survey_id,
             )
         ).first()
+
         if not survey:
             return HTMLResponse(content="Survey introuvable.", status_code=404)
 
+        # ── État du sondage ─────────────────────────────────────────────
+        survey_is_closed = survey.status == 0
+
+        # ── Vérifier si l'utilisateur connecté a déjà répondu ───────────
+        user_has_answered = False
+        user = get_current_user(request)
+
+        if user and user.get("email"):
+            db_user = session.exec(
+                select(User).where(func.lower(User.mail) == user["email"].casefold())
+            ).first()
+
+            if db_user:
+                respondent = session.exec(
+                    select(Respondent).where(
+                        Respondent.survey_id == survey_id,
+                        Respondent.user_id == db_user.user_id,
+                    )
+                ).first()
+
+                if respondent:
+                    user_has_answered = respondent.submission_date is not None
+
+        # ── Chargement des données du questionnaire ─────────────────────
         sections = session.exec(
             select(Section)
             .where(Section.template_id == survey.template_id)
             .order_by(Section.order)
         ).all()
+
         questions = session.exec(
             select(Question).where(Question.template_id == survey.template_id)
         ).all()
+
         options = session.exec(
             select(Option).where(Option.template_id == survey.template_id)
         ).all()
+
         modules = session.exec(
             select(Module).where(Module.survey_id == survey_id)
         ).all()
 
         sections_data = []
+
         for sec in sections:
             sec_questions = [q for q in questions if q.section_id == sec.section_id]
             sec_questions.sort(key=lambda q: q.question_id)
+
             questions_data = []
+
             for q in sec_questions:
                 q_options = [
                     o
@@ -815,6 +846,7 @@ def create_app():
                     if o.section_id == sec.section_id and o.question_id == q.question_id
                 ]
                 q_options.sort(key=lambda o: o.option_id)
+
                 questions_data.append(
                     {
                         "question_id": q.question_id,
@@ -822,11 +854,15 @@ def create_app():
                         "question_type": q.question_type,
                         "category": q.category,
                         "options": [
-                            {"option_id": o.option_id, "text": o.text}
+                            {
+                                "option_id": o.option_id,
+                                "text": o.text,
+                            }
                             for o in q_options
                         ],
                     }
                 )
+
             sections_data.append(
                 {
                     "section_id": sec.section_id,
@@ -836,10 +872,16 @@ def create_app():
             )
 
         modules_data = []
+
         for mod in modules:
             teachers = []
             if mod.teacher:
-                teachers = [p.strip() for p in mod.teacher.split(",") if p.strip()]
+                teachers = [
+                    teacher.strip()
+                    for teacher in mod.teacher.split(",")
+                    if teacher.strip()
+                ]
+
             modules_data.append(
                 {
                     "module_id": mod.module_id,
@@ -850,19 +892,25 @@ def create_app():
                     "one_teacher_in_list": bool(mod.one_teacher_in_list),
                 }
             )
-        # Grouper les modules par UE pour la logique conditionnelle
+
+        # ── Grouper les modules par UE pour la logique conditionnelle ────
         ues_data = {}
+
         for mod_data in modules_data:
             ue_name = mod_data["ue"] or "Sans UE"
+
             if ue_name not in ues_data:
                 ues_data[ue_name] = {
                     "name": ue_name,
                     "is_optional": mod_data["is_optional"],
                     "modules": [],
                 }
-            ues_data[ue_name]["modules"].append(mod_data)
-        ues_list = list(ues_data.values())
 
+            ues_data[ue_name]["modules"].append(mod_data)
+
+        ues_list = list(ues_data.values())
+        print("survey_is_closed =", survey_is_closed)
+        print("user_has_answered =", user_has_answered)
         return templates.TemplateResponse(
             request=request,
             name="survey.html",
@@ -875,10 +923,13 @@ def create_app():
                     "program": survey.program,
                     "semester": survey.semester,
                     "school_year": survey.school_year,
+                    "status": survey.status,
                 },
                 "sections": sections_data,
                 "modules": modules_data,
                 "ues": ues_list,
+                "survey_is_closed": survey_is_closed,
+                "user_has_answered": user_has_answered,
             },
         )
 
@@ -923,6 +974,11 @@ def create_app():
         if not survey:
             return JSONResponse(
                 content={"error": "Survey introuvable."}, status_code=404
+            )
+
+        if survey.status == 0:
+            return JSONResponse(
+                content={"error": "Le sondage est fermé"}, status_code=403
             )
 
         # 4. Vérifier que cet élève est assigné à ce survey (table Respondent)
@@ -1000,6 +1056,58 @@ def create_app():
             # "user_id": db_user.user_id,
         }
 
+    @api_router.post("/surveys/{survey_id}/status")
+    def update_survey_status(
+        survey_id: int,
+        request: Request,
+        session: SessionDep,
+        status: int = Form(...),
+    ):
+        user = require_roles(request, ["admin", "program_manager"])
+        if user is None:
+            return JSONResponse(
+                content={"error": "Accès refusé."},
+                status_code=403,
+            )
+
+        if status not in (0, 1):
+            return JSONResponse(
+                content={"error": "Statut invalide."},
+                status_code=400,
+            )
+
+        survey = session.exec(
+            select(Survey).where(Survey.survey_id == survey_id)
+        ).first()
+
+        if not survey:
+            return JSONResponse(
+                content={"error": "Sondage introuvable."},
+                status_code=404,
+            )
+
+        role = user.get("role", "") or ""
+        allowed_programs = parse_rprm_formations(role)
+
+        if (
+            not role.startswith("admin")
+            and allowed_programs
+            and survey.program not in allowed_programs
+        ):
+            return JSONResponse(
+                content={"error": "Formation non autorisée pour votre rôle."},
+                status_code=403,
+            )
+
+        survey.status = status
+        session.add(survey)
+        session.commit()
+
+        return RedirectResponse(
+            url=request.headers.get("referer", "/dashboard/admin"),
+            status_code=303,
+        )
+
     # └────────────────────────────────────────────────────────────────┘
 
     # ┌─ Route : Dashboards par rôle ────────────────────────────────────┐
@@ -1074,6 +1182,7 @@ def create_app():
                         "program": s.program,
                         "semester": s.semester,
                         "school_year": s.school_year,
+                        "status": s.status,
                         "respondents_count": respondents_count,
                         "answers_count": answers_count,
                     }

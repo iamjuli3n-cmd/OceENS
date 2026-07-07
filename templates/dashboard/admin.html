@@ -18,6 +18,7 @@
       --border-accent: #b3d4ff;
       --border: #eee;
     }
+
     .questionnaires-header {
       display: flex;
       align-items: center;
@@ -70,6 +71,31 @@
       align-items: center;
       justify-content: center;
       text-decoration: none;
+    }
+
+    .status-toggle-form {
+      display: flex;
+    }
+
+    .status-toggle-form .row-icon {
+      padding: 0;
+    }
+
+    .status-toggle-form .row-icon img {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+
+    .survey-toggle svg {
+      width: 13px;
+      height: 13px;
+    }
+
+
+    .survey-toggle img {
+      width: 14px;
+      height: 14px;
     }
 
     /* Tabs */
@@ -225,17 +251,27 @@
                 </div>
               </div>
             </div>
-
+            <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
+              {% if survey['status'] == 0 %}
+              <input type="hidden" name="status" value="1">
+              <button type="submit" class="row-icon" title="Ouvrir le sondage">
+                <img src="https://skilled.mde.epf.fr/images/locked_red.svg" alt="Ouvrir le sondage">
+              </button>
+              {% else %}
+              <input type="hidden" name="status" value="0">
+              <button type="submit" class="row-icon" title="Fermer le sondage">
+                <img src="https://skilled.mde.epf.fr/images/unlocked_green.svg" alt="Fermer le sondage">
+              </button>
+              {% endif %}
+            </form>
             <div class="row-actions">
-              <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon"
-                title="Visualisation"
+              <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
                 onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
                 <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
               </a>
-              <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon"
-                title="Export CSV"
+              <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon" title="Export CSV"
                 onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
                 <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>

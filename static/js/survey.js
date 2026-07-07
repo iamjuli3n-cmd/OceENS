@@ -10,13 +10,43 @@ const Questionnaire = {
 
     // ─── Init ───────────────────────────────────────────
     init() {
+        this.setupAccessState();
         this.setupCheckboxLimits();
         this.setupProgressTracking();
         this.setupSequentialReveal();
         this.setupLiveValidationClear();
         this.updateProgress();
     },
+    // ─── Gestion de l'accès (sondage fermé ou déjà répondu) ──
+    setupAccessState() {
+        const form = document.getElementById('questionnaire-form');
+        const btn = document.getElementById('btn-submit');
 
+        if (!form || !btn) return;
+
+        const isClosed = form.dataset.surveyClosed === 'true';
+        const hasAnswered = form.dataset.userAnswered === 'true';
+
+        if (!isClosed && !hasAnswered) return;
+
+        btn.disabled = true;
+
+        const btnText = btn.querySelector('.btn-submit-text');
+        if (btnText) {
+            btnText.textContent = hasAnswered ? 'Déjà répondu' : 'Sondage fermé' ;
+        }
+
+        const btnIcon = btn.querySelector('.btn-submit-icon');
+        if (btnIcon) {
+            btnIcon.style.display = 'none';
+        }
+
+        btn.classList.add(isClosed ? 'closed' : 'done');
+
+        form.querySelectorAll('input, textarea, select').forEach((field) => {
+            field.disabled = true;
+        });
+    },
     // ─── Limiter les checkboxes QCM à 3 max ─────────────
     setupCheckboxLimits() {
         document.querySelectorAll('input[type="checkbox"][data-max]').forEach(cb => {
@@ -479,7 +509,24 @@ const Questionnaire = {
     // ─── Soumission ─────────────────────────────────────
     submit() {
         // Validation stricte avant envoi
+        const form = document.getElementById('questionnaire-form');
+        const isClosed = form?.dataset.surveyClosed === 'true';
+        const hasAnswered = form?.dataset.userAnswered === 'true';
+
+        if (isClosed) {
+            alert('Le sondage est fermé.');
+            return;
+        }
+
+        if (hasAnswered) {
+            alert('Vous avez déjà répondu à ce sondage.');
+            return;
+        }
+
         const validation = this.validateForm();
+
+
+
         if (!validation.valid) {
             this.showValidationErrors(validation.missingBlocks);
             return;
