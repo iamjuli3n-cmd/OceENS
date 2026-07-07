@@ -976,6 +976,11 @@ def create_app():
                 content={"error": "Survey introuvable."}, status_code=404
             )
 
+        if survey.status == 0:
+            return JSONResponse(
+                content={"error": "Le sondage est fermé"}, status_code=403
+            )
+
         # 4. Vérifier que cet élève est assigné à ce survey (table Respondent)
         #    Règle stricte : pas de INSERT, UPDATE uniquement
         respondent = session.exec(

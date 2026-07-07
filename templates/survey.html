@@ -10,6 +10,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/questionnaire.css">
+    <style>
+        .survey-status-banner {
+            max-width: 980px;
+            margin: 24px auto 0;
+            padding: 14px 20px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            text-align: center;
+        }
+
+        .survey-status-banner.closed {
+            background: rgb(141, 141, 141);
+        }
+
+        .survey-status-banner.answered {
+            background: #2e7d32;
+        }
+    </style>
 </head>
 
 <body>
@@ -27,6 +47,15 @@
     </header>
 
     <main>
+        {% if survey_is_closed %}
+        <div class="survey-status-banner closed">
+            Sondage fermé
+        </div>
+        {% elif user_has_answered %}
+        <div class="survey-status-banner answered">
+            Déjà répondu
+        </div>
+        {% endif %}
         <!-- En-tête du sondage -->
         <div class="questionnaire-hero">
             <h1 id="questionnaire-title">Évaluation {{ survey.program }}</h1>
@@ -41,7 +70,8 @@
             <p class="progress-text" id="progress-text">0% complété</p>
         </div>
 
-        <form id="questionnaire-form" novalidate>
+        <form id="questionnaire-form" novalidate data-survey-closed="{{ 'true' if survey_is_closed else 'false' }}"
+            data-user-answered="{{ 'true' if user_has_answered else 'false' }}">
 
             {# ══════ Sections statiques (Campus, Formation) ══════ #}
             {% for section in sections %}
@@ -178,8 +208,8 @@
                         </div>
 
                         {% for teacher in module.teachers %}
-                        <div class="exclusive-prof-block" data-module-id="{{ module.module_id }}" data-prof="{{ teacher }}"
-                            style="display: none;"
+                        <div class="exclusive-prof-block" data-module-id="{{ module.module_id }}"
+                            data-prof="{{ teacher }}" style="display: none;"
                             data-satisfaction-group="mod-{{ module.module_id }}-{{ teacher | replace(' ', '_') }}">
                             <div class="prof-name-banner">
                                 <span class="prof-icon">👤</span> {{ teacher }}
@@ -260,7 +290,8 @@
                                 data-prof="{{ teacher }}">
                                 <div class="question-label">
                                     <span class="q-number">1.</span>
-                                    Avez-vous eu cours avec {{ teacher }} pour le module {{ module.name }} ? / Did you have
+                                    Avez-vous eu cours avec {{ teacher }} pour le module {{ module.name }} ? / Did you
+                                    have
                                     class with {{ teacher }} for the module {{ module.name }}?
                                 </div>
                                 <div class="options-grid">
