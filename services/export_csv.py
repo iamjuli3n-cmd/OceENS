@@ -9,7 +9,6 @@ EXPORT_COLUMNS = [
     "program",
     "school_year",
     "semester",
-    "submission_id",
     "ue",
     "module",
     "teacher",
@@ -17,7 +16,7 @@ EXPORT_COLUMNS = [
     "category",
     "question_type",
     "question_id",
-    "answer_id",
+    "submission_id",
     "answer_value",
 ]
 
