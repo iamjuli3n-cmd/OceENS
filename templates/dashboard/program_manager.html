@@ -190,33 +190,25 @@
       display: flex;
     }
 
-    .survey-toggle {
-      min-width: 92px;
-      height: 28px;
-      border: none;
-      border-radius: 999px;
-      padding: 0 10px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      font-size: 11px;
-      font-weight: 600;
-      color: white;
+    .status-toggle-form .row-icon {
+      padding: 0;
     }
 
-    .survey-toggle.open {
-      background: #2e7d32;
-    }
-
-    .survey-toggle.closed {
-      background: #c62828;
+    .status-toggle-form .row-icon img {
+      width: 16px;
+      height: 16px;
+      display: block;
     }
 
     .survey-toggle svg {
       width: 13px;
       height: 13px;
+    }
+
+
+    .survey-toggle img {
+      width: 14px;
+      height: 14px;
     }
   </style>
 </head>
@@ -282,21 +274,13 @@
       <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
         {% if survey['status'] == 0 %}
         <input type="hidden" name="status" value="1">
-        <button type="submit" class="survey-toggle closed" title="Ouvrir le sondage">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <rect x="5" y="11" width="14" height="10" rx="2"></rect>
-            <path d="M8 11V7a4 4 0 0 1 7.5-2"></path>
-          </svg>
-          Fermé
+        <button type="submit" class="row-icon" title="Ouvrir le sondage">
+          <img src="https://skilled.mde.epf.fr/images/locked_red.svg" alt="Ouvrir le sondage">
         </button>
         {% else %}
         <input type="hidden" name="status" value="0">
-        <button type="submit" class="survey-toggle open" title="Fermer le sondage">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <rect x="5" y="11" width="14" height="10" rx="2"></rect>
-            <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
-          </svg>
-          Ouvert
+        <button type="submit" class="row-icon" title="Fermer le sondage">
+          <img src="https://skilled.mde.epf.fr/images/unlocked_green.svg" alt="Fermer le sondage">
         </button>
         {% endif %}
       </form>

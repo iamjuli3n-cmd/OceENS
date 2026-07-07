@@ -653,7 +653,7 @@ def create_app():
                         program=survey.program,
                         semester=survey.semester,
                         school_year=survey.school_year,
-                        status=1,
+                        status=0,
                     )
                     session.add(new_survey)
 
