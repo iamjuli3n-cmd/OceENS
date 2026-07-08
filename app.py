@@ -57,39 +57,73 @@ def role_to_dashboard_slug(role: str) -> str:
     """
     Convertit le rôle stocké en BDD en slug de route dashboard.
 
-    "admin"              → "admin"
+    "admin"                       → "admin"
+    "admin:MMDE,MFGE2"             → "admin"
     "program_manager"              → "program_manager"
-    "program_manager:MDE_P2027"    → "program_manager"
-    "student" (ou autre) → "student"
+    "program_manager:MFGE2,MFGE3"  → "program_manager"
+    "student"                      → "student"
     """
-    if role.startswith("admin"):
+    role_slug = (role or "").strip().lower()
+
+    if role_slug.startswith("admin"):
         return "admin"
-    elif role.startswith("program_manager"):
+    if role_slug.startswith("program_manager"):
         return "program_manager"
-    else:
-        return "student"
+
+    return "student"
 
 
 def parse_rprm_formations(role: str) -> list[str]:
     """
-    Extrait la liste des formations autorisées depuis une chaîne de rôle RP-RM.
+    Extrait les codes programmes autorisés depuis une chaîne de rôle.
 
-    "program_manager:PROGRAM1;PROGRAM2" → ["PROGRAM1", "PROGRAM2"]
-    "program_manager:PROGRAM1"            → ["PROGRAM1"]
-    "program_manager"                       → []
-    "admin"                       → []
-    "admin:PROGRAM1;PROGRAM2" → ["PROGRAM1", "PROGRAM2"]
-    "admin:PROGRAM1"            → ["PROGRAM1"]
+    "program_manager:MFGE2,MFGE3"  → ["MFGE2", "MFGE3"]
+    "program_manager:MFGE2;MFGE3"  → ["MFGE2", "MFGE3"]
+    "admin:MMDE,MFGE2"             → ["MMDE", "MFGE2"]
+    "admin"                        → []
+    "program_manager"              → []
     """
     if not role or not isinstance(role, str):
         return []
-    role_upper = role.strip()
-    if not (
-        role_upper.startswith("program_manager:") or role_upper.startswith("admin:")
-    ):
+
+    prefix, separator, raw_programs = role.strip().partition(":")
+
+    if not separator:
         return []
-    after_colon = role_upper.split(":", 1)[1]
-    return [f.strip() for f in after_colon.split(";") if f.strip()]
+
+    prefix = prefix.strip().lower()
+
+    if prefix not in {"admin", "program_manager", "rp-rm"}:
+        return []
+
+    raw_programs = raw_programs.replace(";", ",")
+
+    return [
+        program_code.strip().upper()
+        for program_code in raw_programs.split(",")
+        if program_code.strip()
+    ]
+
+
+# Helper pour la gestion des rôles et des dashboards
+
+
+def role_can_access_program(role: str, program_code: str | None) -> bool:
+    """
+    Vérifie si un rôle admin/program_manager peut accéder à un programme.
+
+    Si le rôle n'a pas de codes après ":", on garde le comportement actuel :
+    accès à tout.
+    """
+    allowed_programs = parse_rprm_formations(role)
+
+    if not allowed_programs:
+        return True
+
+    if not program_code:
+        return False
+
+    return program_code.strip().upper() in allowed_programs
 
 
 # └────────────────────────────────────────────────────────────────────────┘
@@ -227,14 +261,18 @@ def build_parametrage_data(
 
     # ── Programmes depuis la nouvelle table programs ─────
     allowed_program_codes = (
-        set(allowed_programs) if allowed_programs is not None else None
+        {program_code.strip().upper() for program_code in allowed_programs}
+        if allowed_programs is not None
+        else None
     )
 
     program_options = []
     for program in programs_db:
+        program_code = (program.code or "").strip().upper()
+
         if (
             allowed_program_codes is not None
-            and program.code not in allowed_program_codes
+            and program_code not in allowed_program_codes
         ):
             continue
 
@@ -242,8 +280,8 @@ def build_parametrage_data(
 
         program_options.append(
             {
-                "id": program.code,  # valeur sauvegardée côté survey
-                "code": program.code,  # code métier
+                "id": program_code,
+                "code": program_code,  # code métier
                 "name": label,  # affichage dropdown
                 "label": label,
                 "title": program.name,  # intitulé seul
@@ -638,7 +676,7 @@ def create_app():
         return JSONResponse(
             content={
                 "ues": list(ues_dict.values()),
-                "teachersList": teachers_list,
+                "teachersList": teachers,
                 "previousSchoolYear": previous_school_year,
                 "surveyId": previous_survey.survey_id,
             }
@@ -665,27 +703,28 @@ def create_app():
                 status_code=403,
             )
 
+        program_code = (survey.program or "").strip().upper()
+
         program = session.exec(
-            select(Program).where(Program.code == survey.program)
+            select(Program).where(Program.code == program_code)
         ).first()
 
         if not program:
             return JSONResponse(
-                content={"error": f"Programme '{survey.program}' introuvable."},
+                content={"error": f"Programme '{program_code}' introuvable."},
                 status_code=400,
             )
 
         # ── Sécurité : vérifier que la program est autorisée pour le RP-RM ──
-        role = user.get("role", "")
-        if ":" in role:  # RM-RP or Admin with formations
-            allowed = parse_rprm_formations(role)
-            if survey.program not in allowed:
-                return JSONResponse(
-                    content={
-                        "error": f"Formation '{survey.program}' non autorisée pour votre rôle."
-                    },
-                    status_code=403,
-                )
+        role = user.get("role", "") or ""
+
+        if not role_can_access_program(role, program.code):
+            return JSONResponse(
+                content={
+                    "error": f"Formation '{program.code}' non autorisée pour votre rôle."
+                },
+                status_code=403,
+            )
 
         # ── Transaction unique : Survey + Modules + Users + Respondent ──
         nb_crees = 0
@@ -1148,13 +1187,8 @@ def create_app():
             )
 
         role = user.get("role", "") or ""
-        allowed_programs = parse_rprm_formations(role)
 
-        if (
-            not role.startswith("admin")
-            and allowed_programs
-            and survey.program not in allowed_programs
-        ):
+        if not role_can_access_program(role, survey.program):
             return JSONResponse(
                 content={"error": "Formation non autorisée pour votre rôle."},
                 status_code=403,
@@ -1191,12 +1225,8 @@ def create_app():
             "program_manager": "dashboard/program_manager.html",
         }
 
-        programs = []
-        full_role = user.get("role", "")
-        if ":" in full_role:
-            programs = [
-                f.strip() for f in full_role.split(":", 1)[1].split(";") if f.strip()
-            ]
+        full_role = user.get("role", "") or ""
+        programs = parse_rprm_formations(full_role)
 
         context = {"user": user, "programs": programs}
 
@@ -1208,10 +1238,9 @@ def create_app():
 
         if role in ("admin", "program_manager"):
             all_surveys = session.exec(select(Survey)).all()
-            if role == "program_manager" and programs:
-                surveys_filter = [s for s in all_surveys if s.program in programs]
-            else:
-                surveys_filter = list(all_surveys)
+            surveys_filter = [
+                s for s in all_surveys if role_can_access_program(full_role, s.program)
+            ]
 
             surveys_list = []
             for s in surveys_filter:
@@ -1405,7 +1434,6 @@ def create_app():
         session: Session,
         survey_id: int,
         role: str,
-        allowed_programs: list[str],
     ):
         """Helper pour vérifier les accès et le statut de participation"""
         survey = session.exec(
@@ -1419,7 +1447,7 @@ def create_app():
                 None,
             )
 
-        if role != "admin" and survey.program not in allowed_programs:
+        if not role_can_access_program(role, survey.program):
             return (
                 None,
                 {
@@ -1462,12 +1490,11 @@ def create_app():
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
 
         role = user.get("role", "") or ""
-        allowed_programs = parse_rprm_formations(role) if ":" in role else []
-        admin_role = "admin" if role == "admin" else "program_manager"
 
         survey, error_or_warning, _, _ = _check_sondage_access_and_status(
-            session, survey_id, admin_role, allowed_programs
+            session, survey_id, role
         )
+
         if not survey:
             return JSONResponse(
                 content={"error": error_or_warning["error"]},
@@ -1490,14 +1517,11 @@ def create_app():
             return RedirectResponse(url="/")
 
         role = user.get("role", "") or ""
-        allowed_programs = parse_rprm_formations(role) if ":" in role else []
-        admin_role = "admin" if role == "admin" else "program_manager"
 
         survey, error_or_warning, respondents_count, answers_count = (
-            _check_sondage_access_and_status(
-                session, survey_id, admin_role, allowed_programs
-            )
+            _check_sondage_access_and_status(session, survey_id, role)
         )
+
         if not survey:
             return HTMLResponse(
                 content=f"<h1>Erreur</h1><p>{error_or_warning['error']}</p>",
