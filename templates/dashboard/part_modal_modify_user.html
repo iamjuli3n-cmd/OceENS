@@ -304,9 +304,9 @@
             opt.addEventListener('click', function () {
                 document.querySelectorAll('.role-option').forEach(function (o) { o.classList.remove('selected'); });
                 opt.classList.add('selected');
-                selectedRole = opt.dataset.role;
+                editingUser["role"] = opt.dataset.role;
 
-                if (selectedRole === 'program_manager' || selectedRole === 'admin') {
+                if (opt.dataset.role === 'program_manager' || opt.dataset.role === 'admin') {
                     showFiliereSection();
                     renderFiliereTags();
                     refreshFiliereDropdown();
@@ -349,15 +349,15 @@
                     return resp.json();
                 })
                 .then(function () {
-                    user.role = finalRole;
                     closeModal();
-                    renderTable();
-                    showToast('Rôle de ' + user.mail + ' mis à jour', 'success');
+                    showToast('Rôle de ' + editingUser["mail"] + ' mis à jour', 'success');
+                    window.location.reload(); // Recharger la page pour refléter les changements
                 })
                 .catch(function (err) {
                     showToast('Erreur : ' + err.message, 'error');
                     btn.disabled = false;
                     btn.textContent = 'Enregistrer';
+
                 });
         });
 
