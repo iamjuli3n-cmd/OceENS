@@ -3,6 +3,7 @@
     <span class="count" id="count-label">{{users | length}} affiché(s)</span>
 </div>
 
+<!--
 <div class="search-wrap">
     <span class="search-icon">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -11,7 +12,7 @@
         </svg>
     </span>
     <input type="text" class="search-input" id="search-input" placeholder="Rechercher par nom, prénom ou email…">
-</div>
+</div>-->
 
 <div class="filter-tabs">
     <button class="filter-tab active" data-filter="all" onclick="filter('all')">Tous</button>
@@ -79,7 +80,8 @@
 </div>
 
 <script>
-    function filter(role) {
+
+     function filter(role) {
         allUsers = document.querySelectorAll("#users-tbody tr");
         allUsers.forEach(user => {
             if (role === "all" || user.classList.contains(role)) {

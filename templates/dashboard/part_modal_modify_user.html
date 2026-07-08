@@ -157,27 +157,33 @@
                     <select class="formations-select" id="formations-select">
                         <option value="">-- Sélectionner une formation --</option>
                     </select>
-                    <button class="btn-add-formation" id="btn-add-formation">Ajouter</button>
+                    <button class="btn-add-formation" id="btn-add-formation" onclick="addNewProgram()">Ajouter</button>
                 </div>
 
                 <!-- Champ nouvelle formation (caché par défaut) -->
                 <div class="new-formation-row" id="new-formation-row">
                     <input type="text" class="new-formation-input" id="new-formation-input"
                         placeholder="Nom de la nouvelle formation…">
-                    <button class="btn-confirm-formation" id="btn-confirm-formation">✓</button>
-                    <button class="btn-cancel-new-formation" id="btn-cancel-new-formation">✕</button>
+                    <button class="btn-confirm-formation" id="btn-confirm-formation"
+                        onclick="confirmNewProgram()">✓</button>
+                    <button class="btn-cancel-new-formation" id="btn-cancel-new-formation"
+                        onclick="cancelNewProgram()">✕</button>
                 </div>
             </div>
         </div>
 
         <div class="modal-footer">
             <button class="btn-cancel" id="btn-cancel" onclick="closeModal()">Annuler</button>
-            <button class="btn-save" id="btn-save">Enregistrer</button>
+            <button class="btn-save" id="btn-save" onclick="putNewRole()">Enregistrer</button>
         </div>
     </div>
 </div>
 
 <script>
+
+    var selectedFilieres = []; // filières choisies pour le RP-RM en cours d'édition
+
+
     // ── Ouvrir la modale ────────────────────────────
     function openModal(userId) {
         var users = {{ users | tojson | safe
@@ -317,8 +323,25 @@
             });
         });
 
-        // ── Sauvegarde ───────────────────────────────────
-        document.getElementById('btn-save').addEventListener('click', function () {
+        
+
+        
+
+
+
+
+
+        // ── Clavier sur le champ nouvelle filière ────────
+        document.getElementById('new-formation-input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btn-confirm-formation').click(); }
+            if (e.key === 'Escape') { document.getElementById('btn-cancel-new-formation').click(); }
+        });
+
+
+    });
+
+    // ── Sauvegarde ───────────────────────────────────
+        function putNewRole() {
 
             if (!editingUser) return;
 
@@ -359,8 +382,50 @@
                     btn.textContent = 'Enregistrer';
 
                 });
-        });
+        };
 
-    });
+    // ── Ajouter une filière depuis le dropdown ───────
+        function addNewProgram() {
+            var select = document.getElementById('formations-select');
+            var val = select.value;
+            if (!val) return;
+
+            if (val === '__new__') {
+                document.getElementById('new-formation-row').classList.add('visible');
+                document.getElementById('new-formation-input').focus();
+                select.value = '';
+                return;
+            }
+
+            if (selectedFilieres.indexOf(val) === -1) {
+                selectedFilieres.push(val);
+                renderFiliereTags();
+                refreshFiliereDropdown();
+            }
+            select.value = '';
+        };
+
+    // ── Confirmer une nouvelle filière ───────────────
+    function confirmNewProgram() {
+        var input = document.getElementById('new-formation-input');
+        var val = input.value.trim();
+        if (!val) return;
+
+        if (selectedFilieres.indexOf(val) === -1) {
+            selectedFilieres.push(val);
+            renderFiliereTags();
+            refreshFiliereDropdown();
+        }
+        input.value = '';
+        document.getElementById('new-formation-row').classList.remove('visible');
+    };
+
+    // ── Annuler nouvelle filière ─────────────────────
+    function cancelNewProgram() {
+        document.getElementById('new-formation-input').value = '';
+        document.getElementById('new-formation-row').classList.remove('visible');
+    };
+
+
 
 </script>

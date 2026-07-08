@@ -1288,23 +1288,23 @@ def create_app():
         ]
 
         # Programs of all users
-        programs = []
-        for user in users:
-            if ":" in user["role"]:  # Extract programs from role
-                programs.extend(
-                    [
+        programs = set()
+        for user_ in users:
+            if ":" in user_["role"]:  # Extract programs from role
+                for program in [
                         f.strip()
-                        for f in user["role"].split(":", 1)[1].split(";")
+                        for f in user_["role"].split(":", 1)[1].split(";")
                         if f.strip()
-                    ]
-                )
+                    ]:
+                    programs.add(program)
+                
 
         print(programs)
 
         context = {
             "user": user,
             "surveys": surveys,
-            "programs": programs,
+            "programs": list(programs),
             "users": users,
         }
         return templates.TemplateResponse(
