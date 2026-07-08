@@ -1,0 +1,44 @@
+{{ users }}
+
+<div class="card-title">
+    Liste des utilisateurs
+    <span class="count" id="count-label">0 affiché(s)</span>
+</div>
+
+<div class="search-wrap">
+    <span class="search-icon">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+    </span>
+    <input type="text" class="search-input" id="search-input" placeholder="Rechercher par nom, prénom ou email…">
+</div>
+
+<div class="filter-tabs">
+    <button class="filter-tab active" data-filter="all">Tous</button>
+    <button class="filter-tab" data-filter="student">Étudiants</button>
+    <button class="filter-tab" data-filter="admin">Admins</button>
+    <button class="filter-tab" data-filter="program_manager">RP-RM</button>
+</div>
+
+<table class="users-table" id="users-table">
+    <thead>
+        <tr>
+            <th>Utilisateur</th>
+            <th>Rôle</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="users-tbody"></tbody>
+</table>
+
+<div class="empty-state" id="empty-state" style="display:none;">
+    <svg width="48" height="48" fill="none" stroke="#470a68" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+    <p>Aucun utilisateur ne correspond à votre recherche.</p>
+</div>

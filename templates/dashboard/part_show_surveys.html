@@ -1,0 +1,86 @@
+
+
+    {% for survey in surveys %}
+
+    <div class="sondage-row">
+      <div style="flex:1;">
+        <div class="sondage-row-name">
+            {{ survey['program'] }} — {{ survey['semester'] }}
+          </div>
+        <div class="sondage-row-meta">{{ survey['campus'] }} · {{ survey['school_year'] }}</div>
+      </div>
+
+      <a href="/api/surveys/{{ survey['survey_id'] }}"
+        style="background: var(--bg-accent); color: var(--text-accent); border: 0.5px solid var(--border-accent); border-radius: 8px; padding: 5px 11px; text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+        Lien questionnaire
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+          <polyline points="15 3 21 3 21 9" />
+          <line x1="10" y1="14" x2="21" y2="3" />
+        </svg>
+      </a>
+
+      <div style="text-align: right; margin-right: 12px; margin-left: 12px; min-width: 100px;">
+        <div style="font-size: 13px; font-weight: 500; color: #111;">{{ survey['answers_count'] }} / {{
+          survey['respondents_count'] }}</div>
+        <div style="font-size: 10px; color: #aaa;">ont répondu / inscrits</div>
+        <div
+          style="height: 4px; border-radius: 99px; width: 72px; background: var(--border); margin-top: 4px; margin-left: auto;">
+          <div
+            style="height: 100%; border-radius: 99px; background: #470a68; width: {% if survey['respondents_count'] > 0 %}{{ (survey['answers_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
+          </div>
+        </div>
+      </div>
+      <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
+        {% if survey['is_closed'] %}
+        <input type="hidden" name="status" value="1">
+        <button type="submit" class="row-icon" title="Ouvrir le sondage">
+          <img src="{{ url_for('static', path='img/locked_red.svg') }}" alt="Ouvrir le sondage">
+        </button>
+        {% else %}
+        <input type="hidden" name="status" value="0">
+        <button type="submit" class="row-icon" title="Fermer le sondage">
+          <img src="{{ url_for('static', path='img/unlocked_green.svg')}}" alt="Fermer le sondage">
+        </button>
+        {% endif %}
+      </form>
+      <div class="row-actions">
+        <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
+          onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
+          <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+        </a>
+        <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon" title="Export CSV"
+          onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
+          <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    {% else %}
+
+    <div style="text-align:center; padding: 48px 0;">
+      <svg viewBox="0 0 120 100" width="100" height="100" style="margin-bottom:16px;">
+        <rect x="25" y="10" width="55" height="70" rx="6" fill="#fdf0f0" stroke="#df231d" stroke-width="1.5" />
+        <rect x="15" y="18" width="55" height="70" rx="6" fill="white" stroke="#ddd" stroke-width="1.5" />
+        <circle cx="42" cy="48" r="14" fill="#fdf0f0" />
+        <text x="42" y="54" text-anchor="middle" font-size="18" fill="#df231d" font-weight="700">?</text>
+        <line x1="28" y1="68" x2="56" y2="68" stroke="#eee" stroke-width="2" />
+        <line x1="28" y1="74" x2="50" y2="74" stroke="#eee" stroke-width="2" />
+      </svg>
+      <div style="font-size:15px; font-weight:600; color:#111; margin-bottom:8px;">Aucun questionnaire pour l'instant
+      </div>
+      <div style="font-size:13px; color:#aaa; margin-bottom:20px;">Vous n'avez pas encore créé de
+        questionnaire.<br>Cliquez sur le bouton pour commencer.</div>
+      <a href="/dashboard/survey-create"
+        style="background:#df231d; color:white; border-radius:24px; padding:10px 22px; text-decoration:none; font-size:13px; font-weight:600;">+
+        Créer un questionnaire</a>
+    </div>
+
+    {% endfor %}
+  
