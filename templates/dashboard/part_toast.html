@@ -1,0 +1,20 @@
+<!-- Toast -->
+<div class="toast" id="toast">
+    <span class="toast-icon">✓</span>
+    <span id="toast-msg">Rôle mis à jour</span>
+</div>
+
+
+<script>// ── Toast ─────────────────────────────────────────
+    var toastTimer = null;
+    function showToast(msg, type) {
+        type = type || 'success';
+        var toast = document.getElementById('toast');
+        var icon = document.getElementById('toast-icon');
+        document.getElementById('toast-msg').textContent = msg;
+        icon.textContent = type === 'success' ? '✓' : '✕';
+        toast.className = 'toast ' + type + ' show';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 3500);
+    }
+</script>

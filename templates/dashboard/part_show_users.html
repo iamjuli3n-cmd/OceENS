@@ -1,5 +1,3 @@
-{{ users }}
-
 <div class="card-title">
     Liste des utilisateurs
     <span class="count" id="count-label">{{users | length}} affiché(s)</span>
@@ -16,10 +14,10 @@
 </div>
 
 <div class="filter-tabs">
-    <button class="filter-tab active" data-filter="all">Tous</button>
-    <button class="filter-tab" data-filter="student">Étudiants</button>
-    <button class="filter-tab" data-filter="admin">Admins</button>
-    <button class="filter-tab" data-filter="program_manager">RP-RM</button>
+    <button class="filter-tab active" data-filter="all" onclick="filter('all')">Tous</button>
+    <button class="filter-tab" data-filter="student" onclick="filter('student')">Étudiants</button>
+    <button class="filter-tab" data-filter="admin" onclick="filter('admin')">Admins</button>
+    <button class="filter-tab" data-filter="program_manager" onclick="filter('program_manager')">RP-RM</button>
 </div>
 
 <table class="users-table" id="users-table">
@@ -31,13 +29,42 @@
         </tr>
     </thead>
     <tbody id="users-tbody">
-        {% set AVATAR_COLORS = ['#7b2fa0', '#df231d', '#1565c0', '#2e7d32', '#e65100', '#ad1457', '#0277bd', '#558b2f'] %}
+        {% set AVATAR_COLORS = [ '#7b2fa0', '#df231d', '#1565c0', '#2e7d32', '#e65100', '#ad1457', '#0277bd', '#558b2f']
+        %}
+
+        {% set ROLE_TITLE = { 'admin': 'Administrateur', 'student': 'Étudiant', 'program_manager': 'RPRM' } %}
+
 
         {% for user in users %}
-        <tr data-id="1"><td><div class="user-info"><div class="avatar" style="background:{{ AVATAR_COLORS[user.user_id%8] }}">{{user.initials}}</div><div><div class="user-name">{{user.name}}</div><div class="user-email">{{user.mail}}</div></div></div></td><td><span class="role-badge admin"><span class="role-dot"></span>Administrateur : Majeure Test</span></td><td class="td-actions"><button class="btn-edit" data-id="1">Modifier</button></td></tr>
+
+        {% set role,program = user.role.split(":", 1) if ":" in user.role else (user.role, "") %}
+
+        <tr data-id="{{ user.user_id }}" class="{{ role }}">
+            <td>
+                <div class="user-info">
+                    <div class="avatar" style="background: {{ AVATAR_COLORS[user.user_id % AVATAR_COLORS|length] }}">
+                        {{ user.initials }}
+                    </div>
+                    <div>
+                        <div class="user-name">{{ user.name }}</div>
+                        <div class="user-email">{{ user.mail }}</div>
+                    </div>
+                </div>
+            </td>
+
+            <td>
+                <span class="role-badge {{ role }}">
+                    <span class="role-dot"></span>
+                    {{ ROLE_TITLE.get(role, role) }} {% if program %} : {{program }} {% endif %}
+                </span>
+            </td>
+
+            <td class="td-actions">
+                <button class="btn-edit" data-id="{{ user.user_id }}"
+                    onclick="openModal({{ user.user_id }})">Modifier</button>
+            </td>
+        </tr>
         {% endfor %}
-
-
     </tbody>
 </table>
 
@@ -50,3 +77,22 @@
     </svg>
     <p>Aucun utilisateur ne correspond à votre recherche.</p>
 </div>
+
+<script>
+    function filter(role) {
+        allUsers = document.querySelectorAll("#users-tbody tr");
+        allUsers.forEach(user => {
+            if (role === "all" || user.classList.contains(role)) {
+                user.style.display = "";
+            } else {
+                user.style.display = "none";
+            }
+        });
+        document.querySelectorAll(".filter-tab").forEach(tab => {
+            tab.classList.remove("active");
+        });
+        document.querySelector(`[data-filter="${role}"]`).classList.add("active");
+    }
+
+
+</script>

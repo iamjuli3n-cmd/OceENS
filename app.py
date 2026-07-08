@@ -1120,25 +1120,47 @@ def create_app():
         if not user:
             return RedirectResponse(url="/")
         rows = session.exec(
-            select(Survey.survey_id, Survey.program, Survey.campus, Survey.semester, Survey.school_year, Survey.status, Respondent.submission_date)
+            select(
+                Survey.survey_id,
+                Survey.program,
+                Survey.campus,
+                Survey.semester,
+                Survey.school_year,
+                Survey.status,
+                Respondent.submission_date,
+            )
             .join(User, Respondent.user_id == User.user_id)
             .join(Survey, Respondent.survey_id == Survey.survey_id)
             .where(User.mail == user["email"].casefold())
         ).all()
 
-        surveys=[]
-        all_answered_or_closed=True
+        surveys = []
+        all_answered_or_closed = True
         for r in rows:
-            surveys.append({"survey_id":r[0], "program":r[1], "campus":r[2], "semester":r[3], "school_year":r[4],"is_closed":(r[5]==0),"is_answered":(r[6]!=None)})
-            if r[6]==None and r[5]!=0:
-                all_answered_or_closed=False
-        context={"user":user,"surveys":surveys,"all_answered_or_closed":all_answered_or_closed}
+            surveys.append(
+                {
+                    "survey_id": r[0],
+                    "program": r[1],
+                    "campus": r[2],
+                    "semester": r[3],
+                    "school_year": r[4],
+                    "is_closed": (r[5] == 0),
+                    "is_answered": (r[6] != None),
+                }
+            )
+            if r[6] == None and r[5] != 0:
+                all_answered_or_closed = False
+        context = {
+            "user": user,
+            "surveys": surveys,
+            "all_answered_or_closed": all_answered_or_closed,
+        }
         return templates.TemplateResponse(
             request=request,
             name="dashboard/student.html",
             context=context,
         )
-    
+
     @dashboard_router.get("/program_manager", response_class=HTMLResponse)
     async def program_manager_dashboard(request: Request, session: SessionDep):
         user = get_current_user(request)
@@ -1146,13 +1168,13 @@ def create_app():
         print(user)
         if not user:
             return RedirectResponse(url="/")
-        if not ("program_manager" in role or "admin" in role ):
+        if not ("program_manager" in role or "admin" in role):
             return RedirectResponse(url="/")
-        
+
         print(user)
 
         programs = []
-        if ":" in role: # Extract programs from role
+        if ":" in role:  # Extract programs from role
             programs = [
                 f.strip() for f in role.split(":", 1)[1].split(";") if f.strip()
             ]
@@ -1161,40 +1183,57 @@ def create_app():
 
         rows = session.exec(
             select(
-            Survey.survey_id, Survey.program, Survey.campus, Survey.semester, Survey.school_year, Survey.status,
-            func.count(Respondent.user_id).label("respondents_count"),
-            func.count(Respondent.submission_date).label("answers_count")
-        )
-        .join(Respondent, Survey.survey_id == Respondent.survey_id, isouter=True)
-        .where(Survey.program.in_(programs))
-        .group_by(Survey.survey_id)
-        .order_by(Survey.survey_id.desc())
+                Survey.survey_id,
+                Survey.program,
+                Survey.campus,
+                Survey.semester,
+                Survey.school_year,
+                Survey.status,
+                func.count(Respondent.user_id).label("respondents_count"),
+                func.count(Respondent.submission_date).label("answers_count"),
+            )
+            .join(Respondent, Survey.survey_id == Respondent.survey_id, isouter=True)
+            .where(Survey.program.in_(programs))
+            .group_by(Survey.survey_id)
+            .order_by(Survey.survey_id.desc())
         ).all()
 
-        surveys = [{"survey_id":r[0], "program":r[1], "campus":r[2], "semester":r[3], "school_year":r[4],"is_closed":(r[5]==0),"respondents_count":r[6],"answers_count":r[7]} for r in rows]
+        surveys = [
+            {
+                "survey_id": r[0],
+                "program": r[1],
+                "campus": r[2],
+                "semester": r[3],
+                "school_year": r[4],
+                "is_closed": (r[5] == 0),
+                "respondents_count": r[6],
+                "answers_count": r[7],
+            }
+            for r in rows
+        ]
 
-        context={"user":user,"surveys":surveys, "programs":programs}
+        context = {"user": user, "surveys": surveys, "programs": programs}
         return templates.TemplateResponse(
             request=request,
             name="dashboard/program_manager.html",
             context=context,
         )
-    
+
     def extract_name(email):
-        local_part = email.split('@')[0]
+        local_part = email.split("@")[0]
         return " ".join(local_part.split(".")).title()
 
     def extract_initials(email):
-        local_part = email.split('@')[0]
-        
+        local_part = email.split("@")[0]
+
         # (?:^|[.\-\@]) -> Non-capturing group: Match start of string OR a delimiter
         # ([a-zA-Z])    -> Capturing group: Match and "keep" the first letter found
-        pattern = r'(?:^|[.\-\@])([a-zA-Z])'
+        pattern = r"(?:^|[.\-\@])([a-zA-Z])"
 
         # Find all matches, join them, and convert to uppercase
         matches = re.findall(pattern, local_part)
         return "".join(matches).upper()
-    
+
     @dashboard_router.get("/admin", response_class=HTMLResponse)
     async def admin_dashboard(request: Request, session: SessionDep):
         user = get_current_user(request)
@@ -1202,41 +1241,77 @@ def create_app():
         print(user)
         if not user:
             return RedirectResponse(url="/")
-        if not ("admin" in role ):
+        if not ("admin" in role):
             return RedirectResponse(url="/")
-        
-        programs = []
-        if ":" in role: # Extract programs from role
-            programs = [
-                f.strip() for f in role.split(":", 1)[1].split(";") if f.strip()
-            ]
-
-        print(programs)
 
         rows = session.exec(
             select(
-            Survey.survey_id, Survey.program, Survey.campus, Survey.semester, Survey.school_year, Survey.status,
-            func.count(Respondent.user_id).label("respondents_count"),
-            func.count(Respondent.submission_date).label("answers_count")
-        )
-        .join(Respondent, Survey.survey_id == Respondent.survey_id, isouter=True)
-#        .where(Survey.program.in_(programs)) # Admin sees all
-        .group_by(Survey.survey_id)
-        .order_by(Survey.survey_id.desc())
+                Survey.survey_id,
+                Survey.program,
+                Survey.campus,
+                Survey.semester,
+                Survey.school_year,
+                Survey.status,
+                func.count(Respondent.user_id).label("respondents_count"),
+                func.count(Respondent.submission_date).label("answers_count"),
+            )
+            .join(Respondent, Survey.survey_id == Respondent.survey_id, isouter=True)
+            #        .where(Survey.program.in_(programs)) # Admin sees all
+            .group_by(Survey.survey_id)
+            .order_by(Survey.survey_id.desc())
         ).all()
 
-        surveys = [{"survey_id":r[0], "program":r[1], "campus":r[2], "semester":r[3], "school_year":r[4],"is_closed":(r[5]==0),"respondents_count":r[6],"answers_count":r[7]} for r in rows]
-        
-        db_users = session.exec(select(User)).all()
-        users = [ {"user_id": u.user_id, "mail": u.mail, "role": u.role, "initials":extract_initials(u.mail), "name":extract_name(u.mail)} for u in db_users ]
+        surveys = [
+            {
+                "survey_id": r[0],
+                "program": r[1],
+                "campus": r[2],
+                "semester": r[3],
+                "school_year": r[4],
+                "is_closed": (r[5] == 0),
+                "respondents_count": r[6],
+                "answers_count": r[7],
+            }
+            for r in rows
+        ]
 
-        context={"user":user,"surveys":surveys, "programs":programs, "users":users}
+        db_users = session.exec(select(User)).all()
+        users = [
+            {
+                "user_id": u.user_id,
+                "mail": u.mail,
+                "role": u.role,
+                "initials": extract_initials(u.mail),
+                "name": extract_name(u.mail),
+            }
+            for u in db_users
+        ]
+
+        # Programs of all users
+        programs = []
+        for user in users:
+            if ":" in user["role"]:  # Extract programs from role
+                programs.extend(
+                    [
+                        f.strip()
+                        for f in user["role"].split(":", 1)[1].split(";")
+                        if f.strip()
+                    ]
+                )
+
+        print(programs)
+
+        context = {
+            "user": user,
+            "surveys": surveys,
+            "programs": programs,
+            "users": users,
+        }
         return templates.TemplateResponse(
             request=request,
             name="dashboard/admin.html",
             context=context,
         )
-
 
     @dashboard_router.get("/{role}", response_class=HTMLResponse)
     async def dashboard(request: Request, role: str, session: SessionDep):
@@ -1359,8 +1434,6 @@ def create_app():
         respondent_entries = session.exec(
             select(Respondent).where(Respondent.user_id == db_user.user_id)
         ).all()
-
-
 
         if not respondent_entries:
             return JSONResponse(

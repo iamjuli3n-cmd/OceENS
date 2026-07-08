@@ -11,7 +11,7 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
- </head>
+</head>
 
 <body>
 
@@ -62,134 +62,10 @@
 
   </main>
 
-  <!-- Modal -->
-  <div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="modal-title">Modifier le rôle</h3>
-        <p id="modal-subtitle">Choisissez un rôle pour cet utilisateur</p>
-      </div>
+  {% include 'dashboard/part_modal_modify_user.html' %}
 
-      <div class="modal-body">
-        <span class="role-select-label">Quel est son rôle ?</span>
-        <div class="role-options">
-          <div class="role-option" data-role="Etudiant">
-            <div class="ro-name">Étudiant</div>
-          </div>
-          <div class="role-option" data-role="Admin">
-            <div class="ro-name">Admin</div>
-          </div>
-          <div class="role-option" data-role="RP-RM">
-            <div class="ro-name">RP-RM</div>
-          </div>
-        </div>
+  {% include 'dashboard/part_toast.html' %}
 
-        <!-- Section formations RP-RM -->
-        <div class="rprm-formations-section" id="rprm-formations-section">
-          <div class="rprm-section-title">Formations associées</div>
-
-          <!-- Tags des formations sélectionnées -->
-          <div class="formations-tags" id="formations-tags"></div>
-
-          <!-- Dropdown + bouton ajouter -->
-          <div class="formations-select-row">
-            <select class="formations-select" id="formations-select">
-              <option value="">-- Sélectionner une formation --</option>
-            </select>
-            <button class="btn-add-formation" id="btn-add-formation">Ajouter</button>
-          </div>
-
-          <!-- Champ nouvelle formation (caché par défaut) -->
-          <div class="new-formation-row" id="new-formation-row">
-            <input type="text" class="new-formation-input" id="new-formation-input"
-              placeholder="Nom de la nouvelle formation…">
-            <button class="btn-confirm-formation" id="btn-confirm-formation">✓</button>
-            <button class="btn-cancel-new-formation" id="btn-cancel-new-formation">✕</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-cancel" id="btn-cancel">Annuler</button>
-        <button class="btn-save" id="btn-save">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast -->
-  <div class="toast" id="toast">
-    <span class="toast-icon">✓</span>
-    <span id="toast-msg">Rôle mis à jour</span>
-  </div>
-
-  <!-- Modal Garde-fou -->
-  <div id="safeguard-modal"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-    <div
-      style="background:white; padding:32px; border-radius:16px; max-width:450px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-      <div style="margin-bottom:16px; color:#df231d;">
-        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-          <line x1="12" y1="9" x2="12" y2="13"></line>
-          <line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
-      </div>
-      <h3 style="margin-bottom:12px; font-size:20px; color:#111;">Sondage potentiellement en cours</h3>
-      <p id="safeguard-msg" style="color:#555; font-size:15px; margin-bottom:28px; line-height:1.5;"></p>
-      <div style="display:flex; gap:12px; justify-content:center;">
-        <button onclick="closeModal()"
-          style="padding:10px 24px; border-radius:24px; border:1px solid #ccc; background:white; font-size:14px; font-weight:600; color:#555; cursor:pointer;">Annuler</button>
-        <button id="safeguard-continue"
-          style="padding:10px 24px; border-radius:24px; border:none; background:#df231d; color:white; font-size:14px; font-weight:600; cursor:pointer;">Continuer
-          quand même</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const ALL_USERS = {{ users | tojson }};
-
-    let pendingUrl = "";
-    function checkParticipation(event, url, repondants, inscrits) {
-      if (repondants < inscrits) {
-        event.preventDefault();
-        pendingUrl = url;
-        document.getElementById('safeguard-msg').innerText = `Seulement ${repondants} élèves ont répondu sur ${inscrits} inscrits. Les données risquent d'être partielles.`;
-        document.getElementById('safeguard-modal').style.display = 'flex';
-        return false;
-      }
-      return true;
-    }
-
-    function closeModal() {
-      document.getElementById('safeguard-modal').style.display = 'none';
-      pendingUrl = "";
-    }
-
-    document.getElementById('safeguard-continue').addEventListener('click', () => {
-      if (pendingUrl) window.location.href = pendingUrl;
-    });
-  </script>
-  <!--<script src="{{ url_for('static', path='js/admin.js') }}"></script>-->
-  <script>
-    // Tabs
-    const tabs = document.querySelectorAll('.tab');
-    const contents = document.querySelectorAll('.tab-content');
-    console.log(tabs);
-    console.log(contents);
-
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        const target = tab.dataset.tab;
-
-        tabs.forEach((t) => t.classList.remove('active'));
-        contents.forEach((c) => c.classList.remove('active'));
-
-        tab.classList.add('active');
-        document.getElementById(target).classList.add('active');
-      });
-    });
-  </script>
 </body>
 
 </html>
