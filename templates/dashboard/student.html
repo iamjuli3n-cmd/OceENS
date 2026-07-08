@@ -35,6 +35,10 @@
   </div>
 
   <main>
+
+
+
+
     <div class="hero-content">
       <h1 class="logo-title">
         <span class="text-red">Océ</span><span class="text-purple">Ens</span>
@@ -44,7 +48,19 @@
       <section class="questionnaire-section-with-incentive">
 
         <div class="incentive-text">
-          <p class="welcome" id="incentive-message">Chargement de vos questionnaires...</p>
+          <p class="welcome" id="incentive-message">
+            {% if surveys | length > 0 %}
+              {% if all_answered_or_closed %}
+                Merci, vous avez complété tous les questionnaires disponibles.
+              {% else %}
+                Merci de compléter les questionnaires de fin de semestre pour les cours suivants :
+              {% endif %}
+            {% else %}
+              Vous n'avez aucun questionnaire à compléter pour le moment.
+            {% endif %}
+
+
+          </p>
         </div>
 
         <div class="student-questionnaires-card">
@@ -53,7 +69,23 @@
           </div>
 
           <div id="questionnaires-list">
-            <div class="student-empty-state">Chargement...</div>
+            {% for survey in surveys %}
+            <div class="student-survey-row">
+              <div class="student-survey-info">
+                <div class="student-survey-title">{{survey.program}} — {{survey.semester}}</div>
+                <div class="student-survey-meta">{{survey.campus}} · {{survey.school_year}}</div>
+              </div>
+              <div class="student-survey-action">
+                {% if survey.is_answered %}
+                  <button class="student-survey-btn done" disabled="">Questionnaire déjà complété</button>
+                {% elif survey.is_closed %}
+                  <button class="student-survey-btn closed" disabled="">Sondage fermé</button>
+                {% else %}
+                  <a class="student-survey-btn answer" href="/api/surveys/{{survey.survey_id}}">Répondre au questionnaire</a>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
           </div>
         </div>
 

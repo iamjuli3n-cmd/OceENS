@@ -1112,6 +1112,33 @@ def create_app():
 
     # ┌─ Route : Dashboards par rôle ────────────────────────────────────┐
 
+    @dashboard_router.get("/student", response_class=HTMLResponse)
+    async def student_dashboard(request: Request, session: SessionDep):
+        user = get_current_user(request)
+        print(user)
+        if not user:
+            return RedirectResponse(url="/")
+        rows = session.exec(
+            select(Survey.survey_id, Survey.program, Survey.campus, Survey.semester, Survey.school_year, Survey.status, Respondent.submission_date)
+            .join(User, Respondent.user_id == User.user_id)
+            .join(Survey, Respondent.survey_id == Survey.survey_id)
+            .where(User.mail == user["email"].casefold())
+        ).all()
+
+        surveys=[]
+        all_answered_or_closed=True
+        for r in rows:
+            surveys.append({"survey_id":r[0], "program":r[1], "campus":r[2], "semester":r[3], "school_year":r[4],"is_closed":(r[5]==0),"is_answered":(r[6]!=None)})
+            if r[6]==None and r[5]!=0:
+                all_answered_or_closed=False
+        context={"user":user,"surveys":surveys,"all_answered_or_closed":all_answered_or_closed}
+        return templates.TemplateResponse(
+            request=request,
+            name="dashboard/student.html",
+            context=context,
+        )
+
+
     @dashboard_router.get("/{role}", response_class=HTMLResponse)
     async def dashboard(request: Request, role: str, session: SessionDep):
         user = get_current_user(request)
@@ -1233,6 +1260,8 @@ def create_app():
         respondent_entries = session.exec(
             select(Respondent).where(Respondent.user_id == db_user.user_id)
         ).all()
+
+
 
         if not respondent_entries:
             return JSONResponse(
