@@ -2,7 +2,7 @@
 
 <div class="card-title">
     Liste des utilisateurs
-    <span class="count" id="count-label">0 affiché(s)</span>
+    <span class="count" id="count-label">{{users | length}} affiché(s)</span>
 </div>
 
 <div class="search-wrap">
@@ -30,7 +30,15 @@
             <th></th>
         </tr>
     </thead>
-    <tbody id="users-tbody"></tbody>
+    <tbody id="users-tbody">
+        {% set AVATAR_COLORS = ['#7b2fa0', '#df231d', '#1565c0', '#2e7d32', '#e65100', '#ad1457', '#0277bd', '#558b2f'] %}
+
+        {% for user in users %}
+        <tr data-id="1"><td><div class="user-info"><div class="avatar" style="background:{{ AVATAR_COLORS[user.user_id%8] }}">{{user.initials}}</div><div><div class="user-name">{{user.name}}</div><div class="user-email">{{user.mail}}</div></div></div></td><td><span class="role-badge admin"><span class="role-dot"></span>Administrateur : Majeure Test</span></td><td class="td-actions"><button class="btn-edit" data-id="1">Modifier</button></td></tr>
+        {% endfor %}
+
+
+    </tbody>
 </table>
 
 <div class="empty-state" id="empty-state" style="display:none;">
