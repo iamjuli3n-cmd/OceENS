@@ -137,6 +137,7 @@ main {
         opacity: 0;
         transform: translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -459,7 +460,7 @@ main {
     z-index: 1;
 }
 
-.nps-option input[type="radio"]:checked + .nps-label {
+.nps-option input[type="radio"]:checked+.nps-label {
     background: linear-gradient(135deg, #470a68, #5c1a7a);
     color: white;
     border-color: #470a68;
@@ -683,11 +684,27 @@ main {
 }
 
 @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-6px);
+    }
+
+    40% {
+        transform: translateX(6px);
+    }
+
+    60% {
+        transform: translateX(-4px);
+    }
+
+    80% {
+        transform: translateX(4px);
+    }
 }
 
 /* ── Missing Answer Highlight ───────────── */
@@ -702,6 +719,32 @@ main {
 }
 
 @keyframes pulseRed {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(223, 35, 29, 0); }
-    50% { box-shadow: 0 0 0 4px rgba(223, 35, 29, 0.08); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(223, 35, 29, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 0 4px rgba(223, 35, 29, 0.08);
+    }
+}
+
+.survey-status-banner {
+    max-width: 980px;
+    margin: 24px auto 0;
+    padding: 14px 20px;
+    border-radius: 12px;
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    text-align: center;
+}
+
+.survey-status-banner.closed {
+    background: rgb(141, 141, 141);
+}
+
+.survey-status-banner.answered {
+    background: #2e7d32;
 }

@@ -9,27 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/questionnaire.css">
-    <style>
-        .survey-status-banner {
-            max-width: 980px;
-            margin: 24px auto 0;
-            padding: 14px 20px;
-            border-radius: 12px;
-            color: white;
-            font-weight: 700;
-            font-size: 15px;
-            text-align: center;
-        }
-
-        .survey-status-banner.closed {
-            background: rgb(141, 141, 141);
-        }
-
-        .survey-status-banner.answered {
-            background: #2e7d32;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/survey.css">
 </head>
 
 <body>
@@ -102,7 +82,7 @@
                             <input type="radio" name="q_{{ section.section_id }}_{{ question.question_id }}"
                                 value="{{ opt.text }}" data-section="{{ section.section_id }}"
                                 data-question="{{ question.question_id }}" {% if question.question_id==1
-                                %}onchange="Questionnaire.handleSatisfaction(this)" {% endif %}>
+                                %}onchange="SurveyModule.handleSatisfaction(this)" {% endif %}>
                             <span class="option-label">{{ opt.text }}</span>
                         </label>
                         {% endfor %}
@@ -154,12 +134,12 @@
                     <div class="options-grid">
                         <label class="option-radio">
                             <input type="radio" name="ue_filter_{{ ue.name | replace(' ', '_') }}" value="Oui"
-                                onchange="Questionnaire.toggleUeFilter(this)">
+                                onchange="SurveyModule.toggleUeFilter(this)">
                             <span class="option-label">Oui / Yes</span>
                         </label>
                         <label class="option-radio">
                             <input type="radio" name="ue_filter_{{ ue.name | replace(' ', '_') }}" value="Non"
-                                onchange="Questionnaire.toggleUeFilter(this)" checked>
+                                onchange="SurveyModule.toggleUeFilter(this)" checked>
                             <span class="option-label">Non / No</span>
                         </label>
                     </div>
@@ -191,7 +171,7 @@
                                     <input type="radio" name="q_mod_{{ module.module_id }}_exclusive_prof"
                                         value="__none__" data-section="3" data-question="1"
                                         data-module="{{ module.module_id }}"
-                                        onchange="Questionnaire.selectExclusiveProf(this)" checked>
+                                        onchange="SurveyModule.selectExclusiveProf(this)" checked>
                                     <span class="option-label">Je n'ai pas suivi ce module / I did not take this
                                         module</span>
                                 </label>
@@ -200,7 +180,7 @@
                                     <input type="radio" name="q_mod_{{ module.module_id }}_exclusive_prof"
                                         value="{{ teacher }}" data-section="3" data-question="1"
                                         data-module="{{ module.module_id }}"
-                                        onchange="Questionnaire.selectExclusiveProf(this)">
+                                        onchange="SurveyModule.selectExclusiveProf(this)">
                                     <span class="option-label">{{ teacher }}</span>
                                 </label>
                                 {% endfor %}
@@ -238,7 +218,7 @@
                                             value="{{ opt.text }}" data-section="{{ section.section_id }}"
                                             data-question="{{ question.question_id }}"
                                             data-module="{{ module.module_id }}" data-prof="{{ teacher }}" {% if
-                                            question.question_id==2 %}onchange="Questionnaire.handleSatisfaction(this)"
+                                            question.question_id==2 %}onchange="SurveyModule.handleSatisfaction(this)"
                                             {% endif %}>
                                         <span class="option-label">{{ opt.text }}</span>
                                     </label>
@@ -302,7 +282,7 @@
                                             value="{{ opt.text }}" data-section="{{ section.section_id }}"
                                             data-question="{{ question.question_id }}"
                                             data-module="{{ module.module_id }}" data-prof="{{ teacher }}"
-                                            onchange="Questionnaire.toggleProfBlock(this)">
+                                            onchange="SurveyModule.toggleProfBlock(this)">
                                         <span class="option-label">{{ opt.text }}</span>
                                     </label>
                                     {% endfor %}
@@ -342,7 +322,7 @@
                                                 data-question="{{ question.question_id }}"
                                                 data-module="{{ module.module_id }}" data-prof="{{ teacher }}" {% if
                                                 question.question_id==2
-                                                %}onchange="Questionnaire.handleSatisfaction(this)" {% endif %}>
+                                                %}onchange="SurveyModule.handleSatisfaction(this)" {% endif %}>
                                             <span class="option-label">{{ opt.text }}</span>
                                         </label>
                                         {% endfor %}
@@ -435,7 +415,7 @@
 
             <!-- Bouton de soumission -->
             <div class="submit-section">
-                <button type="button" class="btn-submit" id="btn-submit" onclick="Questionnaire.submit()">
+                <button type="button" class="btn-submit" id="btn-submit" onclick="SurveyModule.submit({{ survey.survey_id }})">
                     <span class="btn-submit-text">Envoyer les réponses</span>
                     <span class="btn-submit-icon">→</span>
                 </button>
@@ -451,12 +431,7 @@
         </div>
     </main>
 
-    <script>
-        window.__surveyData__ = {
-            template_id: Number("{{ survey.template_id }}"),
-            survey_id: Number("{{ survey.survey_id }}")
-        };
-    </script>
+   
     <script src="/static/js/survey.js"></script>
 </body>
 

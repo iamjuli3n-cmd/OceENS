@@ -355,7 +355,7 @@ def create_app():
         if not previous_survey:
             return JSONResponse(content={"ues": [], "teachers_list": []})
 
-        # ── Récupération des modules liés à ce survey ────────────────
+        # ── Récupération des modules liés à ce sondage ────────────────
         modules = session.exec(
             select(Module).where(
                 Module.survey_id == previous_survey.survey_id,
@@ -559,7 +559,7 @@ def create_app():
                             # Insertion (INSERT) : ajouter uniquement les nouvelles affectations
                             for user_id in user_ids:
                                 if user_id in existing_respondent_user_ids:
-                                    continue  # Déjà affecté à ce survey, on ne fait rien
+                                    continue  # Déjà affecté à ce sondage, on ne fait rien
                                 new_repondre = Respondent(
                                     template_id=survey.template_id,
                                     survey_id=next_survey_id,
@@ -808,7 +808,7 @@ def create_app():
                 content={"error": "Le sondage est fermé"}, status_code=403
             )
 
-        # 4. Vérifier que cet élève est assigné à ce survey (table Respondent)
+        # 4. Vérifier que cet élève est assigné à ce sondage (table Respondent)
         #    Règle stricte : pas de INSERT, UPDATE uniquement
         respondent = session.exec(
             select(Respondent).where(
@@ -819,7 +819,7 @@ def create_app():
         if not respondent:
             return JSONResponse(
                 content={
-                    "error": "Vous n'êtes pas autorisé ou assigné à répondre à ce survey."
+                    "error": "Vous n'êtes pas autorisé ou assigné à répondre à ce sondage."
                 },
                 status_code=403,
             )
@@ -829,7 +829,7 @@ def create_app():
             respondent.submission_date != None
         ):  # submission_date NOT NULL = has_answered
             return JSONResponse(
-                content={"error": "Vous avez déjà soumis vos réponses pour ce survey."},
+                content={"error": "Vous avez déjà soumis vos réponses pour ce sondage."},
                 status_code=409,
             )
 
