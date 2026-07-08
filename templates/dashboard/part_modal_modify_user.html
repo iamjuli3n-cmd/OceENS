@@ -1,0 +1,431 @@
+<!-- Modal -->
+
+<style>
+    /* ════════════════════════════════════════
+   MODAL
+   ════════════════════════════════════════ */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(20, 10, 30, .45);
+        backdrop-filter: blur(3px);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .25s;
+    }
+
+    .modal-overlay.open {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .modal {
+        background: white;
+        border-radius: 14px;
+        width: 100%;
+        max-width: 540px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+        transform: translateY(20px) scale(.97);
+        transition: transform .25s;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .modal-overlay.open .modal {
+        transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, var(--purple), var(--purple-mid));
+        padding: 22px 24px 18px;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .modal-header h3 {
+        font-size: 1.05rem;
+        font-weight: 600;
+    }
+
+    .modal-header p {
+        font-size: .82rem;
+        opacity: .75;
+        margin-top: 4px;
+    }
+
+    .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        flex-shrink: 0;
+    }
+
+    /* ── Role options ── */
+    .role-select-label {
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--blue-label);
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .role-options {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .role-option {
+        flex: 1;
+        min-width: 100px;
+        padding: 12px 8px;
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all .2s;
+        user-select: none;
+    }
+
+    .role-option:hover {
+        border-color: var(--purple-light);
+        background: #faf7ff;
+    }
+
+    .role-option.selected {
+        border-color: var(--purple);
+        background: #f3eeff;
+    }
+
+    .ro-icon {
+        font-size: 1.4rem;
+        margin-bottom: 4px;
+    }
+
+    .ro-name {
+        font-size: .8rem;
+        font-weight: 600;
+        color: var(--text);
+    }
+</style>
+<div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modal-title">Modifier le rôle</h3>
+            <p id="modal-subtitle">Choisissez un rôle pour cet utilisateur</p>
+        </div>
+
+        <div class="modal-body">
+            <span class="role-select-label">Quel est son rôle ?</span>
+            <div class="role-options">
+                <div class="role-option" data-role="student">
+                    <div class="ro-name">Étudiant</div>
+                </div>
+                <div class="role-option" data-role="admin">
+                    <div class="ro-name">Admin</div>
+                </div>
+                <div class="role-option" data-role="program_manager">
+                    <div class="ro-name">RP-RM</div>
+                </div>
+            </div>
+
+            <!-- Section formations RP-RM -->
+            <div class="rprm-formations-section" id="rprm-formations-section">
+                <div class="rprm-section-title">Formations associées</div>
+
+                <!-- Tags des formations sélectionnées -->
+                <div class="formations-tags" id="formations-tags"></div>
+
+                <!-- Dropdown + bouton ajouter -->
+                <div class="formations-select-row">
+                    <select class="formations-select" id="formations-select">
+                        <option value="">-- Sélectionner une formation --</option>
+                    </select>
+                    <button class="btn-add-formation" id="btn-add-formation" onclick="addNewProgram()">Ajouter</button>
+                </div>
+
+                <!-- Champ nouvelle formation (caché par défaut) -->
+                <div class="new-formation-row" id="new-formation-row">
+                    <input type="text" class="new-formation-input" id="new-formation-input"
+                        placeholder="Nom de la nouvelle formation…">
+                    <button class="btn-confirm-formation" id="btn-confirm-formation"
+                        onclick="confirmNewProgram()">✓</button>
+                    <button class="btn-cancel-new-formation" id="btn-cancel-new-formation"
+                        onclick="cancelNewProgram()">✕</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-cancel" id="btn-cancel" onclick="closeModal()">Annuler</button>
+            <button class="btn-save" id="btn-save" onclick="putNewRole()">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    var selectedFilieres = []; // filières choisies pour le RP-RM en cours d'édition
+
+
+    // ── Ouvrir la modale ────────────────────────────
+    function openModal(userId) {
+        var users = {{ users | tojson | safe
+    }};
+    var user = users.find(u => u.user_id === userId);
+    console.log("User found:", user);
+
+    if (!user) return;
+
+    editingUser = user;
+
+    if (user.role && (user.role.includes(':'))) {
+        var parts = user.role.split(':');
+        selectedRole = parts[0];
+        selectedFilieres = parts.length > 1
+            ? parts[1].split(';').map(function (f) { return f.trim(); }).filter(Boolean)
+            : [];
+    } else {
+        selectedRole = user.role || 'student';
+        selectedFilieres = [];
+    }
+
+    // Header
+    document.getElementById('modal-title').textContent = user.name;
+    document.getElementById('modal-subtitle').textContent = user.mail;
+
+    // Surligner le bon bouton de rôle
+    document.querySelectorAll('.role-option').forEach(function (el) {
+        el.classList.toggle('selected', user.role.startsWith(el.dataset.role));
+    });
+
+    // Section filières
+    if (user.role.startsWith('program_manager') || user.role.startsWith('admin')) {
+        showFiliereSection();
+    } else {
+        hideFiliereSection();
+    }
+    renderFiliereTags();
+    refreshFiliereDropdown();
+
+    // Cacher le champ "nouvelle filière"
+    document.getElementById('new-formation-row').classList.remove('visible');
+    document.getElementById('new-formation-input').value = '';
+
+    // Réactiver le bouton save
+    var btnSave = document.getElementById('btn-save');
+    btnSave.disabled = false;
+    btnSave.textContent = 'Enregistrer';
+
+    // Ouvrir
+    document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    // ── Section filières : afficher/masquer ─────────
+    function showFiliereSection() {
+        document.getElementById('rprm-formations-section').classList.add('visible');
+    }
+    function hideFiliereSection() {
+        document.getElementById('rprm-formations-section').classList.remove('visible');
+    }
+
+    // ── Rendu des tags filières ──────────────────────
+    function renderFiliereTags() {
+        var container = document.getElementById('formations-tags');
+        if (selectedFilieres.length === 0) {
+            container.innerHTML = '<span class="formations-empty-hint">Aucune filière ajoutée</span>';
+            return;
+        }
+        container.innerHTML = selectedFilieres.map(function (f) {
+            return '<span class="formation-tag">'
+                + f
+                + '<button class="formation-tag-remove" data-filiere="' + f + '" title="Retirer">×</button>'
+                + '</span>';
+        }).join('');
+
+        container.querySelectorAll('.formation-tag-remove').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var nom = btn.dataset.filiere;
+                selectedFilieres = selectedFilieres.filter(function (f) { return f !== nom; });
+                renderFiliereTags();
+                refreshFiliereDropdown();
+            });
+        });
+    }
+
+    // ── Rafraîchir le dropdown des filières ─────────
+    function refreshFiliereDropdown() {
+        var select = document.getElementById('formations-select');
+        var existing = {{ programs | tojson | safe
+    }};
+
+    select.innerHTML = '<option value="">-- Sélectionner une filière --</option>';
+
+    existing.forEach(function (f) {
+        if (selectedFilieres.indexOf(f) === -1) {
+            var opt = document.createElement('option');
+            opt.value = f;
+            opt.textContent = f;
+            select.appendChild(opt);
+        }
+    });
+
+    var newOpt = document.createElement('option');
+    newOpt.value = '__new__';
+    newOpt.textContent = '+ Créer une nouvelle filière';
+    select.appendChild(newOpt);
+    }
+
+    // ── Fermer la modale ────────────────────────────
+    function closeModal() {
+        document.getElementById('modal-overlay').classList.remove('open');
+        document.getElementById('new-formation-row').classList.remove('visible');
+        document.getElementById('new-formation-input').value = '';
+        editingUserId = null;
+        selectedFilieres = [];
+    }
+
+    // CODE A EXECUTER AU CHARGEMENT DE LA PAGE
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // ── Sélection du rôle dans la modale ────────────
+        document.querySelectorAll('.role-option').forEach(function (opt) {
+            opt.addEventListener('click', function () {
+                document.querySelectorAll('.role-option').forEach(function (o) { o.classList.remove('selected'); });
+                opt.classList.add('selected');
+                editingUser["role"] = opt.dataset.role;
+
+                if (opt.dataset.role === 'program_manager' || opt.dataset.role === 'admin') {
+                    showFiliereSection();
+                    renderFiliereTags();
+                    refreshFiliereDropdown();
+                } else {
+                    hideFiliereSection();
+                    selectedFilieres = [];
+                }
+            });
+        });
+
+        
+
+        
+
+
+
+
+
+        // ── Clavier sur le champ nouvelle filière ────────
+        document.getElementById('new-formation-input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btn-confirm-formation').click(); }
+            if (e.key === 'Escape') { document.getElementById('btn-cancel-new-formation').click(); }
+        });
+
+
+    });
+
+    // ── Sauvegarde ───────────────────────────────────
+        function putNewRole() {
+
+            if (!editingUser) return;
+
+            // Construire le rôle final
+            var finalRole = editingUser["role"] || 'student';
+            if (selectedRole === 'program_manager' && selectedFilieres.length > 0) {
+                finalRole = 'program_manager:' + selectedFilieres.join(';');
+            }
+            if (selectedRole === 'admin' && selectedFilieres.length > 0) {
+                finalRole = 'admin:' + selectedFilieres.join(';');
+            }
+
+            var btn = document.getElementById('btn-save');
+            btn.disabled = true;
+            btn.textContent = 'Enregistrement…';
+
+            fetch('/api/users/' + editingUser["user_id"] + '/role', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: finalRole })
+            })
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.json().catch(function () { return {}; }).then(function (err) {
+                            throw new Error(err.detail || 'HTTP ' + resp.status);
+                        });
+                    }
+                    return resp.json();
+                })
+                .then(function () {
+                    closeModal();
+                    showToast('Rôle de ' + editingUser["mail"] + ' mis à jour', 'success');
+                    window.location.reload(); // Recharger la page pour refléter les changements
+                })
+                .catch(function (err) {
+                    showToast('Erreur : ' + err.message, 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Enregistrer';
+
+                });
+        };
+
+    // ── Ajouter une filière depuis le dropdown ───────
+        function addNewProgram() {
+            var select = document.getElementById('formations-select');
+            var val = select.value;
+            if (!val) return;
+
+            if (val === '__new__') {
+                document.getElementById('new-formation-row').classList.add('visible');
+                document.getElementById('new-formation-input').focus();
+                select.value = '';
+                return;
+            }
+
+            if (selectedFilieres.indexOf(val) === -1) {
+                selectedFilieres.push(val);
+                renderFiliereTags();
+                refreshFiliereDropdown();
+            }
+            select.value = '';
+        };
+
+    // ── Confirmer une nouvelle filière ───────────────
+    function confirmNewProgram() {
+        var input = document.getElementById('new-formation-input');
+        var val = input.value.trim();
+        if (!val) return;
+
+        if (selectedFilieres.indexOf(val) === -1) {
+            selectedFilieres.push(val);
+            renderFiliereTags();
+            refreshFiliereDropdown();
+        }
+        input.value = '';
+        document.getElementById('new-formation-row').classList.remove('visible');
+    };
+
+    // ── Annuler nouvelle filière ─────────────────────
+    function cancelNewProgram() {
+        document.getElementById('new-formation-input').value = '';
+        document.getElementById('new-formation-row').classList.remove('visible');
+    };
+
+
+
+</script>
