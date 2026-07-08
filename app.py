@@ -1137,6 +1137,47 @@ def create_app():
             name="dashboard/student.html",
             context=context,
         )
+    
+    @dashboard_router.get("/program_manager", response_class=HTMLResponse)
+    async def program_manager_dashboard(request: Request, session: SessionDep):
+        user = get_current_user(request)
+        role = user.get("role", "")
+        print(user)
+        if not user:
+            return RedirectResponse(url="/")
+        if not ("program_manager" in role or "admin" in role ):
+            return RedirectResponse(url="/")
+        
+        print(user)
+
+        programs = []
+        if ":" in role: # Extract programs from role
+            programs = [
+                f.strip() for f in role.split(":", 1)[1].split(";") if f.strip()
+            ]
+
+        print(programs)
+
+        rows = session.exec(
+            select(
+            Survey.survey_id, Survey.program, Survey.campus, Survey.semester, Survey.school_year, Survey.status,
+            func.count(Respondent.user_id).label("respondents_count"),
+            func.count(Respondent.submission_date).label("answers_count")
+        )
+        .join(Respondent, Survey.survey_id == Respondent.survey_id, isouter=True)
+        .where(Survey.program.in_(programs))
+        .group_by(Survey.survey_id)
+        .order_by(Survey.survey_id.desc())
+        ).all()
+
+        surveys = [{"survey_id":r[0], "program":r[1], "campus":r[2], "semester":r[3], "school_year":r[4],"is_closed":(r[5]==0),"respondents_count":r[6],"answers_count":r[7]} for r in rows]
+
+        context={"user":user,"surveys":surveys, "programs":programs}
+        return templates.TemplateResponse(
+            request=request,
+            name="dashboard/program_manager.html",
+            context=context,
+        )
 
 
     @dashboard_router.get("/{role}", response_class=HTMLResponse)
