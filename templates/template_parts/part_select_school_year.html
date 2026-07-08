@@ -1,0 +1,42 @@
+<script>
+    function addAnneeScolaire() {
+        const newYear = prompt("Saisissez la nouvelle année scolaire (ex: 2024-2025) :");
+
+        // 1. Check if input is valid and not empty
+        if (!newYear || !newYear.trim()) return;
+        const schoolYearValue = newYear.trim();
+
+        const selectElement = document.getElementById("param-annee");
+
+        // 2. Check if the value already exists in the dropdown
+        // We convert the options to an array to use the .some() method
+        const exists = Array.from(selectElement.options).some(option => option.value === schoolYearValue);
+
+        if (!exists) {
+            // 3. Create a new <option> element
+            const newOption = document.createElement("option");
+            newOption.value = schoolYearValue;
+            newOption.textContent = schoolYearValue;
+
+            // 4. Add the new option to the select element
+            selectElement.appendChild(newOption);
+
+            // 5. Automatically select the newly added option
+            selectElement.value = schoolYearValue;
+        } else {
+            alert("Cette année scolaire existe déjà !");
+        }
+    }
+</script>
+<label>Année scolaire</label>
+<div class="param-select-group" style="display: flex; gap: 10px; width: 100%;">
+    <select id="param-annee" style="flex: 1;">
+        <option value="">-- Sélectionnez --</option>
+        {% for sy in school_years %}
+        <option value="{{ sy }}">{{ sy }}
+        </option>
+        {% endfor %}
+    </select>
+    <button class="btn-icon" title="Ajouter une année scolaire" onclick="addAnneeScolaire()"
+        style="flex-shrink: 0; padding: 0 15px; background: linear-gradient(135deg, #470a68, #5c1a7a); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">+</button>
+</div>

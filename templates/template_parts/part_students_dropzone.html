@@ -1,0 +1,138 @@
+{% include 'template_parts/part_show_notification.html' %}
+<script>
+    function toggleDropZone() {
+        dropzone = document.getElementById('dropzone-etudiants');
+        if (dropzone.style.display == 'none') {
+            dropzone.style.display = 'block';
+        } else {
+            dropzone.style.display = 'none';
+        }
+    }
+
+    // ─── Fichier : validation et stockage ────────────────
+    function handleFile(file) {
+        if (!file.name.toLowerCase().endsWith('.xlsx')) {
+            this.showNotification('Format invalide. Seuls les fichiers .xlsx sont acceptés.', 'error');
+            return;
+        }
+
+        /* From https://stackoverflow.com/questions/16215771/how-to-open-select-file-dialog-via-js */
+
+        // setting up the reader
+        var reader = new FileReader();
+
+
+        // here we tell the reader what to do when it's done reading...
+        reader.onload = readerEvent => {
+            var content = readerEvent.target.result; // this is the content!
+
+            /*
+            * From https://stackoverflow.com/questions/28782074/excel-to-json-javascript-code
+            * and https://cdn.sheetjs.com/
+            */
+
+            try {
+                workbook = XLSX.read(content, { type: 'binary', cellStyles: true });
+                console.log(workbook);
+                list = document.getElementById('student-list-area');
+                list_txt = ""
+                workbook.Strings.forEach((mail) => {
+                    if (mail.t.includes("@")) {
+                        if (list_txt != "") {
+                            list_txt += ('\n');
+                        }
+                        list_txt += (mail.t);
+                    }
+                })
+                list.value = list_txt;
+                list.style.height = "auto";
+                list.style.height = list.scrollHeight + 'px';
+
+            } catch (error) {
+                console.log("error", error);
+            }
+        }
+        reader.readAsArrayBuffer(file); // Actually read the file
+        toggleDropZone();
+        showNotification(`Fichier "${file.name}" a été chargé.`, 'info');
+    }
+
+    function bindDropzone() {
+        const dropzone = document.getElementById('dropzone-etudiants');
+        const fileInput = document.getElementById('dropzone-file-input');
+        if (!dropzone || !fileInput) return;
+
+        // Empêcher le clic sur l'input de remonter au dropzone (cause du double-open)
+        fileInput.addEventListener('click', (e) => e.stopPropagation());
+
+        // Clic sur la zone → ouvrir le sélecteur de fichier
+        dropzone.addEventListener('click', (e) => {
+            // Ne pas re-déclencher si le clic vient déjà de l'input
+            if (e.target === fileInput) return;
+            fileInput.click();
+        });
+
+        // Sélection via l'input
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        // Drag events
+        dropzone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('dropzone--dragover');
+        });
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('dropzone--dragover');
+        });
+
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dropzone--dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dropzone--dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+    }
+
+    // ─── Init au chargement ─────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        bindDropzone();
+    });
+</script>
+
+
+<div class="dropzone-section" id="student-list">
+    <div style="width:50%; float:left;">
+        <h3>📋 Liste des étudiant.e.s </h3>
+        <p><i>Un mail par ligne</i></p>
+    </div>
+    <div style="width:50%; float:left;">
+        <button class="btn-import" onclick="toggleDropZone()">Importer la liste depuis Excel (un mail
+            par ligne)</button>
+        <div class="dropzone" id="dropzone-etudiants" style="display:none; float:right;">
+            <input type="file" id="dropzone-file-input" accept=".xlsx">
+            <span class="dropzone__icon">📥</span>
+            <div class="dropzone__text">
+                <strong>Glissez-déposez</strong> votre fichier Excel ici<br>
+                ou <strong>cliquez</strong> pour sélectionner
+                <small>Format accepté : .xlsx uniquement</small>
+            </div>
+        </div>
+    </div>
+    <textarea class="student-list-area"
+        id="student-list-area">mickey.mouse@epfedu.fr&#013;&#010;naruto.uzumaki@epfedu.fr</textarea>
+</div>
