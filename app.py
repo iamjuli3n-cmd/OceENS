@@ -692,6 +692,9 @@ def create_app():
             )
         ).first()
 
+        program = session.exec(
+            select(Program).where(Program.code == survey.program)
+        ).first()
         if not survey:
             return HTMLResponse(content="Survey introuvable.", status_code=404)
 
@@ -829,6 +832,10 @@ def create_app():
                     "semester": survey.semester,
                     "school_year": survey.school_year,
                     "status": survey.status,
+                },
+                "program": {
+                    "code": program.code if program else survey.program,
+                    "name": program.name if program else survey.program,
                 },
                 "sections": sections_data,
                 "modules": modules_data,
@@ -1371,9 +1378,16 @@ def create_app():
             or 0
         )
 
-        warning_msg = None
-        if answers_count < respondents_count or survey.status == 1:
-            warning_msg = f"Attention : Le sondage est toujours en cours. Seulement {answers_count} élève(s) ont répondu sur {respondents_count} inscrits."
+        response_rate = (
+            round((answers_count / respondents_count) * 100, 1)
+            if respondents_count > 0
+            else 0
+        )
+
+        warning_msg = (
+            f"Taux de réponse : {response_rate}% "
+            f"({answers_count} sur {respondents_count})"
+        )
 
         return survey, warning_msg, respondents_count, answers_count
 
@@ -1461,11 +1475,18 @@ def create_app():
         # Utilisation de la BDD locale pour le loader sqlite3 natif
         survey_obj = load_sondage_complet("database/db_oceens.db", survey_id)
 
+        program = session.exec(
+            select(Program).where(Program.code == survey.program)
+        ).first()
+
+        program_name = program.name if program else survey.program
+
         viz_context = get_visualisation_context(survey_obj)
 
         context = {
             "user": user,
             "survey": survey,
+            "program_name": program_name,
             "respondents_count": respondents_count,
             "answers_count": answers_count,
             "warning_msg": error_or_warning
