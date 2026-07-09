@@ -5,7 +5,7 @@
 
         // First, check if the email format is valid according to the regex
         if (!regex.test(email)) {
-            return "Email '"+email+"' invalide";
+            return "Email '" + email + "' invalide";
         }
 
         // Extract the domain part (everything after the '@')
@@ -15,127 +15,128 @@
         if (allowedDomains.includes(domain)) {
             return "Valide"
         } else {
-            return "Domaine du mail '"+email+"' invalide ("+allowedDomains+")"
+            return "Domaine du mail '" + email + "' invalide (" + allowedDomains + ")"
         }
     }
 
     // ─── Publication (atomique : sondage + import en une seule requête) ──
     async function publish() {
-        selectedTemplateId = document.getElementById("param-template").value
-        if (!selectedTemplateId) return alert('Pas de template sélectionné !');
-        selectedProgramId = document.getElementById("param-filiere").value
-        if (!selectedProgramId) return alert('Veuillez sélectionner une Filière.');
-        selectedCampusId = document.getElementById("param-campus").value
-        if (!selectedCampusId) return alert('Veuillez sélectionner un Campus.');
-        selectedSemester = document.getElementById("param-semestre").value
-        if (!selectedSemester) return alert("Veuillez sélectionner un semestre.");
-        selectedSchoolYear = document.getElementById("param-annee").value
-        if (!selectedSchoolYear) return alert("Veuillez sélectionner une année scolaire.");
-        if (ues.length === 0) return alert('Le sondage doit contenir au moins une UE.');
-        console.log(ues);
-        ues.forEach(ue => {
-            if (ue.modules.length === 0) return alert('L\'UE "'+ue.name+'"" doit avoir au moins un module.');
-            ue.modules.forEach(m => {
-                if (m.teachers.length === 0) return alert('Le module "'+m.name+'" doit avoir au moins un.e enseignant.e.');
-            })
+
+        campus = {{ campus | tojson }};
+    selectedTemplateId = document.getElementById("param-template").value
+    if (!selectedTemplateId) return alert('Pas de template sélectionné !');
+    selectedProgramId = document.getElementById("param-filiere").value
+    if (!selectedProgramId) return alert('Veuillez sélectionner une Filière.');
+
+    selectedSemester = document.getElementById("param-semestre").value
+    if (!selectedSemester) return alert("Veuillez sélectionner un semestre.");
+    selectedSchoolYear = document.getElementById("param-annee").value
+    if (!selectedSchoolYear) return alert("Veuillez sélectionner une année scolaire.");
+    if (ues.length === 0) return alert('Le sondage doit contenir au moins une UE.');
+    console.log(ues);
+    ues.forEach(ue => {
+        if (ue.modules.length === 0) return alert('L\'UE "' + ue.name + '"" doit avoir au moins un module.');
+        ue.modules.forEach(m => {
+            if (m.teachers.length === 0) return alert('Le module "' + m.name + '" doit avoir au moins un.e enseignant.e.');
         })
+    })
 
-        students = document.getElementById('student-list-area').value.split(/\s+/);
+    students = document.getElementById('student-list-area').value.split(/\s+/);
 
-        student_count = 0;
-        invalid_emails = [];
-        students.forEach(student => {
-            if (student.length > 1) { // If not empty line
-                rep = validateEmail(student);
-                if (rep != "Valide") {
-                    invalid_emails.push(rep);
-                } else { // Valide 
-                    student_count = student_count + 1;
-                }
+    student_count = 0;
+    invalid_emails = [];
+    students.forEach(student => {
+        if (student.length > 1) { // If not empty line
+            rep = validateEmail(student);
+            if (rep != "Valide") {
+                invalid_emails.push(rep);
+            } else { // Valide 
+                student_count = student_count + 1;
             }
-
-        })
-
-        if (invalid_emails.length > 0) {
-            return alert('Certains email sont invalides : ' + invalid_emails);
         }
 
-        if (student_count < 1) return alert('Le sondage doit contenir au moins un mail étudiant.');
+    })
 
-        //const campusNom = this.campusList.find(c => c.id === selectedCampusId)?.name || '';
-        //const filiereNom = this.programsList.find(f => f.id === selectedProgramId)?.name || '';
+    if (invalid_emails.length > 0) {
+        return alert('Certains email sont invalides : ' + invalid_emails);
+    }
+
+    if (student_count < 1) return alert('Le sondage doit contenir au moins un mail étudiant.');
+
+    //const campusNom = this.campusList.find(c => c.id === selectedCampusId)?.name || '';
+    //const filiereNom = this.programsList.find(f => f.id === selectedProgramId)?.name || '';
 
 
-        // Préparer les données du sondage en JSON
-        const surveyData = {
-            template_id: selectedTemplateId,
-            campus: selectedCampusId,
-            program: selectedProgramId,
-            semester: selectedSemester,
-            school_year: selectedSchoolYear,
-            ues: ues.map(ue => ({
-                id: ue.id,
-                name: ue.name,
-                is_optional: ue.is_optional,
-                modules: (ue.modules || []).map(mod => ({
-                    id: mod.id,
-                    name: mod.name,
-                    one_teacher_in_list: mod.one_teacher_in_list || false,
-                    teachers: mod.teachers || []
-                }))
-            })),
-            students: this.students
-        };
+    // Préparer les données du sondage en JSON
+    const surveyData = {
+        template_id: selectedTemplateId,
+        campus: campus[selectedProgramId],
+        program: selectedProgramId,
+        semester: selectedSemester,
+        school_year: selectedSchoolYear,
+        ues: ues.map(ue => ({
+            id: ue.id,
+            name: ue.name,
+            is_optional: ue.is_optional,
+            modules: (ue.modules || []).map(mod => ({
+                id: mod.id,
+                name: mod.name,
+                one_teacher_in_list: mod.one_teacher_in_list || false,
+                teachers: mod.teachers || []
+            }))
+        })),
+        students: this.students
+    };
 
-        // Désactiver le bouton pendant le traitement
-        const btn = document.querySelector('.btn-publish');
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = 'Publication en cours...';
+    // Désactiver le bouton pendant le traitement
+    const btn = document.querySelector('.btn-publish');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Publication en cours...';
+    }
+
+    try {
+        const response = await fetch('/api/surveys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(surveyData),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || `Erreur serveur (${response.status})`);
         }
 
-        try {
-            const response = await fetch('/api/surveys', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(surveyData),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || `Erreur serveur (${response.status})`);
-            }
-
-            // Succès — construire le message
-            if (result.nb_emails_lus) {
-                this.showNotification(
-                    `Sondage publié ! ${result.nb_emails_lus} étudiant(s) traité(s) — ` +
-                    `${result.nb_users_crees} nouveau(x), ${result.nb_repondre_inseres} assigné(s).`,
-                    'success'
-                );
-            } else {
-                this.showNotification('Sondage publié avec succès !', 'success');
-            }
-
-            // Attendre un peu pour lire la notification, puis rediriger
-            
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 2500);
-
-        } catch (error) {
+        // Succès — construire le message
+        if (result.nb_emails_lus) {
             this.showNotification(
-                'Erreur lors de la création du sondage : ' + error.message,
-                'error'
+                `Sondage publié ! ${result.nb_emails_lus} étudiant(s) traité(s) — ` +
+                `${result.nb_users_crees} nouveau(x), ${result.nb_repondre_inseres} assigné(s).`,
+                'success'
             );
-            console.error(error);
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Publier le sondage';
-            }
+        } else {
+            this.showNotification('Sondage publié avec succès !', 'success');
         }
+
+        // Attendre un peu pour lire la notification, puis rediriger
+
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 2500);
+
+    } catch (error) {
+        this.showNotification(
+            'Erreur lors de la création du sondage : ' + error.message,
+            'error'
+        );
+        console.error(error);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Publier le sondage';
+        }
+    }
     }
 </script>
 

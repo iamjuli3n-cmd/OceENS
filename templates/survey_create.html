@@ -62,22 +62,11 @@
 
                 <div class="param-selectors">
                     <div class="param-field">
-                        <label>Campus</label>
-                        <div class="param-select-group">
-                            <select id="param-campus">
-                                {% for campus in campus_list %}
-                                <option value="{{ campus.name }}">{{ campus.name }}</option>
-                                {% endfor %}
-                            </select>
-
-                        </div>
-                    </div>
-                    <div class="param-field">
                         <label>Filière </label>
                         <div class="param-select-group">
                             <select id="param-filiere">
                                 {% for program in programs %}
-                                <option value="{{ program }}">{{ program }}</option>
+                                <option value="{{ program.code }}">{{ program.name }} ({{ program.campus }})</option>
                                 {% endfor %}
                             </select>
                         </div>

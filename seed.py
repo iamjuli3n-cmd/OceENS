@@ -1,5 +1,8 @@
 from sqlalchemy.orm import Session
+from pathlib import Path
+import csv
 from models import (
+    Program,
     User,
     Template,
     Section,
@@ -17,14 +20,14 @@ def seed_users(db: Session):
     """Remplit la table users."""
 
     user_data = [
-        (1, "antoine.gademer@epf.fr", "admin:Majeure Test"),
+        (1, "antoine.gademer@epf.fr", "admin:MDAI5"),
         (2, "bob.leponge@epfedu.fr", "student"),
         (3, "peter.parker@epfedu.fr", "student"),
         (4, "mickey.mouse@epfedu.fr", "student"),
         (5, "naruto.uzumaki@epfedu.fr", "student"),
         (6, "yassine.gharbi@epfedu.fr", "admin"),
-        (7, "arnaud.jousset@epf.fr", "admin"),
-        (8, "etienne.gibaud@epf.fr", "admin"),
+        (7, "arnaud.jousset@epfedu.fr", "admin"),
+        (8, "etienne.gibaud@epfedu.fr", "admin"),
     ]
     for u_data in user_data:
         user = User(user_id=u_data[0], mail=u_data[1], role=u_data[2])
@@ -384,13 +387,86 @@ def seed_options(db: Session):
     db.commit()
 
 
+def _normalize_header(value: str) -> str:
+    return (
+        (value or "")
+        .strip()
+        .lower()
+        .replace("é", "e")
+        .replace("è", "e")
+        .replace("ê", "e")
+        .replace("à", "a")
+        .replace(" ", "_")
+    )
+
+
+def _get_csv_value(row: dict, *possible_names: str) -> str:
+    normalized_row = {_normalize_header(key): value for key, value in row.items()}
+
+    for name in possible_names:
+        key = _normalize_header(name)
+        if key in normalized_row:
+            return (normalized_row[key] or "").strip()
+
+    return ""
+
+
+def seed_programs(db: Session):
+    """Remplit la table programs depuis database/Liste_Formations.csv."""
+
+    csv_path = Path("database/Liste_Formations.csv")
+
+    if not csv_path.exists():
+        print("[SEED] database/Liste_Formations.csv introuvable.")
+        return
+
+    inserted = 0
+
+    with csv_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
+        sample = csv_file.read(2048)
+        csv_file.seek(0)
+
+        try:
+            dialect = csv.Sniffer().sniff(sample, delimiters=";,")
+        except csv.Error:
+            dialect = csv.excel
+            dialect.delimiter = ";"
+
+        reader = csv.reader(csv_file, dialect=dialect)
+
+        for row in reader:
+            if len(row) < 3:
+                continue
+
+            code = (row[0] or "").strip().upper()
+            name = (row[1] or "").strip()
+            campus = (row[2] or "").strip()
+
+            if not code or not name or not campus:
+                continue
+
+            program = Program(
+                code=code,
+                name=name,
+                campus=campus,
+            )
+
+            db.merge(program)
+            inserted += 1
+
+    db.commit()
+    print(
+        f"[SEED] {inserted} programme(s) inséré(s)/mis à jour depuis Liste_Formations.csv."
+    )
+
+
 def seed_surveys(db: Session):
     """Remplit la table surveys."""
     survey_data = {
         "template_id": 1,
         "survey_id": 1,
         "campus": "Montpellier",
-        "program": "Majeure Test",
+        "program": "MDAI5",
         "semester": "Automne",
         "status": 1,
         "school_year": "2026-2027",
@@ -4569,6 +4645,7 @@ def seed_all_if_necessary():
     seed_sections(db)
     seed_questions(db)
     seed_options(db)
+    seed_programs(db)
     seed_surveys(db)
     seed_modules(db)
     seed_respondents(db)

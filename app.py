@@ -23,6 +23,7 @@ from fastapi import Depends, FastAPI, File, Form, Request, UploadFile, APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from requests import session
 from sqlmodel import Session, SQLModel, create_engine, select, func
 import uvicorn
 from seed import seed_all_if_necessary
@@ -39,6 +40,7 @@ from models import (
     Option,
     User,
     Submission,
+    Program,
 )
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
@@ -268,11 +270,20 @@ def create_app():
             for teacher in at.split(","):
                 teachers.add(teacher.strip())
 
-        campus_list = [{"id":1,"name":"Paris-Cachan"},
-                    {"id":2,"name":"Montpellier"},
-                    {"id":3,"name":"Troyes"},
-                    {"id":4,"name":"St-Nazaire"},]
+        if (allowed_programs is None or allowed_programs == []) and role.startswith(
+            "admin"
+        ):
+            programs_list = session.exec(select(Program)).all()
+        else:
+            programs_list = session.exec(
+                select(Program).where(Program.code.in_(allowed_programs))
+            ).all()
 
+        campus = {}
+        for program in programs_list:
+            campus[program.code] = program.campus
+
+        print(campus)
 
         return templates.TemplateResponse(
             request=request,
@@ -280,35 +291,11 @@ def create_app():
             context={
                 "request": request,
                 "survey_templates": survey_templates,
-                "campus_list": campus_list,
-                "programs": allowed_programs,
+                "campus": campus,
+                "programs": programs_list,
                 "school_years": school_years,
                 "teachers_list": sorted(list(teachers)),
             },
-        )
-
-    # └────────────────────────────────────────────────────────────────┘
-
-    # ┌─ API : Données de paramétrage (accès restreint Admin + RP-RM) ────┐
-    @api_router.get("/parametrage")
-    def parametrage_api(request: Request, session: SessionDep):
-        # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user = require_roles(request, ["admin", "program_manager"])
-        if user is None:
-            return JSONResponse(
-                content={"error": "Accès refusé. Rôle Admin ou RP-RM requis."},
-                status_code=403,
-            )
-
-        # Filtrer les filières pour les RP-RM
-        allowed_programs = None
-        role = user.get("role", "") or ""
-
-        if ":" in role:  # RP-RM or Admin with formations
-            allowed_programs = parse_rprm_formations(role)
-
-        return JSONResponse(
-            content=build_parametrage_data(session, allowed_programs=allowed_programs)
         )
 
     # └────────────────────────────────────────────────────────────────┘
@@ -491,7 +478,9 @@ def create_app():
                     for ue in survey.ues:
                         for module_data in ue.modules:
                             enseignant_str = (
-                                ", ".join(module_data.teachers) if module_data.teachers else None
+                                ", ".join(module_data.teachers)
+                                if module_data.teachers
+                                else None
                             )
 
                             new_module = Module(
@@ -829,7 +818,9 @@ def create_app():
             respondent.submission_date != None
         ):  # submission_date NOT NULL = has_answered
             return JSONResponse(
-                content={"error": "Vous avez déjà soumis vos réponses pour ce sondage."},
+                content={
+                    "error": "Vous avez déjà soumis vos réponses pour ce sondage."
+                },
                 status_code=409,
             )
 
@@ -990,20 +981,35 @@ def create_app():
     @dashboard_router.get("/program-manager", response_class=HTMLResponse)
     async def program_manager_dashboard(request: Request, session: SessionDep):
         user = get_current_user(request)
-        role = user.get("role", "")
-        print(user)
+
         if not user:
             return RedirectResponse(url="/")
+
+        role = user.get("role", "")
+        print(user)
+
         if not ("program_manager" in role or "admin" in role):
             return RedirectResponse(url="/")
 
-        print(user)
+        allowed_programs = parse_rprm_formations(role)
+        print(allowed_programs)
 
-        programs = []
-        if ":" in role:  # Extract programs from role
-            programs = [
-                f.strip() for f in role.split(":", 1)[1].split(";") if f.strip()
+        # Admin sans restriction : voit toutes les filières
+        if (allowed_programs is None or allowed_programs == []) and role.startswith(
+            "admin"
+        ):
+            db_programs = session.exec(select(Program)).all()
+            program_codes = [p.code for p in db_programs]
+
+        # RPRM : voit uniquement ses filières
+        else:
+            program_codes = [
+                p.code if hasattr(p, "code") else p for p in allowed_programs
             ]
+
+            db_programs = session.exec(
+                select(Program).where(Program.code.in_(program_codes))
+            ).all()
 
         rows = session.exec(
             select(
@@ -1017,15 +1023,18 @@ def create_app():
                 func.count(Respondent.submission_date).label("answers_count"),
             )
             .join(Respondent, Survey.survey_id == Respondent.survey_id, isouter=True)
-            .where(Survey.program.in_(programs))
+            .where(Survey.program.in_(program_codes))
             .group_by(Survey.survey_id)
             .order_by(Survey.survey_id.desc())
         ).all()
+
+        program_name_by_code = {p.code: p.name for p in db_programs}
 
         surveys = [
             {
                 "survey_id": r[0],
                 "program": r[1],
+                "program_name": program_name_by_code.get(r[1], r[1]),
                 "campus": r[2],
                 "semester": r[3],
                 "school_year": r[4],
@@ -1036,7 +1045,21 @@ def create_app():
             for r in rows
         ]
 
-        context = {"user": user, "surveys": surveys, "programs": programs}
+        programs = [
+            {
+                "code": p.code,
+                "name": p.name,
+                "campus": p.campus,
+            }
+            for p in db_programs
+        ]
+
+        context = {
+            "user": user,
+            "surveys": surveys,
+            "programs": programs,
+        }
+
         return templates.TemplateResponse(
             request=request,
             name="dashboard/program_manager.html",
@@ -1084,11 +1107,14 @@ def create_app():
             .group_by(Survey.survey_id)
             .order_by(Survey.survey_id.desc())
         ).all()
+        db_programs = session.exec(select(Program)).all()
+        program_name_by_code = {p.code: p.name for p in db_programs}
 
         surveys = [
             {
                 "survey_id": r[0],
                 "program": r[1],
+                "program_name": program_name_by_code.get(r[1], r[1]),
                 "campus": r[2],
                 "semester": r[3],
                 "school_year": r[4],
@@ -1111,24 +1137,14 @@ def create_app():
             for u in db_users
         ]
 
-        # Programs of all users
-        programs = set()
-        for user_ in users:
-            if ":" in user_["role"]:  # Extract programs from role
-                for program in [
-                        f.strip()
-                        for f in user_["role"].split(":", 1)[1].split(";")
-                        if f.strip()
-                    ]:
-                    programs.add(program)
-                
-
-        print(programs)
+        programs = [
+            {"code": p.code, "name": p.name, "campus": p.campus} for p in db_programs
+        ]
 
         context = {
             "user": user,
             "surveys": surveys,
-            "programs": list(programs),
+            "programs": programs,
             "users": users,
         }
         return templates.TemplateResponse(
@@ -1138,7 +1154,7 @@ def create_app():
         )
 
     # └────────────────────────────────────────────────────────────────┘
-    
+
     # ┌─ API : Gestion des rôles utilisateurs (accès restreint Admin) ────┐
     def _is_valid_role(role: str) -> bool:
         """Accepte 'admin' ou 'admin:program1,program2', 'student', 'program_manager' ou 'program_manager:program1,program2;...'"""
