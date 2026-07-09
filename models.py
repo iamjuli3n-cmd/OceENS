@@ -43,7 +43,17 @@ class Survey(SQLModel, table=True):
     )
 
     campus: Optional[str] = Field(default=None, sa_column=Column("campus", String))
-    program: Optional[str] = Field(default=None, sa_column=Column("program", String))
+
+    program: Optional[str] = Field(
+        default=None,
+        sa_column=Column(
+            "program",
+            String,
+            ForeignKey("programs.code"),
+            nullable=True,
+        ),
+    )
+
     semester: Optional[str] = Field(default=None, sa_column=Column("semester", String))
     # 1 : Active / 0 : Closed
     status: Optional[int] = Field(default=None, sa_column=Column("status", Integer))
@@ -228,7 +238,7 @@ class Respondent(SQLModel, table=True):
             "user_id", Integer, ForeignKey("users.user_id"), primary_key=True
         ),
     )
-    
+
     # If submission_date is NULL --> Not yet answered
     submission_date: Optional[str] = Field(
         default=None, sa_column=Column("submission_date", String)
@@ -262,3 +272,13 @@ class Submission(SQLModel, table=True):
         default=None,
         sa_column=Column("created_at", String),
     )
+
+
+class Program(SQLModel, table=True):
+    __tablename__ = "programs"
+
+    code: str = Field(sa_column=Column("code", String, primary_key=True))
+
+    name: str = Field(sa_column=Column("name", String, nullable=False))
+
+    campus: str = Field(sa_column=Column("campus", String, nullable=False))

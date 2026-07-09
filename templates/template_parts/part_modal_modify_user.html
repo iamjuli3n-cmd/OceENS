@@ -281,8 +281,8 @@
     existing.forEach(function (f) {
         if (selectedFilieres.indexOf(f) === -1) {
             var opt = document.createElement('option');
-            opt.value = f;
-            opt.textContent = f;
+            opt.value = f.code;
+            opt.textContent = f.name + ' (' + f.campus + ')';
             select.appendChild(opt);
         }
     });
@@ -323,9 +323,9 @@
             });
         });
 
-        
 
-        
+
+
 
 
 
@@ -341,69 +341,69 @@
     });
 
     // ── Sauvegarde ───────────────────────────────────
-        function putNewRole() {
+    function putNewRole() {
 
-            if (!editingUser) return;
+        if (!editingUser) return;
 
-            // Construire le rôle final
-            var finalRole = editingUser["role"] || 'student';
-            if (selectedRole === 'program_manager' && selectedFilieres.length > 0) {
-                finalRole = 'program_manager:' + selectedFilieres.join(';');
-            }
-            if (selectedRole === 'admin' && selectedFilieres.length > 0) {
-                finalRole = 'admin:' + selectedFilieres.join(';');
-            }
+        // Construire le rôle final
+        var finalRole = editingUser["role"] || 'student';
+        if (selectedRole === 'program_manager' && selectedFilieres.length > 0) {
+            finalRole = 'program_manager:' + selectedFilieres.join(';');
+        }
+        if (selectedRole === 'admin' && selectedFilieres.length > 0) {
+            finalRole = 'admin:' + selectedFilieres.join(';');
+        }
 
-            var btn = document.getElementById('btn-save');
-            btn.disabled = true;
-            btn.textContent = 'Enregistrement…';
+        var btn = document.getElementById('btn-save');
+        btn.disabled = true;
+        btn.textContent = 'Enregistrement…';
 
-            fetch('/api/users/' + editingUser["user_id"] + '/role', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role: finalRole })
+        fetch('/api/users/' + editingUser["user_id"] + '/role', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: finalRole })
+        })
+            .then(function (resp) {
+                if (!resp.ok) {
+                    return resp.json().catch(function () { return {}; }).then(function (err) {
+                        throw new Error(err.detail || 'HTTP ' + resp.status);
+                    });
+                }
+                return resp.json();
             })
-                .then(function (resp) {
-                    if (!resp.ok) {
-                        return resp.json().catch(function () { return {}; }).then(function (err) {
-                            throw new Error(err.detail || 'HTTP ' + resp.status);
-                        });
-                    }
-                    return resp.json();
-                })
-                .then(function () {
-                    closeModal();
-                    showToast('Rôle de ' + editingUser["mail"] + ' mis à jour', 'success');
-                    window.location.reload(); // Recharger la page pour refléter les changements
-                })
-                .catch(function (err) {
-                    showToast('Erreur : ' + err.message, 'error');
-                    btn.disabled = false;
-                    btn.textContent = 'Enregistrer';
+            .then(function () {
+                closeModal();
+                showToast('Rôle de ' + editingUser["mail"] + ' mis à jour', 'success');
+                window.location.reload(); // Recharger la page pour refléter les changements
+            })
+            .catch(function (err) {
+                showToast('Erreur : ' + err.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Enregistrer';
 
-                });
-        };
+            });
+    };
 
     // ── Ajouter une filière depuis le dropdown ───────
-        function addNewProgram() {
-            var select = document.getElementById('formations-select');
-            var val = select.value;
-            if (!val) return;
+    function addNewProgram() {
+        var select = document.getElementById('formations-select');
+        var val = select.value;
+        if (!val) return;
 
-            if (val === '__new__') {
-                document.getElementById('new-formation-row').classList.add('visible');
-                document.getElementById('new-formation-input').focus();
-                select.value = '';
-                return;
-            }
-
-            if (selectedFilieres.indexOf(val) === -1) {
-                selectedFilieres.push(val);
-                renderFiliereTags();
-                refreshFiliereDropdown();
-            }
+        if (val === '__new__') {
+            document.getElementById('new-formation-row').classList.add('visible');
+            document.getElementById('new-formation-input').focus();
             select.value = '';
-        };
+            return;
+        }
+
+        if (selectedFilieres.indexOf(val) === -1) {
+            selectedFilieres.push(val);
+            renderFiliereTags();
+            refreshFiliereDropdown();
+        }
+        select.value = '';
+    };
 
     // ── Confirmer une nouvelle filière ───────────────
     function confirmNewProgram() {
