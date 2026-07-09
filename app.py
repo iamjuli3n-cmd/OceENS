@@ -65,7 +65,7 @@ def role_to_dashboard_slug(role: str) -> str:
     if role.startswith("admin"):
         return "admin"
     elif role.startswith("program_manager"):
-        return "program_manager"
+        return "program-manager"
     else:
         return "student"
 
@@ -126,17 +126,11 @@ class SurveyCreate(BaseModel):
     user_id: Optional[int] = 1
 
 
-class ProfesseurBase(BaseModel):
-    id: int
-    firstname: str
-    name: str
-
-
 class ModuleCreate(BaseModel):
     id: int
     name: str
     one_teacher_in_list: bool = False
-    teachers: List[ProfesseurBase]
+    teachers: List[str]
 
 
 class UECreate(BaseModel):
@@ -185,169 +179,6 @@ def parse_name(full_name: Optional[str], fallback_id: int) -> Dict[str, Optional
     if len(parts) == 1:
         return {"id": fallback_id, "firstname": parts[0], "name": ""}
     return {"id": fallback_id, "firstname": parts[0], "name": " ".join(parts[1:])}
-
-
-def build_parametrage_data(
-    session: Session, allowed_programs: list[str] | None = None
-) -> Dict[str, object]:
-    templates = session.exec(select(Template)).all()
-    surveys = session.exec(select(Survey)).all()
-    modules = session.exec(select(Module)).all()
-    users = session.exec(select(User)).all()
-
-    campus_names = []
-    program_names = []
-    semesters = []
-    school_years = []
-    formation_to_campus: Dict[str, str] = {}
-    for survey in surveys:
-        if survey.campus and survey.campus not in campus_names:
-            campus_names.append(survey.campus)
-        if survey.program and survey.program not in program_names:
-            program_names.append(survey.program)
-            formation_to_campus[survey.program] = survey.campus or ""
-        if survey.semester and survey.semester not in semesters:
-            semesters.append(survey.semester)
-        if survey.school_year and survey.school_year not in school_years:
-            school_years.append(survey.school_year)
-
-    # Filtrer les filières si l'utilisateur RP-RM n'a accès qu'à certaines formations
-    if allowed_programs is not None:
-        program_names = [f for f in program_names if f in allowed_programs]
-        # Ajouter les formations autorisées absentes des surveys existants
-        for ap in allowed_programs:
-            if ap not in program_names:
-                program_names.append(ap)
-
-    default_campuses = ["Paris-Cachan", "Montpellier", "Troyes", "St-Nazaire"]
-    for dc in default_campuses:
-        if dc not in campus_names:
-            campus_names.append(dc)
-
-    campus_list = [
-        {"id": index + 1, "name": campus} for index, campus in enumerate(campus_names)
-    ]
-    campus_index = {campus["name"]: campus["id"] for campus in campus_list}
-    programs = []
-    for index, program in enumerate(program_names):
-        programs.append(
-            {
-                "id": index + 1,
-                "name": program,
-                "campus_id": campus_index.get(
-                    formation_to_campus.get(program, ""), None
-                ),
-            }
-        )
-
-    teachers = []
-    teacher_index = 1
-    teachers_seen = {}
-    for module in modules:
-        if not module.teacher:
-            continue
-        teachers_list_as_string = [
-            p.strip() for p in module.teacher.split(",") if p.strip()
-        ]
-        for teacher_as_string in teachers_list_as_string:
-            teacher = parse_name(teacher_as_string, teacher_index)
-            if not teacher["firstname"] and not teacher["name"]:
-                continue
-            key = (teacher["firstname"].lower(), teacher["name"].lower())
-            if key not in teachers_seen:
-                teachers_seen[key] = teacher_index
-                teacher["id"] = teacher_index
-                teachers.append(teacher)
-                teacher_index += 1
-
-    for user in users:
-        if user.role and "Enseignant" in user.role and user.mail:
-            parsed = parse_name(
-                user.mail.split("@")[0].replace(".", " "), teacher_index
-            )
-            parsed["name"] = parsed["name"] or ""
-            parsed["firstname"] = parsed["firstname"] or ""
-            key = (parsed["firstname"].lower(), parsed["name"].lower())
-            if key and key not in teachers_seen:
-                teachers_seen[key] = teacher_index
-                parsed["id"] = teacher_index
-                teachers.append(parsed)
-                teacher_index += 1
-
-    ues_by_program = {}
-    if modules and programs:
-        default_program_id = programs[0]["id"]
-        for module in modules:
-            program_id = default_program_id
-            ue_name = module.ue or "Sans UE"
-            ues_by_program.setdefault(program_id, [])
-            ue_entry = next(
-                (ue for ue in ues_by_program[program_id] if ue["name"] == ue_name), None
-            )
-            if ue_entry is None:
-                ue_entry = {
-                    "id": len(ues_by_program[program_id]) + 1,
-                    "name": ue_name,
-                    "is_optional": module.is_optional or False,
-                    "_open": True,
-                    "modules": [],
-                }
-                ues_by_program[program_id].append(ue_entry)
-            teachers_list = []
-            if module.teacher:
-                teachers_list_as_string = [
-                    p.strip() for p in module.teacher.split(",") if p.strip()
-                ]
-                for teacher_as_string in teachers_list_as_string:
-                    parsed = parse_name(teacher_as_string, 0)
-                    if parsed["firstname"] or parsed["name"]:
-                        key = (parsed["firstname"].lower(), parsed["name"].lower())
-                        if key not in teachers_seen:
-                            teachers_seen[key] = teacher_index
-                            parsed["id"] = teacher_index
-                            teachers.append(parsed)
-                            teacher_index += 1
-                        teachers_list.append(
-                            {
-                                "id": teachers_seen[key],
-                                "firstname": parsed["firstname"],
-                                "name": parsed["name"],
-                            }
-                        )
-            ue_entry["modules"].append(
-                {
-                    "id": int(module.module_id or 0),
-                    "name": module.name or "Module",
-                    "one_teacher_in_list": bool(module.one_teacher_in_list),
-                    "teachers": teachers_list,
-                }
-            )
-
-    template_dicts = [template.dict() for template in templates]
-
-    return {
-        "templates": template_dicts,
-        "campus_list": campus_list,
-        "programs": programs,
-        "semesters": semesters,
-        "school_years": school_years,
-        "teachers_list": teachers,
-        "ues_by_program": ues_by_program,
-        "selected_template_id": template_dicts[0]["template_id"]
-        if template_dicts
-        else None,
-        "selected_campus_id": campus_list[0]["id"] if campus_list else None,
-        "selected_program_id": programs[0]["id"] if programs else None,
-        "semester_year": semesters[0] if semesters else "",
-        "selected_school_year": school_years[0] if school_years else "",
-        "questions": [
-            question.dict() for question in session.exec(select(Question)).all()
-        ],
-        "options": [option.dict() for option in session.exec(select(Option)).all()],
-    }
-
-
-# └────────────────────────────────────────────────────────────────────────┘
 
 
 # ┌─ Gestion du cycle de vie (lifespan) ──────────────────────────────────┐
@@ -416,45 +247,43 @@ def create_app():
         user = require_roles(request, ["admin", "program_manager"])
         if user is None:
             # Utilisateur non connecté ou rôle insuffisant → redirection
-            connected_user = get_current_user(request)
-            if connected_user:
-                slug = role_to_dashboard_slug(connected_user.get("role", ""))
-                return RedirectResponse(url=f"/dashboard/{slug}")
             return RedirectResponse(url="/")
 
         # Déterminer les formations autorisées pour un RP-RM
-        allowed_programs = None
-        is_program_manager = False
         role = user.get("role", "") or ""
+        print(role)
+        allowed_programs = parse_rprm_formations(role)
+        print(allowed_programs)
 
-        if role.startswith("admin:"):
-            allowed_programs = parse_rprm_formations(role)
-            is_program_manager = True
-        if role.startswith("program_manager:"):
-            allowed_programs = parse_rprm_formations(role)
-            is_program_manager = True
-        elif role.startswith("program_manager"):
-            is_program_manager = True
+        # Fetch all potential templates
+        survey_templates = session.exec(select(Template)).all()
 
-        data = build_parametrage_data(session, allowed_programs=allowed_programs)
+        # Extract all distinct school years
+        school_years = session.exec(select(Survey.school_year).distinct()).all()
+
+        # Extract all distinct teachers
+        associated_teachers = session.exec(select(Module.teacher).distinct()).all()
+        teachers = set()
+        for at in associated_teachers:
+            for teacher in at.split(","):
+                teachers.add(teacher.strip())
+
+        campus_list = [{"id":1,"name":"Paris-Cachan"},
+                    {"id":2,"name":"Montpellier"},
+                    {"id":3,"name":"Troyes"},
+                    {"id":4,"name":"St-Nazaire"},]
+
+
         return templates.TemplateResponse(
             request=request,
             name="survey_create.html",
             context={
                 "request": request,
-                "templates": data["templates"],
-                "campus_list": data["campus_list"],
-                "programs": data["programs"],
-                "semesters": data["semesters"],
-                "school_years": data["school_years"],
-                "teachers_list": data["teachers_list"],
-                "ues_by_program": data["ues_by_program"],
-                "selected_template_id": data["selected_template_id"],
-                "selected_campus_id": data["selected_campus_id"],
-                "selected_program_id": data["selected_program_id"],
-                "semester_year": data["semester_year"],
-                "selected_school_year": data["selected_school_year"],
-                "is_program_manager": is_program_manager,
+                "survey_templates": survey_templates,
+                "campus_list": campus_list,
+                "programs": allowed_programs,
+                "school_years": school_years,
+                "teachers_list": sorted(list(teachers)),
             },
         )
 
@@ -526,7 +355,7 @@ def create_app():
         if not previous_survey:
             return JSONResponse(content={"ues": [], "teachers_list": []})
 
-        # ── Récupération des modules liés à ce survey ────────────────
+        # ── Récupération des modules liés à ce sondage ────────────────
         modules = session.exec(
             select(Module).where(
                 Module.survey_id == previous_survey.survey_id,
@@ -661,11 +490,8 @@ def create_app():
                     # ── Étape 2 : Créer les modules ──
                     for ue in survey.ues:
                         for module_data in ue.modules:
-                            prof_names = [
-                                f"{p.firstname} {p.name}" for p in module_data.teachers
-                            ]
                             enseignant_str = (
-                                ", ".join(prof_names) if prof_names else None
+                                ", ".join(module_data.teachers) if module_data.teachers else None
                             )
 
                             new_module = Module(
@@ -733,7 +559,7 @@ def create_app():
                             # Insertion (INSERT) : ajouter uniquement les nouvelles affectations
                             for user_id in user_ids:
                                 if user_id in existing_respondent_user_ids:
-                                    continue  # Déjà affecté à ce survey, on ne fait rien
+                                    continue  # Déjà affecté à ce sondage, on ne fait rien
                                 new_repondre = Respondent(
                                     template_id=survey.template_id,
                                     survey_id=next_survey_id,
@@ -982,7 +808,7 @@ def create_app():
                 content={"error": "Le sondage est fermé"}, status_code=403
             )
 
-        # 4. Vérifier que cet élève est assigné à ce survey (table Respondent)
+        # 4. Vérifier que cet élève est assigné à ce sondage (table Respondent)
         #    Règle stricte : pas de INSERT, UPDATE uniquement
         respondent = session.exec(
             select(Respondent).where(
@@ -993,7 +819,7 @@ def create_app():
         if not respondent:
             return JSONResponse(
                 content={
-                    "error": "Vous n'êtes pas autorisé ou assigné à répondre à ce survey."
+                    "error": "Vous n'êtes pas autorisé ou assigné à répondre à ce sondage."
                 },
                 status_code=403,
             )
@@ -1003,7 +829,7 @@ def create_app():
             respondent.submission_date != None
         ):  # submission_date NOT NULL = has_answered
             return JSONResponse(
-                content={"error": "Vous avez déjà soumis vos réponses pour ce survey."},
+                content={"error": "Vous avez déjà soumis vos réponses pour ce sondage."},
                 status_code=409,
             )
 
@@ -1161,7 +987,7 @@ def create_app():
             context=context,
         )
 
-    @dashboard_router.get("/program_manager", response_class=HTMLResponse)
+    @dashboard_router.get("/program-manager", response_class=HTMLResponse)
     async def program_manager_dashboard(request: Request, session: SessionDep):
         user = get_current_user(request)
         role = user.get("role", "")
@@ -1178,8 +1004,6 @@ def create_app():
             programs = [
                 f.strip() for f in role.split(":", 1)[1].split(";") if f.strip()
             ]
-
-        print(programs)
 
         rows = session.exec(
             select(
@@ -1313,181 +1137,8 @@ def create_app():
             context=context,
         )
 
-    @dashboard_router.get("/{role}", response_class=HTMLResponse)
-    async def dashboard(request: Request, role: str, session: SessionDep):
-        user = get_current_user(request)
-        if not user:
-            return RedirectResponse(url="/")
-        if role not in VALID_ROLES:
-            return RedirectResponse(url="/")
-
-        user_slug = role_to_dashboard_slug(user.get("role", ""))
-        if user_slug != "admin" and user_slug != role:  # Admin can see all the pages
-            return RedirectResponse(url=f"/dashboard/{user_slug}")
-
-        template_map = {
-            "admin": "dashboard/admin.html",
-            "student": "dashboard/student.html",
-            "program_manager": "dashboard/program_manager.html",
-        }
-
-        programs = []
-        full_role = user.get("role", "")
-        if ":" in full_role:
-            programs = [
-                f.strip() for f in full_role.split(":", 1)[1].split(";") if f.strip()
-            ]
-
-        context = {"user": user, "programs": programs}
-
-        if role == "admin":
-            db_users = session.exec(select(User)).all()
-            context["users"] = [
-                {"user_id": u.user_id, "mail": u.mail, "role": u.role} for u in db_users
-            ]
-
-        if role in ("admin", "program_manager"):
-            all_surveys = session.exec(select(Survey)).all()
-            if role == "program_manager" and programs:
-                surveys_filter = [s for s in all_surveys if s.program in programs]
-            else:
-                surveys_filter = list(all_surveys)
-
-            surveys_list = []
-            for s in surveys_filter:
-                respondents_count = (
-                    session.exec(
-                        select(func.count(Respondent.user_id)).where(
-                            Respondent.survey_id == s.survey_id,
-                        )
-                    ).first()
-                    or 0
-                )
-
-                answers_count = (
-                    session.exec(
-                        select(func.count(Respondent.user_id)).where(
-                            Respondent.survey_id == s.survey_id,
-                            Respondent.submission_date
-                            != None,  # submission_date NOT NULL = has_answered
-                        )
-                    ).first()
-                    or 0
-                )
-
-                surveys_list.append(
-                    {
-                        "template_id": s.template_id,
-                        "survey_id": s.survey_id,
-                        "campus": s.campus,
-                        "program": s.program,
-                        "semester": s.semester,
-                        "school_year": s.school_year,
-                        "status": s.status,
-                        "respondents_count": respondents_count,
-                        "answers_count": answers_count,
-                    }
-                )
-            context["surveys"] = surveys_list[::-1]
-
-        return templates.TemplateResponse(
-            request=request,
-            name=template_map[role],
-            context=context,
-        )
-
     # └────────────────────────────────────────────────────────────────┘
-
-    # ┌─ API : Questionnaire(s) assigné à l'étudiant connecté ──────────────┐
-    @api_router.get("/surveys/my/")
-    def get_connected_user_surveys(request: Request, session: SessionDep):
-        """
-        Retourne tous les questionnaires assignés à l'étudiant connecté.
-        Interroge la table Respondent pour récupérer les couples survey_id/template_id
-        associés à l'étudiant, ainsi que son statut de réponse pour chaque sondage.
-        """
-        user = get_current_user(request)
-        if not user:
-            return JSONResponse(
-                content={"error": "Authentification requise."},
-                status_code=401,
-            )
-
-        # Résoudre l'user_id depuis l'email de l'utilisateur connecté
-        db_user = session.exec(
-            select(User).where(User.mail == user["email"].casefold())
-        ).first()
-
-        if not db_user:
-            return JSONResponse(
-                content={
-                    "error": "Utilisateur "
-                    + user["email"]
-                    + " non trouvé en base de données."
-                },
-                status_code=404,
-            )
-
-        # Chercher toutes les entrées Respondent pour cet utilisateur
-        # Un étudiant peut être affecté à plusieurs sondages, par exemple
-        # sur plusieurs semestres ou plusieurs années scolaires.
-        respondent_entries = session.exec(
-            select(Respondent).where(Respondent.user_id == db_user.user_id)
-        ).all()
-
-        if not respondent_entries:
-            return JSONResponse(
-                content={
-                    "surveys": [],
-                    "message": "Aucun questionnaire assigné.",
-                },
-                status_code=200,
-            )
-
-        # Construire la liste des questionnaires assignés à l'étudiant
-        surveys = []
-
-        for entry in respondent_entries:
-            # Récupérer les infos du survey pour le contexte d'affichage
-            survey = session.exec(
-                select(Survey).where(
-                    Survey.survey_id == entry.survey_id,
-                )
-            ).first()
-
-            # Sécurité : si la ligne Respondent pointe vers un survey inexistant,
-            # on l'ignore pour éviter de casser la réponse API.
-            if not survey:
-                continue
-
-            # submission_date NOT NULL = l'étudiant a déjà répondu
-            has_answered = entry.submission_date is not None
-
-            # status = 0 signifie que le sondage est fermé
-            is_closed = survey.status == 0
-
-            surveys.append(
-                {
-                    "template_id": survey.template_id,
-                    "survey_id": survey.survey_id,
-                    "has_answered": has_answered,
-                    "url": f"/api/surveys/{survey.survey_id}",
-                    "campus": survey.campus,
-                    "program": survey.program,
-                    "semester": survey.semester,
-                    "school_year": survey.school_year,
-                    "status": survey.status,
-                    "is_closed": is_closed,
-                    "can_answer": not has_answered and not is_closed,
-                }
-            )
-
-        return {
-            "surveys": surveys,
-        }
-
-    # └────────────────────────────────────────────────────────────────┘
-
+    
     # ┌─ API : Gestion des rôles utilisateurs (accès restreint Admin) ────┐
     def _is_valid_role(role: str) -> bool:
         """Accepte 'admin' ou 'admin:program1,program2', 'student', 'program_manager' ou 'program_manager:program1,program2;...'"""
@@ -1619,7 +1270,7 @@ def create_app():
 
         resp = generate_csv_response(survey_obj)
         if isinstance(error_or_warning, str):
-            resp.headers["X-Warning"] = "Survey en cours - donnees partielles"
+            resp.headers["X-Warning"] = "Sondage en cours - donnees partielles"
 
         return resp
 

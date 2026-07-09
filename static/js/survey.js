@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════
-//  Questionnaire — Module JS
+//  SurveyModule — Module JS
 //  Logique conditionnelle, collecte, validation, soumission
 // ═══════════════════════════════════════════════════════
 
-const Questionnaire = {
+const SurveyModule = {
 
     // Mots-clés pour détecter SATISFAIT
     SATISFIED_KEYWORDS: ['très satisfait', 'very satisfied', 'plutôt satisfait', 'somewhat satisfied', 'totalement satisfait', 'totally satisfied'],
@@ -58,7 +58,7 @@ const Questionnaire = {
                     this.checked = false;
                     alert(`Vous ne pouvez sélectionner que ${max} options maximum.`);
                 }
-                Questionnaire.updateProgress();
+                this.updateProgress();
             });
         });
     },
@@ -507,7 +507,7 @@ const Questionnaire = {
     },
 
     // ─── Soumission ─────────────────────────────────────
-    submit() {
+    submit(survey_id) {
         // Validation stricte avant envoi
         const form = document.getElementById('questionnaire-form');
         const isClosed = form?.dataset.surveyClosed === 'true';
@@ -548,8 +548,6 @@ const Questionnaire = {
             btn.querySelector('.btn-submit-text').textContent = 'Envoi en cours...';
         }
 
-        const { template_id, survey_id } = window.__surveyData__;
-
         fetch(`/api/surveys/${survey_id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -585,5 +583,5 @@ const Questionnaire = {
 
 // ─── Init au chargement ─────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    Questionnaire.init();
+    SurveyModule.init();
 });

@@ -1,0 +1,30 @@
+<script>
+    function // ─── Notification (banner en bas de l'écran) ─────────
+        showNotification(message, type = 'info') {
+        // Supprimer l'ancienne notification si présente
+        const existing = document.getElementById('import-notification');
+        if (existing) existing.remove();
+        if (this._notifTimer) clearTimeout(this._notifTimer);
+
+        const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+        const el = document.createElement('div');
+        el.id = 'import-notification';
+        el.className = `import-notification import-notification--${type}`;
+        el.innerHTML = `
+<span class="import-notification__icon">${icons[type] || icons.info}</span>
+<span>${message}</span>
+<button class="import-notification__close"
+    onclick="this.parentElement.classList.remove('show'); setTimeout(() => this.parentElement.remove(), 400);">&times;</button>
+`;
+        document.body.appendChild(el);
+
+        // Trigger l'animation
+        requestAnimationFrame(() => el.classList.add('show'));
+
+        // Auto-dismiss après 6 secondes
+        this._notifTimer = setTimeout(() => {
+            el.classList.remove('show');
+            setTimeout(() => el.remove(), 400);
+        }, 6000);
+    }
+</script>

@@ -30,6 +30,7 @@ import requests
 import msal
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, Response
+
 import os
 load_dotenv()
 
@@ -38,6 +39,7 @@ ALLOWED_DOMAINS = os.environ.get("ALLOWED_DOMAINS", "").split(",")
 # Format : "example.com,company.fr" en variable d'environnement
 # Accepte des domaines multiples séparés par des virgules
 # └───────────────────────────────────────────────────────────────────────────┘
+
 
 
 router = APIRouter()
@@ -223,17 +225,8 @@ async def auth_callback(request: Request):
     session_token = str(uuid.uuid4())
     _user_sessions[session_token] = user
 
-    # Détermine le slug de dashboard en fonction du rôle
-    # "admin" → "admin", "program_manager:..." → "program_manager", autre → "student"
-    if role == "admin":
-        dashboard_slug = "admin"
-    elif role.startswith("program_manager"):
-        dashboard_slug = "program_manager"
-    else:
-        dashboard_slug = "student"
-
-    # Redirige vers le dashboard de l'utilisateur
-    response = RedirectResponse(url=f"/dashboard/{dashboard_slug}")
+    # Redirige vers la racine
+    response = RedirectResponse(url=f"/")
 
     # Code commenté : stockage du token en cookie sécurisé
     # Utilisé uniquement en développement avec certificat auto-signé
