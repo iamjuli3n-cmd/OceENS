@@ -42,7 +42,7 @@
 
       <div class="tab-content active" id="users">
         <div class="card">
-          {% include 'dashboard/part_show_users.html' %}
+          {% include 'template_parts/part_show_users.html' %}
         </div>
       </div>
 
@@ -54,7 +54,7 @@
             <div class="questionnaires-title">Tous les questionnaires</div>
           </div>
 
-          {% include 'dashboard/part_show_surveys.html' %}
+          {% include 'template_parts/part_show_surveys.html' %}
         </div>
       </div>
 
@@ -62,9 +62,9 @@
 
   </main>
 
-  {% include 'dashboard/part_modal_modify_user.html' %}
+  {% include 'template_parts/part_modal_modify_user.html' %}
 
-  {% include 'dashboard/part_toast.html' %}
+  {% include 'template_parts/part_toast.html' %}
 
   <!-- JS SCRIPT FOR THE TABS -->
   <script>
