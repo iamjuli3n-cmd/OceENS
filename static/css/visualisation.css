@@ -505,3 +505,11 @@ body {
         justify-content: flex-start;
     }
 }
+
+.teacher-score-row {
+    margin-bottom: 10px;
+}
+
+.teacher-score-row:last-child {
+    margin-bottom: 0;
+}
