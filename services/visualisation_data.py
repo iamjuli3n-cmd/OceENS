@@ -1,67 +1,209 @@
-import pandas as pd
 from typing import Dict, Any
 
-def get_visualisation_context(survey_obj) -> Dict[str, Any]:
+
+# Helper functions
+def _get_record_field(record: dict, *names, default=""):
+    for name in names:
+        if name in record and record[name] is not None:
+            return record[name]
+    return default
+
+
+def _to_score_1_10(value):
+    try:
+        score = float(str(value).replace(",", ".").strip())
+    except (TypeError, ValueError):
+        return None
+
+    if 1 <= score <= 10:
+        return score
+
+    return None
+
+
+def _is_recommendation_record(record: dict) -> bool:
+    question_type = str(
+        _get_record_field(record, "question_type", "Type_Question")
+    ).lower()
+
+    section = str(
+        _get_record_field(record, "section", "Section", "category", "Categorie")
+    ).lower()
+
+    question = str(_get_record_field(record, "question", "Question")).lower()
+
+    text = f"{question_type} {section} {question}"
+
+    return "nps" in text or "recommand" in text or "recommend" in text
+
+
+def _get_attr(obj, *names, default=None):
+    for name in names:
+        if hasattr(obj, name):
+            value = getattr(obj, name)
+            if value is not None:
+                return value
+    return default
+
+
+def _split_teachers(value: str) -> list[str]:
+    if not value:
+        return []
+
+    return [teacher.strip() for teacher in str(value).split(",") if teacher.strip()]
+
+
+def get_visualisation_context(
+    survey_obj,
+    program_name: str | None = None,
+) -> Dict[str, Any]:
     """
-    Prépare les données pour le filtrage et l'agrégation côté client (Drill-down).
-    Calcule les KPI globaux en backend pour garantir la robustesse.
+    Prépare les données d'affichage de la visualisation.
     """
     records = survey_obj.to_flat_dataframe_records()
-    
-    # Remplacement des variables non résolues dans les titres de graphes
+
     campus = survey_obj.campus or ""
-    program = survey_obj.program or ""
-    module_name = survey_obj.modules[0].nom if len(survey_obj.modules) == 1 else "ce module"
-    teacher_name = survey_obj.modules[0].teacher if len(survey_obj.modules) == 1 else "l'enseignant"
+    program_code = survey_obj.program or ""
+    program = program_name or program_code
 
-    clean_records = []
-    for r in records:
-        if "OUVERTE" not in str(r.get("question_type", "")).upper():
-            # Correction des placeholders
-            for field in ["Section", "Question"]:
-                if r.get(field):
-                    val = str(r[field])
-                    val = val.replace("[CAMPUS]", campus)
-                    val = val.replace("[FORMATION]", program)
-                    val = val.replace("[MODULE]", module_name)
-                    val = val.replace("[ENSEIGNANT]", teacher_name)
-                    r[field] = val
-            clean_records.append(r)
-    
-    ues = list(set([m.ue for m in survey_obj.modules if m.ue]))
-    modules = [{"id": m.module_id, "name": m.nom, "ue": m.ue} for m in survey_obj.modules]
-    
-    df = pd.DataFrame(clean_records)
+    # ── Score de recommandation ─────────────────────────────
+    recommendation_candidates = []
 
-    satisfaction_pct = 0
-    recommandation_avg = 0
-    
-    if not df.empty:
-        # Taux de satisfaction globale (Questions de type QCU_Satisfaction)
-        df_sat = df[df['question_type'].astype(str).str.contains('SATISFACTION', case=False, na=False)]
-        sat_positive = ["Très satisfait", "Plutôt satisfait", "Totalement satisfait"]
-        if not df_sat.empty:
-            total_sat = len(df_sat)
-            pos_sat = len(df_sat[df_sat['answer_value'].isin(sat_positive)])
-            satisfaction_pct = round((pos_sat / total_sat) * 100, 1) if total_sat > 0 else 0
+    for record in records:
+        if not _is_recommendation_record(record):
+            continue
 
-        # Taux de recommandation (NPS)
-        df_nps = df[df['question_type'].astype(str).str.contains('NPS', case=False, na=False)]
-        
-        if not df_nps.empty:
-            valid_nps = pd.to_numeric(df_nps['answer_value'], errors='coerce').dropna()
-            if not valid_nps.empty:
-                # Moyenne sur 10
-                recommandation_avg = round(valid_nps.mean(), 1)
-                
-    return {
-        "kpis": {
-            "satisfaction": satisfaction_pct,
-            "nps": recommandation_avg
+        value = _get_record_field(
+            record,
+            "value",
+            "answer_value",
+            "Valeur_Reponse",
+            "Valeur",
+        )
+
+        score = _to_score_1_10(value)
+
+        if score is None:
+            continue
+
+        question_id = _get_record_field(
+            record,
+            "question_id",
+            "Question_ID",
+            default=0,
+        )
+
+        recommendation_candidates.append(
+            {
+                "question_id": int(question_id or 0),
+                "score": score,
+                "question": _get_record_field(record, "question", "Question"),
+            }
+        )
+
+    if recommendation_candidates:
+        last_question_id = max(
+            item["question_id"] for item in recommendation_candidates
+        )
+
+        last_question_scores = [
+            item
+            for item in recommendation_candidates
+            if item["question_id"] == last_question_id
+        ]
+
+        recommendation_score = round(
+            sum(item["score"] for item in last_question_scores)
+            / len(last_question_scores),
+            1,
+        )
+
+        recommendation_count = len(last_question_scores)
+        recommendation_question = last_question_scores[0]["question"]
+    else:
+        recommendation_score = None
+        recommendation_count = 0
+        recommendation_question = ""
+
+    # ── Modules du sondage ──────────────────────────────────
+    modules = []
+
+    for module in survey_obj.modules:
+        module_id = _get_attr(module, "module_id", "id", default=None)
+        module_name = _get_attr(module, "nom", "name", default="Module sans nom")
+        ue_name = _get_attr(module, "ue", "UE", default="")
+        teacher_raw = _get_attr(module, "teacher", "enseignant", default="")
+
+        modules.append(
+            {
+                "id": module_id,
+                "name": module_name,
+                "ue": ue_name,
+                "teachers": _split_teachers(teacher_raw),
+                "score": None,
+                "score_label": "Plutôt satisfait et +",
+            }
+        )
+
+    modules = sorted(
+        modules,
+        key=lambda m: (
+            (m["ue"] or "").lower(),
+            (m["name"] or "").lower(),
+        ),
+    )
+
+    ues = sorted({module["ue"] for module in modules if module.get("ue")})
+
+    # ── Liste affichée dans la synthèse ─────────────────────
+    summary_items = [
+        {
+            "rank": 1,
+            "type": "campus",
+            "title": "Campus",
+            "subtitle": campus,
+            "ue": None,
+            "teachers": [],
+            "score": None,
+            "score_label": "Plutôt satisfait et +",
         },
+        {
+            "rank": 2,
+            "type": "formation",
+            "title": "Formation",
+            "subtitle": program,
+            "ue": None,
+            "teachers": [],
+            "score": None,
+            "score_label": "Plutôt satisfait et +",
+        },
+    ]
+
+    for index, module in enumerate(modules, start=3):
+        summary_items.append(
+            {
+                "rank": index,
+                "type": "module",
+                "title": module["name"],
+                "subtitle": "",
+                "ue": module["ue"],
+                "teachers": module["teachers"],
+                "score": module["score"],
+                "score_label": module["score_label"],
+            }
+        )
+
+    return {
         "filters": {
             "ues": ues,
-            "modules": modules
+            "modules": modules,
         },
-        "records": clean_records
+        "modules": modules,
+        "summary_items": summary_items,
+        "recommendation": {
+            "score": recommendation_score,
+            "count": recommendation_count,
+            "question": recommendation_question,
+        },
+        "records": records,
     }

@@ -81,7 +81,7 @@
 
 <script>
 
-     function filter(role) {
+    function filter(role) {
         allUsers = document.querySelectorAll("#users-tbody tr");
         allUsers.forEach(user => {
             if (role === "all" || user.classList.contains(role)) {

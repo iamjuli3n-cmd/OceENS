@@ -1,262 +1,17 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Visualisation — OceEns</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg-color: #f7f6f2; /* Light beige/gray background matching mockup */
-            --card-bg: #ffffff;
-            --text-primary: #111827;
-            --text-secondary: #6b7280;
-            --epf-purple: #470a68;
-            --epf-red: #df231d;
-            --color-1: #ef4444; /* Rouge foncé */
-            --color-2: #f87171; /* Rouge clair */
-            --color-3: #eab308; /* Jaune/Kaki */
-            --color-4: #4ade80; /* Vert clair */
-            --color-5: #22c55e; /* Vert foncé */
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            padding-bottom: 60px;
-        }
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/visualisation.css">
 
-        /* Header */
-        .header {
-            background: white;
-            padding: 0 32px;
-            height: 58px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-        }
-        .header-logo-oceens {
-            font-size: 1.4rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        .btn-logout {
-            color: #555; font-size: 13px; text-decoration: none;
-            background: #f5f5f5; padding: 5px 14px; border-radius: 20px;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 24px auto;
-            padding: 0 24px;
-        }
-
-        /* Filters */
-        .filters-bar {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-            background: white;
-            padding: 12px 24px;
-            border-radius: 99px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            font-size: 14px;
-        }
-        .filter-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .filter-label { color: var(--text-secondary); font-size: 13px; }
-        .filter-select {
-            border: none;
-            color: var(--epf-purple);
-            font-weight: 700;
-            font-family: inherit;
-            font-size: 14px;
-            background: transparent;
-            outline: none;
-            cursor: pointer;
-            -webkit-appearance: none;
-            padding-right: 16px;
-            background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23470a68' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right center;
-        }
-        .filter-separator { color: #ccc; margin: 0 4px; }
-
-        /* KPI Banner */
-        .kpi-banner {
-            background: linear-gradient(135deg, var(--epf-purple) 0%, var(--epf-red) 100%);
-            border-radius: 16px;
-            padding: 40px;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 20px rgba(223, 35, 29, 0.15);
-        }
-        .kpi-left h3 {
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            opacity: 0.9;
-            margin-bottom: 8px;
-            font-weight: 700;
-        }
-        .kpi-left .huge-pct {
-            font-size: 72px;
-            font-weight: 800;
-            line-height: 1;
-            margin-bottom: 12px;
-            font-family: 'Inter', sans-serif;
-            letter-spacing: -2px;
-        }
-        .kpi-left p {
-            font-size: 14px;
-            opacity: 0.9;
-            max-width: 400px;
-            line-height: 1.4;
-        }
-        .kpi-right {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 24px 32px;
-            border-radius: 16px;
-            text-align: center;
-            min-width: 320px;
-        }
-        .kpi-right h4 {
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 16px;
-            font-weight: 700;
-        }
-        .progress-bar-container {
-            width: 100%;
-            height: 8px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 99px;
-            margin-bottom: 8px;
-            overflow: hidden;
-            position: relative;
-        }
-        .progress-bar-fill {
-            height: 100%;
-            background: white;
-            border-radius: 99px;
-            width: 0%;
-            transition: width 1s ease-out;
-        }
-        .progress-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            opacity: 0.9;
-            font-weight: 500;
-        }
-
-        /* Two columns */
-        .two-cols {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-        .card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-        }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 24px;
-        }
-        .card-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-        .card-subtitle { font-size: 13px; color: var(--text-secondary); }
-        .card-meta { font-size: 13px; color: #aaa; font-weight: 500; }
-
-        /* Key Indicators List */
-        .indicator-list { display: flex; flex-direction: column; gap: 24px; }
-        .indicator-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 15px;
-            font-weight: 500;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .indicator-item:last-child { border-bottom: none; padding-bottom: 0; }
-        .ind-label { display: flex; align-items: center; gap: 12px; color: #333; }
-        .ind-dot { width: 10px; height: 10px; border-radius: 50%; }
-        .ind-value { font-weight: 700; font-size: 18px; }
-
-        /* Tricolor Bar */
-        .tricolor-container {
-            display: flex;
-            height: 36px;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 12px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .tricolor-segment {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 14px;
-            transition: width 0.5s ease;
-        }
-        .tricolor-labels {
-            display: flex;
-            justify-content: space-between;
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        /* Modules Table */
-        .modules-list { display: flex; flex-direction: column; gap: 16px; }
-        .module-row {
-            display: flex;
-            align-items: center;
-            padding: 16px 0;
-            border-bottom: 1px solid #f0f0f0;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .module-row:hover { opacity: 0.8; }
-        .module-row:last-child { border-bottom: none; }
-        .mod-rank {
-            width: 32px; height: 32px; background: #f5f5f5; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; color: var(--epf-purple); margin-right: 16px; font-size: 14px;
-        }
-        .mod-info { flex: 1; }
-        .mod-name { font-weight: 700; color: #111; font-size: 15px; margin-bottom: 4px; }
-        .mod-sub { font-size: 12px; color: var(--text-secondary); }
-        .mod-score {
-            display: flex; align-items: center; gap: 16px;
-        }
-        .mod-bar-bg {
-            width: 80px; height: 6px; background: #f0f0f0; border-radius: 99px; overflow: hidden;
-        }
-        .mod-bar-fill { height: 100%; border-radius: 99px; }
-        .mod-pct { font-weight: 700; font-size: 16px; min-width: 40px; text-align: right; }
-    </style>
 </head>
+
 <body>
 
     <header class="header">
@@ -266,14 +21,16 @@
         <nav style="display:flex; align-items:center; gap:14px;">
             <span style="color:#555; font-size:13px;">{{ user.email }}</span>
             <a href="/logout" class="btn-logout">Déconnexion</a>
-            <a href="javascript:history.back()" class="btn-logout" style="background:var(--epf-purple); color:white;">Retour</a>
+            <a href="javascript:history.back()" class="btn-logout"
+                style="background:var(--epf-purple); color:white;">Retour</a>
         </nav>
     </header>
 
     <div class="container">
-        
+
         {% if warning_msg %}
-        <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; color: #b45309; font-size: 14px; font-weight: 500;">
+        <div
+            style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; color: #b45309; font-size: 14px; font-weight: 500;">
             {{ warning_msg }}
         </div>
         {% endif %}
@@ -282,29 +39,45 @@
         <div class="filters-bar">
             <div class="filter-item">
                 <span class="filter-label">Campus</span>
-                <select class="filter-select" id="flt-campus" disabled>
+                <select class="filter-select" disabled>
                     <option>{{ survey.campus }}</option>
                 </select>
             </div>
+
             <span class="filter-separator">›</span>
+
+            <div class="filter-item">
+                <span class="filter-label">Année</span>
+                <select class="filter-select" disabled>
+                    <option>{{ survey.school_year }}</option>
+                </select>
+            </div>
+
+            <span class="filter-separator">›</span>
+
             <div class="filter-item">
                 <span class="filter-label">Filière</span>
-                <select class="filter-select" id="flt-filiere" disabled>
-                    <option>{{ survey.program }}</option>
+                <select class="filter-select" disabled>
+                    <option>{{ program_name }}</option>
                 </select>
             </div>
+
             <span class="filter-separator">›</span>
+
             <div class="filter-item">
-                <span class="filter-label">UE</span>
-                <select class="filter-select" id="flt-ue" onchange="updateDashboard()">
-                    <option value="ALL">Toutes les UE</option>
+                <span class="filter-label">Semestre</span>
+                <select class="filter-select" disabled>
+                    <option>{{ survey.semester }}</option>
                 </select>
             </div>
+
             <span class="filter-separator">›</span>
+
             <div class="filter-item">
-                <span class="filter-label">Module</span>
-                <select class="filter-select" id="flt-module" onchange="updateDashboard()">
-                    <option value="ALL">Tous les modules</option>
+                <span class="filter-label">Filtre</span>
+                <select class="filter-select" id="flt-display-mode">
+                    <option value="teacher">Par Enseignant</option>
+                    <option value="module">Par Module</option>
                 </select>
             </div>
         </div>
@@ -312,341 +85,86 @@
         <!-- KPI Banner -->
         <div class="kpi-banner">
             <div class="kpi-left">
-                <h3>Taux de satisfaction global</h3>
-                <div class="huge-pct" id="global-sat-val">0%</div>
-                <p>Calculé sur l'ensemble des réponses de la filière <br><strong>{{ survey.program }}</strong> — <span id="global-sat-context">Toutes les UE</span>.</p>
+                <h2>Taux de satisfaction global</h2>
+                <div class="huge-pct" id="global-sat-val">En cours de dev</div>
+                <p>Calculé sur la question « Formation »
+                    Pourcentage « Plutôt satisfait et + »
+                    <br><strong>{{ survey.program }}</strong> — <span id="global-sat-context">Toutes les UE</span>.
+                </p>
             </div>
             <div class="kpi-right">
-                <h3>Recommanderaient le module</h3>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" id="global-rec-bar"></div>
-                </div>
-                <div class="progress-labels">
-                    <span>0%</span>
-                    <span id="global-rec-val">0%</span>
-                    <span>100%</span>
+                <h3>Score de recommandation</h3>
+
+                <div class="huge-pct" id="rec-tricolor-val">
+                    {% if viz_data.recommendation.score is not none %}
+                    {{ "%.1f"|format(viz_data.recommendation.score)|replace(".", ",") }}
+                    {% else %}
+                    Non disponible
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <div class="two-cols">
-            <!-- Left: Histogram -->
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <div class="card-title">Répartition des avis</div>
-                        <div class="card-subtitle">Note attribuée par les étudiants, de 1 (pas satisfait) à 5 (très satisfait)</div>
-                    </div>
-                    <div class="card-meta" id="histo-count">0 réponses</div>
-                </div>
-                <div style="position: relative; height: 260px; width: 100%;">
-                    <canvas id="histoChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Right: Key Indicators -->
-            <div class="card">
-                <div class="card-header" style="margin-bottom: 32px;">
-                    <div>
-                        <div class="card-title">Indicateurs clés</div>
-                        <div class="card-subtitle">Synthèse calculée sur la sélection en cours</div>
-                    </div>
-                </div>
-                <div class="indicator-list">
-                    <div class="indicator-item">
-                        <div class="ind-label"><div class="ind-dot" style="background: var(--color-1);"></div> Pas satisfaits (note ≤ 2)</div>
-                        <div class="ind-value" style="color: var(--color-1);" id="ind-pas-sat">0%</div>
-                    </div>
-                    <div class="indicator-item">
-                        <div class="ind-label"><div class="ind-dot" style="background: var(--color-3);"></div> Neutres / mitigés (note 3)</div>
-                        <div class="ind-value" style="color: var(--color-3);" id="ind-neutre">0%</div>
-                    </div>
-                    <div class="indicator-item">
-                        <div class="ind-label"><div class="ind-dot" style="background: var(--color-5);"></div> Recommandent le module</div>
-                        <div class="ind-value" style="color: var(--color-5);" id="ind-reco">0%</div>
-                    </div>
-                    <div class="indicator-item">
-                        <div class="ind-label"><div class="ind-dot" style="background: var(--epf-purple);"></div> Taux de réponse</div>
-                        <div class="ind-value" style="color: var(--epf-purple);" id="ind-taux-rep">
-                            {% if respondents_count > 0 %}{{ ((answers_count / respondents_count) * 100)|round|int }}%{% else %}0%{% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recommendation Tricolor -->
-        <div class="card" style="margin-bottom: 24px;">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">Recommanderiez-vous ce module ?</div>
-                    <div class="card-subtitle">Répartition des réponses à la question de recommandation</div>
-                </div>
-            </div>
-            <div class="tricolor-container">
-                <div class="tricolor-segment" id="tri-non" style="background: var(--color-1); width: 0%;"></div>
-                <div class="tricolor-segment" id="tri-neutre" style="background: var(--color-3); width: 0%; color: #333;"></div>
-                <div class="tricolor-segment" id="tri-oui" style="background: var(--color-5); width: 0%;"></div>
-            </div>
-            <div class="tricolor-labels">
-                <span>Non</span>
-                <span>Sans avis</span>
-                <span>Oui</span>
-            </div>
-        </div>
-
-        <!-- Modules ranking -->
+        <!-- Résumé Campus / Formation / Modules -->
         <div class="card">
             <div class="card-header">
                 <div>
-                    <div class="card-title" id="mod-table-title">Modules de la formation</div>
-                    <div class="card-subtitle">Cliquez sur un module pour filtrer le dashboard sur celui-ci</div>
+                    <div class="card-title">Synthèse du sondage</div>
+                    <div class="card-subtitle">
+                        Campus, formation et modules évalués dans ce sondage
+                    </div>
                 </div>
-                <div class="card-meta">classés par score</div>
             </div>
-            <div class="modules-list" id="modules-container">
-                <!-- Injected by JS -->
+
+            <div class="summary-list">
+                {% for item in viz_data.summary_items %}
+                <div class="summary-row">
+                    <div class="summary-rank">{{ item.rank }}</div>
+
+                    <div class="summary-main">
+                        <div class="summary-title-line">
+                            <span class="summary-title">{{ item.title }}</span>
+
+                            {% if item.ue %}
+                            <span class="ue-tag">{{ item.ue }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if item.subtitle %}
+                        <div class="summary-subtitle">{{ item.subtitle }}</div>
+                        {% endif %}
+
+                        {% if item.teachers %}
+                        <div class="summary-teachers">
+                            {% for teacher in item.teachers %}
+                            <div>{{ teacher }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="summary-score">
+                        {% if item.score is not none %}
+                        <div class="score-line">
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: {{ item.score }}%;"></div>
+                            </div>
+                            <span class="score-value">{{ item.score }}%</span>
+                        </div>
+                        {% else %}
+                        <div class="score-placeholder">Score à calculer</div>
+                        {% endif %}
+
+                        <div class="score-label">{{ item.score_label }}</div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
 
     </div>
 
-    <script>
-        const rawData = {{ viz_data.records | tojson | safe }};
-        const metadata = {{ viz_data.filters | tojson | safe }};
-        
-        // Setup dropdowns
-        const ueSelect = document.getElementById('flt-ue');
-        const modSelect = document.getElementById('flt-module');
-        
-        metadata.ues.forEach(ue => {
-            if(ue) {
-                const opt = document.createElement('option');
-                opt.value = ue; opt.textContent = ue;
-                ueSelect.appendChild(opt);
-            }
-        });
-        metadata.modules.forEach(m => {
-            if(m && m.name) {
-                const opt = document.createElement('option');
-                opt.value = m.name; opt.textContent = m.name; opt.dataset.ue = m.ue;
-                modSelect.appendChild(opt);
-            }
-        });
 
-        let histoChartInstance = null;
-
-        function updateDashboard() {
-            const selectedUe = ueSelect.value;
-            const selectedMod = modSelect.value;
-            
-            // Note: Since rawData flat structure from backend doesn't yet natively bind 'UE' and 'Module' per answer row,
-            // we simulate drill-down by checking if the question text or section name contains the module name.
-            // If the backend is updated to add "UE" and "Module" to `to_flat_dataframe_records()`, change `r.Section` to `r.Module`.
-            let filtered = rawData.filter(r => {
-                if (selectedMod !== "ALL") {
-                    // Simulation: Filter answers that belong to selected module
-                    // Fallback to true if we can't determine
-                    const haystack = (r.Section + " " + r.Question).toLowerCase();
-                    if (!haystack.includes(selectedMod.toLowerCase())) return false;
-                }
-                return true;
-            });
-
-            // Update Context Text
-            let ctxText = "Toutes les UE";
-            if(selectedUe !== "ALL") ctxText = selectedUe;
-            if(selectedMod !== "ALL") ctxText = selectedMod;
-            document.getElementById('global-sat-context').innerText = ctxText;
-            document.getElementById('mod-table-title').innerText = selectedUe !== "ALL" ? "Modules de l'UE sélectionnée" : "Tous les modules";
-
-            calculateMetrics(filtered);
-            updateModulesRanking(filtered, selectedUe);
-        }
-
-        function extractNote(valeurStr) {
-            // Extrait une note 1-5 depuis la valeur texte
-            const val = String(valeurStr).toLowerCase();
-            if(val.includes("1") || val.includes("très insatisfait") || val.includes("trés insatisfait") || val.includes("pas du tout")) return 1;
-            if(val.includes("2") || val.includes("plutôt insatisfait") || val.includes("peu")) return 2;
-            if(val.includes("3") || val.includes("neutre") || val.includes("moyen")) return 3;
-            if(val.includes("4") || val.includes("plutôt satisfait") || val.includes("bien")) return 4;
-            if(val.includes("5") || val.includes("très satisfait") || val.includes("trés satisfait") || val.includes("excellent")) return 5;
-            
-            // Tentative parsing int
-            const n = parseInt(valeurStr);
-            if(!isNaN(n) && n >= 1 && n <= 5) return n;
-            return null;
-        }
-
-        function calculateMetrics(data) {
-            // Agrégation Histogramme & Satisfaction globale
-            let notesCount = {1:0, 2:0, 3:0, 4:0, 5:0};
-            let totalNotes = 0;
-            
-            // Agrégation Recommandation (OUI/NON/SANS AVIS)
-            let recoCount = {oui:0, non:0, neutre:0};
-            let totalReco = 0;
-
-            data.forEach(r => {
-                const qType = String(r.question_type || "").toUpperCase();
-                const val = String(r.value || "");
-                
-                // SATISFACTION / NOTES
-                if(qType.includes("SATISFACTION") || qType.includes("NOTE")) {
-                    const note = extractNote(val);
-                    if(note !== null) {
-                        notesCount[note]++;
-                        totalNotes++;
-                    }
-                }
-                
-                // RECOMMANDATION
-                if(qType.includes("OUI_NON") || val.toLowerCase().includes("oui") || val.toLowerCase().includes("non")) {
-                    if(val.toLowerCase() === "oui") recoCount.oui++;
-                    else if(val.toLowerCase() === "non") recoCount.non++;
-                    else recoCount.neutre++;
-                    totalReco++;
-                }
-            });
-
-            // 1. Mise à jour Histogramme
-            const notesArr = [notesCount[1], notesCount[2], notesCount[3], notesCount[4], notesCount[5]];
-            const notesPctArr = notesArr.map(n => totalNotes > 0 ? Math.round((n/totalNotes)*100) : 0);
-            
-            document.getElementById('histo-count').innerText = `${totalNotes} réponses`;
-
-            if(histoChartInstance) histoChartInstance.destroy();
-            const ctx = document.getElementById('histoChart').getContext('2d');
-            histoChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['1', '2', '3', '4', '5'],
-                    datasets: [{
-                        data: notesPctArr,
-                        backgroundColor: ['#ef4444', '#f87171', '#eab308', '#4ade80', '#22c55e'],
-                        borderRadius: 6,
-                        borderWidth: 0,
-                        barPercentage: 0.6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) { return context.raw + '%'; }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { display: false, max: Math.max(...notesPctArr, 10) + 10 },
-                        x: { grid: { display: false }, border: { display: false } }
-                    },
-                    animation: {
-                        onComplete: function() {
-                            const chartInstance = this;
-                            const ctx = chartInstance.ctx;
-                            ctx.font = "bold 13px 'DM Sans'";
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'bottom';
-                            ctx.fillStyle = '#111';
-
-                            this.data.datasets.forEach(function(dataset, i) {
-                                const meta = chartInstance.getDatasetMeta(i);
-                                meta.data.forEach(function(bar, index) {
-                                    const data = dataset.data[index];
-                                    if(data > 0) ctx.fillText(data + '%', bar.x, bar.y - 5);
-                                });
-                            });
-                        }
-                    }
-                }
-            });
-
-            // 2. Mise à jour KPI Globaux & Indicateurs Clés
-            const pasSatPct = notesPctArr[0] + notesPctArr[1];
-            const neutrePct = notesPctArr[2];
-            const satPct = notesPctArr[3] + notesPctArr[4]; // >= 4
-
-            document.getElementById('global-sat-val').innerText = `${satPct}%`;
-            document.getElementById('ind-pas-sat').innerText = `${pasSatPct}%`;
-            document.getElementById('ind-neutre').innerText = `${neutrePct}%`;
-
-            // 3. Mise à jour Recommandation
-            const pctOui = totalReco > 0 ? Math.round((recoCount.oui/totalReco)*100) : 0;
-            const pctNon = totalReco > 0 ? Math.round((recoCount.non/totalReco)*100) : 0;
-            const pctNeutre = totalReco > 0 ? 100 - pctOui - pctNon : 0;
-
-            document.getElementById('global-rec-bar').style.width = `${pctOui}%`;
-            document.getElementById('global-rec-val').innerText = `${pctOui}%`;
-            document.getElementById('ind-reco').innerText = `${pctOui}%`;
-
-            // Tricolor Bar
-            const elNon = document.getElementById('tri-non');
-            const elNeutre = document.getElementById('tri-neutre');
-            const elOui = document.getElementById('tri-oui');
-
-            elNon.style.width = `${pctNon}%`;
-            elNeutre.style.width = `${pctNeutre}%`;
-            elOui.style.width = `${pctOui}%`;
-
-            elNon.innerText = pctNon > 5 ? `${pctNon}%` : '';
-            elNeutre.innerText = pctNeutre > 5 ? `${pctNeutre}%` : '';
-            elOui.innerText = pctOui > 5 ? `${pctOui}%` : '';
-        }
-
-        function updateModulesRanking(data, ueFilter) {
-            const container = document.getElementById('modules-container');
-            container.innerHTML = "";
-
-            // Calculate mock recommendation score per module
-            let mods = metadata.modules;
-            if(ueFilter !== "ALL") mods = mods.filter(m => m.ue === ueFilter);
-
-            let ranked = mods.map(m => {
-                // Here we simulate the score since rawData doesn't link answers to modules natively yet.
-                // We use a deterministic random or calculate if possible.
-                // In a real app with proper data model, we'd filter data for this module and calculate pctOui.
-                // For now, let's derive a mock score based on its id to keep it stable but varied.
-                let score = 40 + ((m.id * 17) % 60); 
-                return { ...m, score: score };
-            });
-
-            ranked.sort((a,b) => b.score - a.score);
-
-            ranked.forEach((m, idx) => {
-                let color = 'var(--color-1)';
-                if(m.score >= 70) color = 'var(--color-5)';
-                else if(m.score >= 40) color = 'var(--color-3)';
-
-                const row = document.createElement('div');
-                row.className = 'module-row';
-                row.onclick = () => {
-                    modSelect.value = m.name;
-                    if(ueSelect.value === "ALL" && m.ue) ueSelect.value = m.ue;
-                    updateDashboard();
-                };
-                
-                row.innerHTML = `
-                    <div class="mod-rank">${idx + 1}</div>
-                    <div class="mod-info">
-                        <div class="mod-name">${m.name}</div>
-                        <div class="mod-sub">${m.score}% recommandent ce module</div>
-                    </div>
-                    <div class="mod-score">
-                        <div class="mod-bar-bg"><div class="mod-bar-fill" style="width:${m.score}%; background:${color};"></div></div>
-                        <div class="mod-pct" style="color:${color};">${m.score}%</div>
-                    </div>
-                `;
-                container.appendChild(row);
-            });
-        }
-
-        // Init
-        updateDashboard();
-    </script>
 </body>
+
 </html>
