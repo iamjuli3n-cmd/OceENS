@@ -145,10 +145,13 @@
                             <div class="score-line"
                                 title="Pourcentage de répondant ayant répondu 'Plutôt satisfait' ou +">
                                 <div class="score-bar">
-                                    <div class="score-fill" style="width: {{ item.score }}%;"></div>
+                                    <div class="score-fill {{ 'good' if item.score >= 50 else 'warning' }}"
+                                        style="width: {{ item.score }}%;">
+                                    </div>
                                 </div>
-                                <span class="score-value">{{ item.score }}% (/{{item.total_count}})</span>
-
+                                <span class="score-value {{ 'good' if item.score >= 50 else 'warning' }}">
+                                    {{ item.score }}% (/{{item.total_count}})
+                                </span>
                             </div>
                             {% else %}
                             <span class="score-placeholder">Score à calculer</span>
@@ -173,10 +176,13 @@
                                 <div class="score-line"
                                     title="Pourcentage de répondant ayant répondu 'Plutôt satisfait' ou +">
                                     <div class="score-bar">
-                                        <div class="score-fill" style="width: {{ teacher_score.score }}%;"></div>
+                                        <div class="score-fill {{ 'good' if teacher_score.score >= 50 else 'warning' }}"
+                                            style="width: {{ teacher_score.score }}%;">
+                                        </div>
                                     </div>
-                                    <span class="score-value">{{ teacher_score.score }}%
-                                        (/{{teacher_score.total_count}})</span>
+                                    <span class="score-value {{ 'good' if teacher_score.score >= 50 else 'warning' }}">
+                                        {{ teacher_score.score }}% (/{{teacher_score.total_count}})
+                                    </span>
                                 </div>
                             </div>
 
