@@ -21,7 +21,7 @@ def get_session() -> Session:
 # Type alias for easier use in FastAPI endpoints
 SessionDep = Annotated[Session, Depends(get_session)]
 
-def get_or_create_user(session: Session, email: str) -> str:
+def get_or_create_user(email: str) -> str:
     """
     Retrieves a user's role or creates a new user with default 'student' role.
     
@@ -33,13 +33,14 @@ def get_or_create_user(session: Session, email: str) -> str:
     
     # 1. Search for user using modern SQLModel syntax
     statement = select(User).where(User.mail == email)
-    user = session.exec(statement).first()
+    with Session(engine) as session:
+        user = session.exec(statement).first()
 
-    if not user:
-        # 2. Create if not found
-        user = User(mail=email)
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-    
-    return user
+        if not user:
+            # 2. Create if not found
+            user = User(mail=email)
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+        
+        return user
