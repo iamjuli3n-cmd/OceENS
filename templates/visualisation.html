@@ -132,24 +132,33 @@
                     </div>
 
                     <div class="summary-main">
-                        <div class="summary-title-line">
+                        <div class="summary-title-line" onclick="toggleDetail({{item.rank}})">
                             <span class="summary-title">{{ item.title }}</span>
                         </div>
 
                         {% if item.type != "module" and item.subtitle %}
-                        <div class="summary-score-inline" title="Pourcentage de répondant ayant répondu 'Plutôt satisfait' ou +">
+                        <div class="summary-score-inline"
+                            title="Pourcentage de répondant ayant répondu 'Plutôt satisfait' ou +">
                             <span class="summary-subtitle">{{ item.subtitle }}</span>
 
                             {% if item.score is not none %}
-                            <div class="score-line"  title="Pourcentage de répondant ayant répondu 'Plutôt satisfait' ou +">
+                            <div class="score-line"
+                                title="Pourcentage de répondant ayant répondu 'Plutôt satisfait' ou +">
                                 <div class="score-bar">
                                     <div class="score-fill" style="width: {{ item.score }}%;"></div>
                                 </div>
                                 <span class="score-value">{{ item.score }}% (/{{item.total_count}})</span>
+
                             </div>
                             {% else %}
                             <span class="score-placeholder">Score à calculer</span>
                             {% endif %}
+                        </div>
+                        <div class="detailled-section" id="detailled-section-{{item.rank}}">
+                            <h4>{{item.question}}</h4>
+
+                            {{item.histo | tojson}}
+
                         </div>
                         {% endif %}
 
@@ -161,15 +170,26 @@
                                     {{ teacher_score.name if teacher_score.name else "Sans enseignant" }}
                                 </span>
 
-                                <div class="score-line"  title="Pourcentage de répondant ayant répondu 'Plutôt satisfait' ou +">
+                                <div class="score-line"
+                                    title="Pourcentage de répondant ayant répondu 'Plutôt satisfait' ou +">
                                     <div class="score-bar">
                                         <div class="score-fill" style="width: {{ teacher_score.score }}%;"></div>
                                     </div>
-                                    <span class="score-value">{{ teacher_score.score }}% (/{{teacher_score.total_count}})</span>
+                                    <span class="score-value">{{ teacher_score.score }}%
+                                        (/{{teacher_score.total_count}})</span>
                                 </div>
                             </div>
+
                             {% endfor %}
                         </div>
+                        <div class="detailled-section" id="detailled-section-{{item.rank}}">
+                            {% for teacher_score in item.teacher_scores %}
+                            <h4>{{teacher_score.question}}</h4>
+                            {{teacher_score.histo | tojson}}
+                            {% endfor %}
+
+                        </div>
+
                         {% endif %}
                     </div>
 
@@ -179,6 +199,15 @@
         </div>
 
     </div>
+
+    <script>
+        function toggleDetail(rank) {
+            if (document.getElementById("detailled-section-" + rank).style.display == "block")
+                document.getElementById("detailled-section-" + rank).style.display = "none";
+            else
+                document.getElementById("detailled-section-" + rank).style.display = "block"
+        }
+    </script>
 
 
 </body>

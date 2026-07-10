@@ -1,6 +1,7 @@
 from typing import Dict, Any
 import unicodedata
 
+from collections import defaultdict
 from database import engine
 from sqlmodel import Session, select, func
 from models import (
@@ -147,9 +148,12 @@ def _score_from_records(records: list[dict]) -> dict:
     total = 0
     positive = 0
 
+    histo=defaultdict(int)
+
     for record in records:
         if not _is_satisfaction_record(record):
             continue
+        histo[record['value']]+=1
 
         value = _get_record_field(
             record,
@@ -167,17 +171,28 @@ def _score_from_records(records: list[dict]) -> dict:
         if _is_positive_satisfaction(value):
             positive += 1
 
+    if records and len(records)>0 and "question" in records[0].keys():
+        question = records[0]["question"]
+    else:
+        question = ""
     if total == 0:
         return {
+            "question": question,
             "score": None,
+            "histo":None,
             "positive_count": 0,
             "total_count": 0,
+            
         }
 
     return {
+        "question": records[0]["question"] or "",
         "score": round((positive / total) * 100),
+        "histo":histo,
         "positive_count": positive,
         "total_count": total,
+        
+        
     }
 
 
@@ -357,6 +372,9 @@ def _score_for_module_teacher(records: list[dict], module: dict, teacher: str) -
         if not teacher_name:
             continue
 
+        if record["question_type"] != "QCU_Satisfaction":
+            continue
+
         if record_teacher == teacher_name:
             filtered.append(record)
 
@@ -433,7 +451,7 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
                     "filters": {"ues": [], "modules": []},
                     "modules": [],
                     "summary_items": [],
-                    "recommendation": {"score": None, "count": 0, "question": ""},
+                    "recommendation": {"question":"", "score": None, "histo":None, "count": 0, "question": ""},
                     "records": [],
                 },
             }
@@ -532,6 +550,8 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
             "score": campus_score["score"],
             "positive_count": campus_score["positive_count"],
             "total_count": campus_score["total_count"],
+            "histo":campus_score["histo"],
+            "question":campus_score["question"],
             "score_label": "",
         },
         {
@@ -544,6 +564,8 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
             "score": formation_score["score"],
             "positive_count": formation_score["positive_count"],
             "total_count": formation_score["total_count"],
+            "histo":formation_score["histo"],
+            "question":formation_score["question"],
             "score_label": "",
         },
     ]
@@ -554,6 +576,9 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
         for teacher in module["teachers"]:
             teacher_score = _score_for_module_teacher(records, module, teacher)
 
+
+            print(module)
+
             teacher_scores.append(
                 {
                     "name": teacher,
@@ -562,6 +587,9 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
                     else 0,
                     "positive_count": teacher_score["positive_count"],
                     "total_count": teacher_score["total_count"],
+                    "histo": teacher_score["histo"] if teacher_score["histo"] is not None
+                    else {},
+                    "question": teacher_score["question"].replace("[ENSEIGNANT]",teacher).replace("[MODULE]",module["name"]),
                     "score_label": "",
                 }
             )
@@ -577,6 +605,7 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
                     else 0,
                     "positive_count": module_score["positive_count"],
                     "total_count": module_score["total_count"],
+                    "histo": module_score["histo"],
                     "score_label": "",
                 }
             )

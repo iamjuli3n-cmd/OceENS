@@ -210,7 +210,7 @@ def seed_questions(session: Session):
             "Module / Enseignant",
             "QCU_Satisfaction",
             "FR_EN",
-            "Dans l'ensemble, pour le module [MODULE] avec l'teacher [ENSEIGNANT], en tenant compte de l'organisation, des ressources et de la pédagogie, vous êtes : / Overall, for the module [MODULE] with the teacher [ENSEIGNANT], taking into account the organization, resources and pedagogy, you are:",
+            "Dans l'ensemble, pour le module [MODULE] avec l'enseignant [ENSEIGNANT], en tenant compte de l'organisation, des ressources et de la pédagogie, vous êtes : / Overall, for the module [MODULE] with the teacher [ENSEIGNANT], taking into account the organization, resources and pedagogy, you are:",
         ),
         (
             1,

@@ -431,6 +431,7 @@ body {
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+    cursor:pointer;
 }
 
 .summary-title {
@@ -508,4 +509,8 @@ body {
         width: 100%;
         max-width: 100%;
     }
+}
+
+.detailled-section {
+    display:none;
 }
