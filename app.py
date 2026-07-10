@@ -521,6 +521,7 @@ def create_app():
             .join(User, Role.user_id == User.user_id, isouter=True)
             .where(User.mail == user["email"].casefold())
         ).first()
+        session.flush()
         if roles_query:
             roles = roles_query.split(",")
         else:
@@ -547,21 +548,12 @@ def create_app():
         nb_repondre_inseres = 0
 
         try:
-            with session.begin():
+            with session.begin_nested():
                 with session.no_autoflush:
                     # ── Étape 1 : Créer le survey ──
-                    existing_survey = session.exec(
-                        select(Survey).where(Survey.template_id == survey.template_id)
-                    ).all()
-                    next_survey_id = (
-                        max([s.survey_id for s in existing_survey] + [0]) + 1
-                    )
-
-                    survey_url = f"/api/surveys/{next_survey_id}"
 
                     new_survey = Survey(
                         template_id=survey.template_id,
-                        survey_id=next_survey_id,
                         campus=survey.campus,
                         program=survey.program,
                         semester=survey.semester,
@@ -569,6 +561,9 @@ def create_app():
                         status=0,
                     )
                     session.add(new_survey)
+                    session.flush()  # Pour obtenir survey_id généré
+
+                    survey_id = new_survey.survey_id
 
                     # ── Étape 2 : Créer les modules ──
                     for ue in survey.ues:
@@ -586,7 +581,7 @@ def create_app():
                                 is_optional=ue.is_optional,
                                 one_teacher_in_list=module_data.one_teacher_in_list,
                                 template_id=survey.template_id,
-                                survey_id=next_survey_id,
+                                survey_id=survey_id,
                             )
                             session.add(new_module)
 
@@ -632,7 +627,7 @@ def create_app():
                             existing_respondent_user_ids = session.exec(
                                 select(Respondent.user_id).where(
                                     # Respondent.template_id == survey.template_id,
-                                    Respondent.survey_id == next_survey_id,
+                                    Respondent.survey_id == survey_id,
                                     Respondent.user_id.in_(user_ids),
                                 )
                             ).all()
@@ -647,7 +642,7 @@ def create_app():
                                     continue  # Déjà affecté à ce sondage, on ne fait rien
                                 new_repondre = Respondent(
                                     template_id=survey.template_id,
-                                    survey_id=next_survey_id,
+                                    survey_id=survey_id,
                                     user_id=user_id,
                                     submission_date=None,
                                 )
@@ -673,8 +668,7 @@ def create_app():
 
         result = {
             "message": "Survey créé avec succès",
-            "survey_id": next_survey_id,
-            "survey_url": f"/api/surveys/{next_survey_id}",
+            "survey_id": survey_id,
         }
         if survey.students:
             result.update(
