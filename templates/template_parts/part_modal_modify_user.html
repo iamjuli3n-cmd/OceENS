@@ -28,11 +28,11 @@
         background: white;
         border-radius: 14px;
         width: 100%;
-        max-width: 540px;
+        max-width: 670px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
         transform: translateY(20px) scale(.97);
         transition: transform .25s;
-        max-height: 90vh;
+        /*max-height: 90vh;*/
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -123,6 +123,162 @@
         font-weight: 600;
         color: var(--text);
     }
+
+    /* ════════════════════════════════════════
+   SECTION FILIÈRES RP-RM
+   ════════════════════════════════════════ */
+    .rprm-formations-section {
+        display: none;
+        /* caché par défaut */
+        margin-top: 4px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+        animation: fadeInDown .2s ease;
+    }
+
+    .rprm-formations-section.visible {
+        display: block;
+        /* affiché quand RP-RM sélectionné */
+    }
+
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .rprm-section-title {
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--blue-label);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .rprm-section-title::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+    }
+
+    /* Tags */
+    .formations-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+        min-height: 32px;
+        align-items: flex-start;
+    }
+
+    .formations-empty-hint {
+        font-size: .78rem;
+        color: #b0bec5;
+        font-style: italic;
+        align-self: center;
+    }
+
+    .formation-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ede7f6;
+        color: #4527a0;
+        border: 1px solid #c5b8e8;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: .78rem;
+        font-weight: 600;
+        animation: tagIn .15s ease;
+    }
+
+    @keyframes tagIn {
+        from {
+            opacity: 0;
+            transform: scale(.85);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .formation-tag-remove {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #4527a0;
+        font-size: 15px;
+        line-height: 1;
+        padding: 0;
+        opacity: .5;
+        transition: opacity .2s;
+    }
+
+    .formation-tag-remove:hover {
+        opacity: 1;
+    }
+
+    /* Dropdown row */
+    .formations-select-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .formations-select {
+        flex: 1;
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: .88rem;
+        font-family: 'DM Sans', sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        cursor: pointer;
+        transition: border-color .2s;
+    }
+
+    .formations-select:focus {
+        outline: none;
+        border-color: var(--purple);
+        box-shadow: 0 0 0 3px rgba(71, 10, 104, .1);
+        background: white;
+    }
+
+    .btn-add-formation {
+    padding: 9px 16px;
+    background: linear-gradient(135deg, var(--purple), var(--purple-mid));
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all .2s;
+    white-space: nowrap;
+}
+
+.btn-add-formation:hover {
+    background: linear-gradient(135deg, var(--purple-mid), var(--purple-light));
+}
+
+    
+
+   
+
+    
 </style>
 <div class="modal-overlay" id="modal-overlay">
     <div class="modal">
@@ -134,20 +290,28 @@
         <div class="modal-body">
             <span class="role-select-label">Quel est son rôle ?</span>
             <div class="role-options">
+
                 <div class="role-option" data-role="student">
-                    <div class="ro-name">Étudiant</div>
+                    <input type="checkbox" value="student" id="role-option-student" disabled /> <label class="ro-name"
+                        for="role-option-student">Étudiant</label>
                 </div>
                 <div class="role-option" data-role="admin">
-                    <div class="ro-name">Admin</div>
+                    <input type="checkbox" value="admin" id="role-option-admin" /> <label class="ro-name"
+                        for="role-option-admin">Admin</label>
                 </div>
                 <div class="role-option" data-role="program_manager">
-                    <div class="ro-name">RP-RM</div>
+                    <input type="checkbox" value="program_manager" id="role-option-program-manager" /> <label
+                        class="ro-name" for="role-option-program-manager">RPRM</label>
+                </div>
+                <div class="role-option" data-role="facilitator">
+                    <input type="checkbox" value="facilitator" id="role-option-facilitator" /> <label class="ro-name"
+                        for="role-option-facilitator">Animateur</label>
                 </div>
             </div>
 
             <!-- Section formations RP-RM -->
             <div class="rprm-formations-section" id="rprm-formations-section">
-                <div class="rprm-section-title">Formations associées</div>
+                <div class="rprm-section-title">Formations associées aux RPRMs</div>
 
                 <!-- Tags des formations sélectionnées -->
                 <div class="formations-tags" id="formations-tags"></div>
@@ -156,18 +320,30 @@
                 <div class="formations-select-row">
                     <select class="formations-select" id="formations-select">
                         <option value="">-- Sélectionner une formation --</option>
+                        {% for program in programs %}
+                        <option value="{{program.code}}"> {{program.name}} ({{program.campus}})</option>
+                        {% endfor %}
                     </select>
-                    <button class="btn-add-formation" id="btn-add-formation" onclick="addNewProgram()">Ajouter</button>
+                                        <button class="btn-add-formation" id="btn-add-formation" onclick="addNewProgram()">Ajouter</button>
                 </div>
+            </div>
 
-                <!-- Champ nouvelle formation (caché par défaut) -->
-                <div class="new-formation-row" id="new-formation-row">
-                    <input type="text" class="new-formation-input" id="new-formation-input"
-                        placeholder="Nom de la nouvelle formation…">
-                    <button class="btn-confirm-formation" id="btn-confirm-formation"
-                        onclick="confirmNewProgram()">✓</button>
-                    <button class="btn-cancel-new-formation" id="btn-cancel-new-formation"
-                        onclick="cancelNewProgram()">✕</button>
+            <!-- Section formations Animateurs -->
+            <div class="rprm-formations-section" id="rprm-formations-facilitator-section">
+                <div class="rprm-section-title">Formations associées aux Animateurs</div>
+
+                <!-- Tags des formations sélectionnées -->
+                <div class="formations-tags" id="formations-facilitator-tags"></div>
+
+                <!-- Dropdown + bouton ajouter -->
+                <div class="formations-select-row">
+                    <select class="formations-select" id="formations-facilitator-select">
+                        <option value="">-- Sélectionner une formation --</option>
+                        {% for program in programs %}
+                        <option value="{{program.code}}"> {{program.name}} ({{program.campus}})</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn-add-formation" id="btn-add-formation" onclick="addNewFacilitatorProgram()">Ajouter</button>
                 </div>
             </div>
         </div>
@@ -181,7 +357,15 @@
 
 <script>
 
-    var selectedFilieres = []; // filières choisies pour le RP-RM en cours d'édition
+    function checkStudent() {
+        console.log("CHECKSTUDENT");
+        document.getElementById("role-option-student").checked = !(document.getElementById("role-option-admin").checked || document.getElementById("role-option-program-manager").checked || document.getElementById("role-option-facilitator").checked)
+    }
+
+
+
+    var selectedPrograms = []; // filières choisies pour le RP-RM en cours d'édition
+    var selectedFacilitatorPrograms = []; // filières choisies pour l'animateur en cours d'édition
 
 
     // ── Ouvrir la modale ────────────────────────────
@@ -195,38 +379,33 @@
 
     editingUser = user;
 
-    if (user.role && (user.role.includes(':'))) {
-        var parts = user.role.split(':');
-        selectedRole = parts[0];
-        selectedFilieres = parts.length > 1
-            ? parts[1].split(';').map(function (f) { return f.trim(); }).filter(Boolean)
-            : [];
-    } else {
-        selectedRole = user.role || 'student';
-        selectedFilieres = [];
-    }
+    document.getElementById("role-option-admin").checked = false;
+    document.getElementById("role-option-program-manager").checked = false;
+    document.getElementById("role-option-facilitator").checked = false;
+
+    user.roles.forEach(role => {
+        if (role.startsWith("admin")) {
+            document.getElementById("role-option-admin").checked = true;
+        }
+        if (role.startsWith("program_manager")) {
+            document.getElementById("role-option-program-manager").checked = true;
+            if (role.includes(":"))
+                selectedPrograms.push(role.split(":")[1])
+        }
+        if (role.startsWith("facilitator")) {
+            document.getElementById("role-option-facilitator").checked = true;
+            if (role.includes(":"))
+                selectedFacilitatorPrograms.push(role.split(":")[1])
+        }
+
+
+    })
 
     // Header
     document.getElementById('modal-title').textContent = user.name;
     document.getElementById('modal-subtitle').textContent = user.mail;
 
-    // Surligner le bon bouton de rôle
-    document.querySelectorAll('.role-option').forEach(function (el) {
-        el.classList.toggle('selected', user.role.startsWith(el.dataset.role));
-    });
-
-    // Section filières
-    if (user.role.startsWith('program_manager') || user.role.startsWith('admin')) {
-        showFiliereSection();
-    } else {
-        hideFiliereSection();
-    }
-    renderFiliereTags();
-    refreshFiliereDropdown();
-
-    // Cacher le champ "nouvelle filière"
-    document.getElementById('new-formation-row').classList.remove('visible');
-    document.getElementById('new-formation-input').value = '';
+    renderProgramTags();
 
     // Réactiver le bouton save
     var btnSave = document.getElementById('btn-save');
@@ -238,21 +417,27 @@
     }
 
     // ── Section filières : afficher/masquer ─────────
-    function showFiliereSection() {
+    function showProgramSection() {
         document.getElementById('rprm-formations-section').classList.add('visible');
     }
-    function hideFiliereSection() {
+    function hideProgramSection() {
         document.getElementById('rprm-formations-section').classList.remove('visible');
+    }
+    function showFacilitatorProgramSection() {
+        document.getElementById('rprm-formations-facilitator-section').classList.add('visible');
+    }
+    function hideFacilitatorProgramSection() {
+        document.getElementById('rprm-formations-facilitator-section').classList.remove('visible');
     }
 
     // ── Rendu des tags filières ──────────────────────
-    function renderFiliereTags() {
+    function renderProgramTags() {
         var container = document.getElementById('formations-tags');
-        if (selectedFilieres.length === 0) {
+        if (selectedPrograms.length === 0) {
             container.innerHTML = '<span class="formations-empty-hint">Aucune filière ajoutée</span>';
             return;
         }
-        container.innerHTML = selectedFilieres.map(function (f) {
+        container.innerHTML = selectedPrograms.map(function (f) {
             return '<span class="formation-tag">'
                 + f
                 + '<button class="formation-tag-remove" data-filiere="' + f + '" title="Retirer">×</button>'
@@ -263,47 +448,74 @@
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 var nom = btn.dataset.filiere;
-                selectedFilieres = selectedFilieres.filter(function (f) { return f !== nom; });
-                renderFiliereTags();
-                refreshFiliereDropdown();
+                selectedPrograms = selectedPrograms.filter(function (f) { return f !== nom; });
+                renderProgramTags();
             });
         });
     }
 
-    // ── Rafraîchir le dropdown des filières ─────────
-    function refreshFiliereDropdown() {
-        var select = document.getElementById('formations-select');
-        var existing = {{ programs | tojson | safe
-    }};
-
-    select.innerHTML = '<option value="">-- Sélectionner une filière --</option>';
-
-    existing.forEach(function (f) {
-        if (selectedFilieres.indexOf(f) === -1) {
-            var opt = document.createElement('option');
-            opt.value = f.code;
-            opt.textContent = f.name + ' (' + f.campus + ')';
-            select.appendChild(opt);
+    // ── Rendu des tags filières ──────────────────────
+    function renderFacilitatorProgramTags() {
+        var container = document.getElementById('formations-facilitator-tags');
+        if (selectedFacilitatorPrograms.length === 0) {
+            container.innerHTML = '<span class="formations-empty-hint">Aucune filière ajoutée</span>';
+            return;
         }
-    });
+        container.innerHTML = selectedFacilitatorPrograms.map(function (f) {
+            return '<span class="formation-tag">'
+                + f
+                + '<button class="formation-tag-remove" data-filiere="' + f + '" title="Retirer">×</button>'
+                + '</span>';
+        }).join('');
 
-    var newOpt = document.createElement('option');
-    newOpt.value = '__new__';
-    newOpt.textContent = '+ Créer une nouvelle filière';
-    select.appendChild(newOpt);
+        container.querySelectorAll('.formation-facilitator-tag-remove').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var nom = btn.dataset.filiere;
+                selectedFacilitatorPrograms = selectedFacilitatorPrograms.filter(function (f) { return f !== nom; });
+                renderFacilitatorProgramTags();
+            });
+        });
     }
+
+
+
 
     // ── Fermer la modale ────────────────────────────
     function closeModal() {
         document.getElementById('modal-overlay').classList.remove('open');
-        document.getElementById('new-formation-row').classList.remove('visible');
-        document.getElementById('new-formation-input').value = '';
         editingUserId = null;
-        selectedFilieres = [];
+        selectedPrograms = [];
+        selectedFacilitatorPrograms = [];
+    }
+
+    function buildRoles() {
+        roles= new Set()
+        if (document.getElementById("role-option-admin").checked) {
+            roles.add("admin")
+        }
+        if (document.getElementById("role-option-program-manager").checked) {
+            selectedPrograms.forEach(program=> {
+                roles.add("program_manager:"+program)
+            })
+        }
+        if(document.getElementById("role-option-facilitator").checked) {
+            selectedFacilitatorPrograms.forEach(program=> {
+                roles.add("facilitator:"+program)
+            })
+        }
+        return Array.from(roles);
     }
 
     // CODE A EXECUTER AU CHARGEMENT DE LA PAGE
     document.addEventListener('DOMContentLoaded', function () {
+
+        // Student is the option if no other are selected
+        document.getElementById("role-option-student").addEventListener("change", checkStudent);
+        document.getElementById("role-option-admin").addEventListener("change", checkStudent);
+        document.getElementById("role-option-program-manager").addEventListener("change", checkStudent);
+        document.getElementById("role-option-facilitator").addEventListener("change", checkStudent);
+        checkStudent();
 
         // ── Sélection du rôle dans la modale ────────────
         document.querySelectorAll('.role-option').forEach(function (opt) {
@@ -312,31 +524,20 @@
                 opt.classList.add('selected');
                 editingUser["role"] = opt.dataset.role;
 
-                if (opt.dataset.role === 'program_manager' || opt.dataset.role === 'admin') {
-                    showFiliereSection();
-                    renderFiliereTags();
-                    refreshFiliereDropdown();
+                if (opt.dataset.role === 'program_manager') {
+                    showProgramSection();
+                    renderProgramTags();
                 } else {
-                    hideFiliereSection();
-                    selectedFilieres = [];
+                    hideProgramSection();
+                }
+                if (opt.dataset.role === 'facilitator') {
+                    showFacilitatorProgramSection();
+                    renderFacilitatorProgramTags();
+                } else {
+                    hideFacilitatorProgramSection();
                 }
             });
         });
-
-
-
-
-
-
-
-
-
-        // ── Clavier sur le champ nouvelle filière ────────
-        document.getElementById('new-formation-input').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btn-confirm-formation').click(); }
-            if (e.key === 'Escape') { document.getElementById('btn-cancel-new-formation').click(); }
-        });
-
 
     });
 
@@ -345,14 +546,10 @@
 
         if (!editingUser) return;
 
+
+
         // Construire le rôle final
-        var finalRole = editingUser["role"] || 'student';
-        if (selectedRole === 'program_manager' && selectedFilieres.length > 0) {
-            finalRole = 'program_manager:' + selectedFilieres.join(';');
-        }
-        if (selectedRole === 'admin' && selectedFilieres.length > 0) {
-            finalRole = 'admin:' + selectedFilieres.join(';');
-        }
+        var roles = buildRoles()
 
         var btn = document.getElementById('btn-save');
         btn.disabled = true;
@@ -361,7 +558,7 @@
         fetch('/api/users/' + editingUser["user_id"] + '/role', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ role: finalRole })
+            body: JSON.stringify({ roles: roles })
         })
             .then(function (resp) {
                 if (!resp.ok) {
@@ -390,42 +587,24 @@
         var val = select.value;
         if (!val) return;
 
-        if (val === '__new__') {
-            document.getElementById('new-formation-row').classList.add('visible');
-            document.getElementById('new-formation-input').focus();
-            select.value = '';
-            return;
-        }
-
-        if (selectedFilieres.indexOf(val) === -1) {
-            selectedFilieres.push(val);
-            renderFiliereTags();
-            refreshFiliereDropdown();
+        if (selectedPrograms.indexOf(val) === -1) {
+            selectedPrograms.push(val);
+            renderProgramTags();
         }
         select.value = '';
     };
 
-    // ── Confirmer une nouvelle filière ───────────────
-    function confirmNewProgram() {
-        var input = document.getElementById('new-formation-input');
-        var val = input.value.trim();
+    // ── Ajouter une filière depuis le dropdown ───────
+    function addNewFacilitatorProgram() {
+        var select = document.getElementById('formations-facilitator-select');
+        var val = select.value;
         if (!val) return;
 
-        if (selectedFilieres.indexOf(val) === -1) {
-            selectedFilieres.push(val);
-            renderFiliereTags();
-            refreshFiliereDropdown();
+         if (selectedFacilitatorPrograms.indexOf(val) === -1) {
+            selectedFacilitatorPrograms.push(val);
+            renderFacilitatorProgramTags();
         }
-        input.value = '';
-        document.getElementById('new-formation-row').classList.remove('visible');
+        select.value = '';
     };
-
-    // ── Annuler nouvelle filière ─────────────────────
-    function cancelNewProgram() {
-        document.getElementById('new-formation-input').value = '';
-        document.getElementById('new-formation-row').classList.remove('visible');
-    };
-
-
 
 </script>

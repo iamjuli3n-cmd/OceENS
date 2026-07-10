@@ -26,28 +26,6 @@ engine = create_engine(
 # ┌─ Déclaration du modèle de base ───────────────────────────────────────────┐
 Base = declarative_base()
 
-
-class UserAuth(Base):
-    """
-    Modèle SQLAlchemy miroir de la table Users existante dans db_oceens.db
-
-    Colonnes :
-    - user_id (INTEGER, PK, auto-increment) : Identifiant unique
-    - mail (STRING) : Adresse email de l'utilisateur
-    - role (STRING) : Rôle de l'utilisateur (défaut: "student")
-
-    Exemple :
-        julien@epfedu.fr   →  student
-        admin@epfedu.fr    →  admin
-        prof@epfedu.fr     →  program_manager:MDE_P2027;MIN_P2027
-    """
-    __tablename__ = "users"
-
-    id_user = Column("user_id", Integer, primary_key=True, autoincrement=True)
-    mail = Column("mail", String)
-    role = Column("role", String, default="student")
-# └───────────────────────────────────────────────────────────────────────────┘
-
 # ┌─ Session factory pour les requêtes à la BDD ──────────────────────────────┐
 SessionLocal = sessionmaker(bind=engine)
 # └───────────────────────────────────────────────────────────────────────────┘

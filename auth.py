@@ -22,8 +22,12 @@ Flux typique :
 Utilisateur → /login → Microsoft Login → /auth/callback → Dashboard
 """
 
+from sqlmodel import select, func
+from models import (
+    User,
+    Role,
+)
 from dotenv import load_dotenv
-
 
 import uuid
 import requests
@@ -272,51 +276,7 @@ def get_current_user(request: Request) -> dict | None:
 
 # └───────────────────────────────────────────────────────────────────────────┘
 
-# ┌─ Fonction utilitaire : Vérification des rôles autorisés ────────────────────┐
 
-
-def require_roles(request: Request, allowed_roles: list[str]) -> dict | None:
-    """
-    Vérifie que l'utilisateur connecté possède un rôle autorisé.
-
-    Logique :
-    1. Récupère l'utilisateur via get_current_user()
-    2. Si pas connecté → retourne None
-    3. Vérifie si le rôle de l'utilisateur correspond à un des rôles autorisés
-       - "admin" → match exact avec "admin"
-       - "program_manager" → match si le rôle commence par "program_manager" (couvre "program_manager:MDE_P2027")
-       - "student" → match exact avec "student"
-    4. Si le rôle ne correspond pas → retourne None
-    5. Si le rôle correspond → retourne le dict utilisateur
-
-    Args :
-        request : L'objet Request FastAPI
-        allowed_roles : Liste de rôles autorisés, ex: ["admin", "program_manager"]
-
-    Return :
-        dict avec {"name", "email", "role"} si autorisé, None sinon
-
-    Exemple :
-        user = require_roles(request, ["admin", "program_manager"])
-        if user is None:
-            return RedirectResponse(url="/dashboard/student")
-    """
-    user = get_current_user(request)
-    if not user:
-        return None
-
-    user_role = user.get("role", "")
-
-    for allowed in allowed_roles:
-        if allowed == "admin" and user_role.startswith("admin"):
-            return user
-        if allowed == "program_manager" and user_role.startswith("program_manager"):
-            return user
-        if allowed == "student" and user_role == "student":
-            return user
-
-    # Aucun rôle autorisé ne correspond
-    return None
 
 
 # └───────────────────────────────────────────────────────────────────────────┘

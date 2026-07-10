@@ -33,14 +33,12 @@
         {% set AVATAR_COLORS = [ '#7b2fa0', '#df231d', '#1565c0', '#2e7d32', '#e65100', '#ad1457', '#0277bd', '#558b2f']
         %}
 
-        {% set ROLE_TITLE = { 'admin': 'Administrateur', 'student': 'Étudiant', 'program_manager': 'RPRM' } %}
+        {% set ROLE_TITLE = { 'admin': 'Administrateur', 'student': 'Étudiant', 'program_manager': 'RPRM', 'facilitator': 'Animateur' } %}
 
 
         {% for user in users %}
 
-        {% set role,program = user.role.split(":", 1) if ":" in user.role else (user.role, "") %}
-
-        <tr data-id="{{ user.user_id }}" class="{{ role }}">
+        <tr data-id="{{ user.user_id }}">
             <td>
                 <div class="user-info">
                     <div class="avatar" style="background: {{ AVATAR_COLORS[user.user_id % AVATAR_COLORS|length] }}">
@@ -54,10 +52,15 @@
             </td>
 
             <td>
+                {% for full_role in user.roles %}
+                {% set role,program = full_role.split(":", 1) if ":" in full_role else (full_role, "") %}
+
                 <span class="role-badge {{ role }}">
                     <span class="role-dot"></span>
-                    {{ ROLE_TITLE.get(role, role) }} {% if program %} : {{program }} {% endif %}
+                    {{ ROLE_TITLE.get(role) }} {% if program %} : {{program }} {% endif %}
+
                 </span>
+                {% endfor %}
             </td>
 
             <td class="td-actions">
@@ -81,7 +84,7 @@
 
 <script>
 
-     function filter(role) {
+    function filter(role) {
         allUsers = document.querySelectorAll("#users-tbody tr");
         allUsers.forEach(user => {
             if (role === "all" || user.classList.contains(role)) {
