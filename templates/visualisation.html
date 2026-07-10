@@ -28,6 +28,8 @@
 
     <div class="container">
 
+      
+
         {% if warning_msg %}
         <div
             style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; color: #b45309; font-size: 14px; font-weight: 500;">
@@ -115,6 +117,7 @@
                     <div class="card-subtitle">
                         Campus, formation et modules évalués dans ce sondage
                     </div>
+                      {{survey_obj | tojson | safe}}
                 </div>
             </div>
 

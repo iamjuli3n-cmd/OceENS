@@ -1,6 +1,22 @@
 from typing import Dict, Any
 import unicodedata
 
+from database import engine
+from sqlmodel import Session,select
+from models import (
+    Program,
+    User,
+    Role,
+    Template,
+    Section,
+    Question,
+    Option,
+    Module,
+    Survey,
+    Respondent,
+    Answer,
+)
+
 
 # ─────────────────────────────────────────────
 # Helpers génériques
@@ -357,9 +373,22 @@ def _score_for_module_teacher(records: list[dict], module: dict, teacher: str) -
 # Context principal
 # ─────────────────────────────────────────────
 def get_visualisation_context(
-    survey_obj,
-    program_name: str | None = None,
+    survey_id:int
 ) -> Dict[str, Any]:
+    
+    session = Session(engine)
+    
+    survey = session.exec(select(Survey).join(Program,Survey.program==Program.code).where(Survey.survey_id==survey_id)).first()
+    
+    print(survey)
+
+    
+
+    return {"survey":survey,"answers_count":0,"respondents_count": 1,"viz_data":{}}
+    
+
+
+
     records = survey_obj.to_flat_dataframe_records()
 
     campus = survey_obj.campus or ""

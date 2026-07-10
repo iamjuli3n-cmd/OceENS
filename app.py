@@ -1429,27 +1429,30 @@ def create_app():
             )
 
         # Utilisation de la BDD locale pour le loader sqlite3 natif
-        survey_obj = load_sondage_complet(survey_id)
+        #survey_obj = load_sondage_complet(survey_id)
 
-        program = session.exec(
-            select(Program).where(Program.code == survey.program)
-        ).first()
+     
+        # program = session.exec(
+        #     select(Program).where(Program.code == survey.program)
+        # ).first()
 
-        program_name = program.name if program else survey.program
+        # program_name = program.name if program else survey.program
 
-        viz_context = get_visualisation_context(survey_obj, program_name=program_name)
+        context = get_visualisation_context(survey_id)
+        context["user"]=user
 
-        context = {
-            "user": user,
-            "survey": survey,
-            "program_name": program_name,
-            "respondents_count": respondents_count,
-            "answers_count": answers_count,
-            "warning_msg": error_or_warning
-            if isinstance(error_or_warning, str)
-            else None,
-            "viz_data": viz_context,
-        }
+        # context = {
+        #     "user": user,
+        #     "survey": survey,
+        #     "program_name": program_name,
+        #     "respondents_count": respondents_count,
+        #     "answers_count": answers_count,
+        #     "warning_msg": error_or_warning
+        #     if isinstance(error_or_warning, str)
+        #     else None,
+        #     "viz_data": viz_context,
+        #     "survey_obj": survey_obj
+        # }
 
         return templates.TemplateResponse(
             request=request, name="visualisation.html", context=context
