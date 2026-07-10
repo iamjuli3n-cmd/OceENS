@@ -213,13 +213,12 @@ async def auth_callback(request: Request):
 
     # Récupère le rôle de cet utilisateur depuis notre base de données
     # Si l'utilisateur n'existe pas, il est créé avec le rôle "student"
-    role = get_or_create_user(email)
+    get_or_create_user(email)
 
     # Construit l'objet utilisateur avec les infos Microsoft + notre rôle
     user = {
         "name": graph.get("displayName"),
         "email": email,
-        "role": role,
     }
 
     # Stocke l'utilisateur en session Starlette (fonctionne en production)

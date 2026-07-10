@@ -56,7 +56,7 @@ load_dotenv()
 VALID_ROLES = {"admin", "student", "program_manager"}
 
 
-def role_to_dashboard_slug(role: str) -> str:
+def role_to_dashboard_slug(roles: List[str]) -> str:
     """
     Convertit le rôle stocké en BDD en slug de route dashboard.
 
@@ -65,12 +65,13 @@ def role_to_dashboard_slug(role: str) -> str:
     "program_manager:MDE_P2027"    → "program_manager"
     "student" (ou autre) → "student"
     """
-    if role.startswith("admin"):
-        return "admin"
-    elif role.startswith("program_manager"):
-        return "program-manager"
-    else:
-        return "student"
+    for role in roles:
+        if role.startswith("admin"):
+            return "admin"
+        elif role.startswith("program_manager"):
+            return "program-manager"
+        else:
+            return "student"
 
 
 def parse_rprm_formations(role: str) -> list[str]:
@@ -279,14 +280,21 @@ def create_app():
 
     # ┌─ Route : Page d'accueil (version app.py conservée) ──────────────┐
     @app.get("/", response_class=HTMLResponse)
-    async def index(request: Request):
+    async def index(request: Request, session:SessionDep):
         """
         Page d'accueil. Si l'utilisateur est déjà connecté avec un rôle
         valide, redirection vers son dashboard. Sinon, affichage du login.
         """
         user = get_current_user(request)
-        if user and user.get("role"):
-            slug = role_to_dashboard_slug(user["role"])
+        if user:
+            # Déterminer les formations autorisées pour un RP-RM
+            roles_query = session.exec(select(func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).where(User.mail == user["email"].casefold())).first()
+            if roles_query:
+                roles = roles_query.split(',')
+            else:
+                roles = ["student"]
+            print(roles)
+            slug = role_to_dashboard_slug(roles)
             return RedirectResponse(url=f"/dashboard/{slug}")
         return templates.TemplateResponse(request=request, name="index.html")
 

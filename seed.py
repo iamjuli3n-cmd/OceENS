@@ -27,8 +27,8 @@ def seed_users(db: Session):
         (4, "mickey.mouse@epfedu.fr"),
         (5, "naruto.uzumaki@epfedu.fr"),
         (6, "yassine.gharbi@epfedu.fr"),
-        (7, "arnaud.jousset@epfedu.fr"),
-        (8, "etienne.gibaud@epfedu.fr"),
+        (7, "arnaud.jousset@epf.fr"),
+        (8, "etienne.gibaud@epf.fr"),
     ]
     for u_data in user_data:
         user = User(user_id=u_data[0], mail=u_data[1])

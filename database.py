@@ -12,6 +12,7 @@ Rôles supportés : "student" (défaut), "admin", "program_manager:..." (respons
 
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker
+from models import User
 
 # ┌─ Configuration de la base de données ──────────────────────────────────────┐
 # On utilise désormais la base de données principale du projet
@@ -56,23 +57,19 @@ def get_or_create_user(email: str) -> str:
 
     try:
         # Requête : cherche l'utilisateur par email (case-insensitive)
-        user = db.query(UserAuth).filter(
-            UserAuth.mail == email.lower()
+        user = db.query(User).filter(
+            User.mail == email.lower()
         ).first()
 
-        if user:
-            # Utilisateur trouvé → retourne son rôle
-            return user.role if user.role else "student"
+        if not user:
+            # Utilisateur non trouvé → auto-inscription avec rôle par défaut
+            new_user = User(
+                mail=email.lower(),
+            )
+            db.add(new_user)
+            db.commit()
 
-        # Utilisateur non trouvé → auto-inscription avec rôle par défaut
-        new_user = UserAuth(
-            mail=email.lower(),
-            role="student"
-        )
-        db.add(new_user)
-        db.commit()
-
-        return "student"
+        
 
     finally:
         # Ferme proprement la connexion
