@@ -388,7 +388,7 @@ body {
 
 .summary-row {
     display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-columns: 160px minmax(0, 1fr);
     align-items: center;
     gap: 28px;
     padding: 26px 0;
@@ -408,8 +408,8 @@ body {
 
 .ue-tag {
     display: block;
-    width: 260px;
-    max-width: 260px;
+    width: 160px;
+    max-width: 160px;
     border-radius: 6px;
     padding: 8px 10px;
     background: var(--epf-purple);

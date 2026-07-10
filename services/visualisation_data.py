@@ -187,10 +187,7 @@ def _score_for_campus(records: list[dict]) -> dict:
     for record in records:
         text = _record_text(record)
 
-        if _record_has_module(record):
-            continue
-
-        if "campus" in text:
+        if record["category"]== "Campus" and record["question_type"] == "QCU_Satisfaction":
             filtered.append(record)
 
     return _score_from_records(filtered)
@@ -202,10 +199,7 @@ def _score_for_formation(records: list[dict]) -> dict:
     for record in records:
         text = _record_text(record)
 
-        if _record_has_module(record):
-            continue
-
-        if "formation" in text or "program" in text:
+        if record["category"]== "Formation" and record["question_type"] == "QCU_Satisfaction":
             filtered.append(record)
 
     return _score_from_records(filtered)
