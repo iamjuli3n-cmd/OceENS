@@ -478,7 +478,22 @@ body {
 .score-fill {
     height: 100%;
     border-radius: 999px;
+}
+
+.score-fill.good {
     background: #22c55e;
+}
+
+.score-fill.warning {
+    background: #eab308;
+}
+
+.score-value.good {
+    color: #22c55e;
+}
+
+.score-value.warning {
+    color: #eab308;
 }
 
 .score-value {

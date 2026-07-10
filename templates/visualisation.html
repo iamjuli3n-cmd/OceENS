@@ -143,9 +143,13 @@
                             {% if item.score is not none %}
                             <div class="score-line">
                                 <div class="score-bar">
-                                    <div class="score-fill" style="width: {{ item.score }}%;"></div>
+                                    <div class="score-fill {{ 'good' if item.score >= 50 else 'warning' }}"
+                                        style="width: {{ item.score }}%;">
+                                    </div>
                                 </div>
-                                <span class="score-value">{{ item.score }}%</span>
+                                <span class="score-value {{ 'good' if item.score >= 50 else 'warning' }}">
+                                    {{ item.score }}%
+                                </span>
                             </div>
                             {% else %}
                             <span class="score-placeholder">Score à calculer</span>
@@ -163,9 +167,13 @@
 
                                 <div class="score-line">
                                     <div class="score-bar">
-                                        <div class="score-fill" style="width: {{ teacher_score.score }}%;"></div>
+                                        <div class="score-fill {{ 'good' if teacher_score.score >= 50 else 'warning' }}"
+                                            style="width: {{ teacher_score.score }}%;">
+                                        </div>
                                     </div>
-                                    <span class="score-value">{{ teacher_score.score }}%</span>
+                                    <span class="score-value {{ 'good' if teacher_score.score >= 50 else 'warning' }}">
+                                        {{ teacher_score.score }}%
+                                    </span>
                                 </div>
                             </div>
                             {% endfor %}
