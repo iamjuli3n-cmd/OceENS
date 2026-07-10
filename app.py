@@ -27,6 +27,7 @@ from requests import session
 from sqlmodel import Session, SQLModel, create_engine, select, func, delete
 import uvicorn
 from seed import seed_all_if_necessary
+from database import engine, SessionDep, create_db_and_tables
 
 # ┌─ Importation des modèles et du module d'authentification ─────────────┐
 from models import (
@@ -93,24 +94,7 @@ def parse_rprm_formations(role: str) -> list[str]:
 # └────────────────────────────────────────────────────────────────────────┘
 
 
-# ┌─ Configuration de la base de données ──────────────────────────────────┐
-sqlite_file_name = "database/db_oceens.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
 
-connect_args = {"check_same_thread": False, "timeout": 15}
-engine = create_engine(sqlite_url, connect_args=connect_args)
-
-
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
-
-
-def get_session():
-    with Session(engine) as session:
-        yield session
-
-
-SessionDep = Annotated[Session, Depends(get_session)]
 # └────────────────────────────────────────────────────────────────────────┘
 
 
