@@ -209,7 +209,6 @@ def require_roles(
         roles = roles_query.split(",")
     else:
         roles = ["student"]
-    print(roles)
 
     if check_role(roles, allowed_roles):
         return user
@@ -287,7 +286,6 @@ def create_app():
                 roles = roles_query.split(",")
             else:
                 roles = ["student"]
-            print(roles)
             slug = role_to_dashboard_slug(roles)
             return RedirectResponse(url=f"/dashboard/{slug}")
         return templates.TemplateResponse(request=request, name="index.html")
@@ -317,13 +315,11 @@ def create_app():
             roles = roles_query.split(",")
         else:
             roles = ["student"]
-        print(roles)
 
         allowed_programs = []
         for role in roles:
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
-        print(allowed_programs)
 
         # Fetch all potential templates
         survey_templates = session.exec(select(Template)).all()
@@ -348,8 +344,6 @@ def create_app():
         campus = {}
         for program in programs_list:
             campus[program.code] = program.campus
-
-        print(campus)
 
         return templates.TemplateResponse(
             request=request,
@@ -510,13 +504,11 @@ def create_app():
             roles = roles_query.split(",")
         else:
             roles = ["student"]
-        print(roles)
 
         allowed_programs = []
         for role in roles:
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
-        print(allowed_programs)
 
         if survey.program not in allowed_programs:
             return JSONResponse(
@@ -997,7 +989,6 @@ def create_app():
         for role in roles:
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
-        print(allowed_programs)
 
         if (
             not "admin" in roles
@@ -1025,7 +1016,6 @@ def create_app():
     @dashboard_router.get("/student", response_class=HTMLResponse)
     async def student_dashboard(request: Request, session: SessionDep):
         user = get_current_user(request)
-        print(user)
         if not user:
             return RedirectResponse(url="/")
         rows = session.exec(
@@ -1077,7 +1067,6 @@ def create_app():
         if not user:
             return RedirectResponse(url="/")
 
-        print(user)
         roles_query = session.exec(
             select(func.group_concat(Role.role))
             .join(User, Role.user_id == User.user_id, isouter=True)
@@ -1087,7 +1076,6 @@ def create_app():
             roles = roles_query.split(",")
         else:
             roles = ["student"]
-        print(roles)
 
         if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
@@ -1096,7 +1084,6 @@ def create_app():
         for role in roles:
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
-        print(allowed_programs)
 
         # Admin sans restriction : voit toutes les filières
         if (allowed_programs is None or allowed_programs == []) and ("admin" in roles):
@@ -1186,7 +1173,6 @@ def create_app():
     @dashboard_router.get("/admin", response_class=HTMLResponse)
     async def admin_dashboard(request: Request, session: SessionDep):
         user = get_current_user(request)
-        print(user)
 
         if not user:
             return RedirectResponse(url="/")
@@ -1200,7 +1186,6 @@ def create_app():
             roles = roles_query.split(",")
         else:
             roles = ["student"]
-        print(roles)
 
         if not ("admin" in roles):
             return RedirectResponse(url="/")
@@ -1244,7 +1229,6 @@ def create_app():
             .join(Role, Role.user_id == User.user_id, isouter=True)
             .group_by(User.user_id)
         ).all()
-        print(db_users)
         users = [
             {
                 "user_id": u[0].user_id,
@@ -1382,7 +1366,6 @@ def create_app():
             roles = roles_query.split(",")
         else:
             roles = ["student"]
-        print(roles)
 
         if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
@@ -1391,7 +1374,6 @@ def create_app():
         for role in roles:
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
-        print(allowed_programs)
 
         survey, error_or_warning, _, _ = _check_sondage_access_and_status(
             session, survey_id, roles, allowed_programs
@@ -1403,7 +1385,7 @@ def create_app():
             )
 
         # Utilisation de la BDD locale pour le loader sqlite3 natif
-        survey_obj = load_sondage_complet("database/db_oceens.db", survey_id)
+        survey_obj = load_sondage_complet(survey_id)
 
         resp = generate_csv_response(survey_obj)
         if isinstance(error_or_warning, str):
@@ -1426,7 +1408,6 @@ def create_app():
             roles = roles_query.split(",")
         else:
             roles = ["student"]
-        print(roles)
 
         if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
@@ -1435,7 +1416,6 @@ def create_app():
         for role in roles:
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
-        print(allowed_programs)
 
         survey, error_or_warning, respondents_count, answers_count = (
             _check_sondage_access_and_status(
@@ -1449,7 +1429,7 @@ def create_app():
             )
 
         # Utilisation de la BDD locale pour le loader sqlite3 natif
-        survey_obj = load_sondage_complet("database/db_oceens.db", survey_id)
+        survey_obj = load_sondage_complet(survey_id)
 
         program = session.exec(
             select(Program).where(Program.code == survey.program)
