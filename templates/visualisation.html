@@ -28,7 +28,7 @@
 
     <div class="container">
 
-      
+
 
         {% if warning_msg %}
         <div
@@ -79,7 +79,6 @@
                 <span class="filter-label">Filtre</span>
                 <select class="filter-select" id="flt-display-mode">
                     <option value="teacher">Par Enseignant</option>
-                    <option value="module">Par Module</option>
                 </select>
             </div>
         </div>
@@ -88,12 +87,14 @@
         <div class="kpi-banner">
             <div class="kpi-right">
                 <h3>{{ program_name }}</h3>
-                <div class="huge-pct" id="rec-tricolor-val">{{ survey.campus }} | {{ survey.school_year }} | {{ survey.semester }}</div>
+                <div class="huge-pct" id="rec-tricolor-val">{{ survey.campus }} | {{ survey.school_year }} | {{
+                    survey.semester }}</div>
             </div>
             <div class="kpi-right">
                 <h3> Taux de réponse : </h3>
                 <div class="huge-pct" id="rec-tricolor-val">
-                    {{ answers_count }} / {{ respondents_count }} ({{ "%.0f"|format(100*answers_count/respondents_count)}}%)
+                    {{ answers_count }} / {{ respondents_count }} ({{
+                    "%.0f"|format(100*answers_count/respondents_count)}}%)
                 </div>
             </div>
             <div class="kpi-right">
@@ -117,85 +118,61 @@
                     <div class="card-subtitle">
                         Campus, formation et modules évalués dans ce sondage
                     </div>
-                      {{survey_obj | tojson | safe}}
                 </div>
             </div>
 
             <div class="summary-list">
                 {% for item in viz_data.summary_items %}
                 <div class="summary-row">
-                    <!--<div class="summary-rank">{{ item.rank }}</div>-->
-                    {% if item.ue %}
-                            <span class="ue-tag">{{ item.ue }}</span>
-                            {% else %}
-                            <span></span>
-                            {% endif %}
+
+                    <div class="summary-left-tag">
+                        {% if item.ue %}
+                        <span class="ue-tag">{{ item.ue }}</span>
+                        {% endif %}
+                    </div>
 
                     <div class="summary-main">
                         <div class="summary-title-line">
                             <span class="summary-title">{{ item.title }}</span>
                         </div>
 
-                        {% if item.subtitle %}
-                        <div class="summary-subtitle">{{ item.subtitle }} 
+                        {% if item.type != "module" and item.subtitle %}
+                        <div class="summary-score-inline">
+                            <span class="summary-subtitle">{{ item.subtitle }}</span>
+
+                            {% if item.score is not none %}
                             <div class="score-line">
-                            <div class="score-bar">
-                                <div class="score-fill" style="width: 60%;"></div>
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: {{ item.score }}%;"></div>
+                                </div>
+                                <span class="score-value">{{ item.score }}%</span>
                             </div>
-                            <span class="score-value">60%</span>
-                            </div>
+                            {% else %}
+                            <span class="score-placeholder">Score à calculer</span>
+                            {% endif %}
                         </div>
                         {% endif %}
 
-                        {% if item.teachers %}
+                        {% if item.type == "module" and item.teacher_scores %}
                         <div class="summary-teachers">
-                            {% for teacher in item.teachers %}
-                            <div class="summary-subtitle">{{ teacher }}
+                            {% for teacher_score in item.teacher_scores %}
+                            <div class="summary-score-inline">
+                                <span class="summary-subtitle">
+                                    {{ teacher_score.name if teacher_score.name else "Sans enseignant" }}
+                                </span>
+
                                 <div class="score-line">
-                            <div class="score-bar">
-                                <div class="score-fill" style="width: 60%;"></div>
-                            </div>
-                            <span class="score-value">60%</span>
-                            </div>
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: {{ teacher_score.score }}%;"></div>
+                                    </div>
+                                    <span class="score-value">{{ teacher_score.score }}%</span>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
                         {% endif %}
                     </div>
 
-                    <!-- <div class="summary-score">
-                        {% if item.type == "module" and item.teacher_scores %}
-                        {% for teacher_score in item.teacher_scores %}
-                        <div class="teacher-score-row">
-                            {% if teacher_score.score is not none %}
-                            <div class="score-line">
-                                <div class="score-bar">
-                                    <div class="score-fill" style="width: {{ teacher_score.score }}%;"></div>
-                                </div>
-                                <span class="score-value">{{ teacher_score.score }}%</span>
-                            </div>
-                            {% else %}
-                            <div class="score-placeholder">Score à calculer</div>
-                            {% endif %}
-
-                            <div class="score-label">{{ teacher_score.score_label }}</div>
-                        </div>
-                        {% endfor %}
-                        {% else %}
-                        {% if item.score is not none %}
-                        <div class="score-line">
-                            <div class="score-bar">
-                                <div class="score-fill" style="width: {{ item.score }}%;"></div>
-                            </div>
-                            <span class="score-value">{{ item.score }}%</span>
-                        </div>
-                        {% else %}
-                        <div class="score-placeholder">Score à calculer</div>
-                        {% endif %}
-
-                        <div class="score-label">{{ item.score_label }}</div>
-                        {% endif %}
-                    </div> -->
                 </div>
                 {% endfor %}
             </div>

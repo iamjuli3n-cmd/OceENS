@@ -2,7 +2,7 @@ from typing import Dict, Any
 import unicodedata
 
 from database import engine
-from sqlmodel import Session,select
+from sqlmodel import Session, select, func
 from models import (
     Program,
     User,
@@ -372,45 +372,143 @@ def _score_for_module_teacher(records: list[dict], module: dict, teacher: str) -
 # ─────────────────────────────────────────────
 # Context principal
 # ─────────────────────────────────────────────
-def get_visualisation_context(
-    survey_id:int
-) -> Dict[str, Any]:
-    
-    session = Session(engine)
-    
-    survey = session.exec(select(Survey).join(Program,Survey.program==Program.code).where(Survey.survey_id==survey_id)).first()
-    
-    print(survey)
-
-    
-
-    return {"survey":survey,"answers_count":0,"respondents_count": 1,"viz_data":{}}
-    
 
 
+def _build_records_from_db(
+    survey: Survey,
+    program: Program | None,
+    sections: list[Section],
+    questions: list[Question],
+    modules: list[Module],
+    answers: list[Answer],
+) -> list[dict]:
+    sections_by_id = {section.section_id: section for section in sections}
 
-    records = survey_obj.to_flat_dataframe_records()
+    questions_by_key = {
+        (question.section_id, question.question_id): question for question in questions
+    }
 
-    campus = survey_obj.campus or ""
-    program_code = survey_obj.program or ""
-    program = program_name or program_code
+    modules_by_id = {module.module_id: module for module in modules}
 
+    records = []
+
+    for answer in answers:
+        section = sections_by_id.get(answer.section_id)
+        question = questions_by_key.get((answer.section_id, answer.question_id))
+        module = modules_by_id.get(answer.module_id)
+
+        records.append(
+            {
+                "campus": survey.campus,
+                "program": survey.program,
+                "program_name": program.name if program else survey.program,
+                "semester": survey.semester,
+                "school_year": survey.school_year,
+                "section": section.name if section else "",
+                "question_id": answer.question_id,
+                "question": question.text if question else "",
+                "question_type": question.question_type if question else "",
+                "category": question.category if question else "",
+                "answer_id": answer.answer_id,
+                "submission_id": answer.submission_id,
+                "value": answer.value,
+                "module_id": answer.module_id,
+                "module": module.name if module else "",
+                "ue": module.ue if module else "",
+                "teacher": answer.teacher or (module.teacher if module else ""),
+            }
+        )
+
+    return records
+
+
+def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
+    with Session(engine) as session:
+        survey = session.exec(
+            select(Survey).where(Survey.survey_id == survey_id)
+        ).first()
+
+        if not survey:
+            return {
+                "survey": None,
+                "program_name": "",
+                "respondents_count": 0,
+                "answers_count": 0,
+                "warning_msg": "Survey introuvable.",
+                "viz_data": {
+                    "filters": {"ues": [], "modules": []},
+                    "modules": [],
+                    "summary_items": [],
+                    "recommendation": {"score": None, "count": 0, "question": ""},
+                    "records": [],
+                },
+            }
+
+        program = session.exec(
+            select(Program).where(Program.code == survey.program)
+        ).first()
+
+        sections = session.exec(
+            select(Section)
+            .where(Section.template_id == survey.template_id)
+            .order_by(Section.order)
+        ).all()
+
+        questions = session.exec(
+            select(Question).where(Question.template_id == survey.template_id)
+        ).all()
+
+        modules_db = session.exec(
+            select(Module)
+            .where(Module.survey_id == survey_id)
+            .order_by(Module.ue, Module.name)
+        ).all()
+
+        answers = session.exec(
+            select(Answer).where(Answer.survey_id == survey_id)
+        ).all()
+
+        respondents_count = (
+            session.exec(
+                select(func.count(Respondent.user_id)).where(
+                    Respondent.survey_id == survey_id
+                )
+            ).first()
+            or 0
+        )
+
+        answers_count = (
+            session.exec(
+                select(func.count(Respondent.user_id)).where(
+                    Respondent.survey_id == survey_id,
+                    Respondent.submission_date != None,
+                )
+            ).first()
+            or 0
+        )
+
+    records = _build_records_from_db(
+        survey=survey,
+        program=program,
+        sections=sections,
+        questions=questions,
+        modules=modules_db,
+        answers=answers,
+    )
+
+    campus = survey.campus or ""
+    program_name = program.name if program else survey.program
     recommendation = _get_recommendation_score(records)
 
     modules = []
 
-    for module in survey_obj.modules:
-        module_id = _get_attr(module, "module_id", "id", default=None)
-        module_name = _get_attr(module, "nom", "name", default="Module sans nom")
-        ue_name = _get_attr(module, "ue", "UE", default="")
-        teacher_raw = _get_attr(module, "teacher", "enseignant", default="")
-
+    for module in modules_db:
         modules.append(
             {
-                "id": module_id,
-                "name": module_name,
-                "ue": ue_name,
-                "teachers": _split_teachers(teacher_raw),
+                "id": module.module_id,
+                "name": module.name or "Module sans nom",
+                "ue": module.ue or "",
+                "teachers": _split_teachers(module.teacher),
                 "score": None,
                 "score_label": "",
             }
@@ -446,7 +544,7 @@ def get_visualisation_context(
             "rank": 2,
             "type": "formation",
             "title": "Formation",
-            "subtitle": program,
+            "subtitle": program_name,
             "ue": None,
             "teachers": [],
             "score": formation_score["score"],
@@ -474,7 +572,6 @@ def get_visualisation_context(
                 }
             )
 
-        # Fallback si module sans enseignant
         if not teacher_scores:
             module_score = _score_for_module(records, module)
 
@@ -508,13 +605,34 @@ def get_visualisation_context(
             }
         )
 
+    response_rate = (
+        round((answers_count / respondents_count) * 100, 1)
+        if respondents_count > 0
+        else 0
+    )
+
+    warning_msg = (
+        f"Taux de réponse : {response_rate}% ({answers_count} sur {respondents_count})"
+    )
+
     return {
-        "filters": {
-            "ues": ues,
-            "modules": modules,
+        "survey": survey,
+        "program_name": program_name,
+        "program": {
+            "code": survey.program,
+            "name": program_name,
         },
-        "modules": modules,
-        "summary_items": summary_items,
-        "recommendation": recommendation,
-        "records": records,
+        "respondents_count": respondents_count,
+        "answers_count": answers_count,
+        "warning_msg": warning_msg,
+        "viz_data": {
+            "filters": {
+                "ues": ues,
+                "modules": modules,
+            },
+            "modules": modules,
+            "summary_items": summary_items,
+            "recommendation": recommendation,
+            "records": records,
+        },
     }
