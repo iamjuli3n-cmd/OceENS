@@ -41,7 +41,7 @@
         })
     })
 
-    students = document.getElementById('student-list-area').value.split(/\s+/);
+    students = document.getElementById('student-list-area').value.toLowerCase().split(/\s+/);
 
     student_count = 0;
     invalid_emails = [];

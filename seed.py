@@ -4,6 +4,7 @@ import csv
 from models import (
     Program,
     User,
+    Role,
     Template,
     Section,
     Question,
@@ -13,26 +14,43 @@ from models import (
     Respondent,
     Answer,
 )
-from database import UserAuth, SessionLocal
+from database import SessionLocal
 
 
 def seed_users(db: Session):
     """Remplit la table users."""
 
     user_data = [
-        (1, "antoine.gademer@epf.fr", "admin:MDAI5"),
-        (2, "bob.leponge@epfedu.fr", "student"),
-        (3, "peter.parker@epfedu.fr", "student"),
-        (4, "mickey.mouse@epfedu.fr", "student"),
-        (5, "naruto.uzumaki@epfedu.fr", "student"),
-        (6, "yassine.gharbi@epfedu.fr", "admin"),
-        (7, "arnaud.jousset@epfedu.fr", "admin"),
-        (8, "etienne.gibaud@epfedu.fr", "admin"),
+        (1, "antoine.gademer@epf.fr"),
+        (2, "bob.leponge@epfedu.fr"),
+        (3, "peter.parker@epfedu.fr"),
+        (4, "mickey.mouse@epfedu.fr"),
+        (5, "naruto.uzumaki@epfedu.fr"),
+        (6, "yassine.gharbi@epfedu.fr"),
+        (7, "arnaud.jousset@epf.fr"),
+        (8, "etienne.gibaud@epf.fr"),
     ]
     for u_data in user_data:
-        user = User(user_id=u_data[0], mail=u_data[1], role=u_data[2])
+        user = User(user_id=u_data[0], mail=u_data[1])
         db.merge(
             user
+        )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
+    db.commit()
+
+def seed_roles(db: Session):
+    """Remplit la table roles."""
+
+    role_data = [
+        (1, "admin"),
+        (1, "program_manager:MDAI5"),
+        (6, "admin"),
+        (7, "admin"),
+        (8, "admin"),
+    ]
+    for r_data in role_data:
+        role = Role(user_id=r_data[0], role=r_data[1])
+        db.merge(
+            role
         )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
     db.commit()
 
@@ -4637,10 +4655,11 @@ def seed_answers(db: Session):
 
 def seed_all_if_necessary():
     db = SessionLocal()
-    if db.query(UserAuth).first():  # Check if there is at least one user :)
+    if db.query(User).first():  # Check if there is at least one user :)
         return
     """Exécute le seeding complet dans le bon order de dépendance."""
     seed_users(db)
+    seed_roles(db)
     seed_templates(db)
     seed_sections(db)
     seed_questions(db)

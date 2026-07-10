@@ -11,7 +11,6 @@ class User(SQLModel, table=True):
         default=None, sa_column=Column("user_id", Integer, primary_key=True)
     )
     mail: Optional[str] = Field(default=None, sa_column=Column("mail", String))
-    role: Optional[str] = Field(default=None, sa_column=Column("role", String))
 
 
 class Template(SQLModel, table=True):
@@ -282,3 +281,17 @@ class Program(SQLModel, table=True):
     name: str = Field(sa_column=Column("name", String, nullable=False))
 
     campus: str = Field(sa_column=Column("campus", String, nullable=False))
+
+class Role(SQLModel, table=True):
+    __tablename__ = "roles"
+
+    # Composite primary key (user_id,role,program_code)
+
+    user_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            "user_id", Integer, ForeignKey("users.user_id"), primary_key=True
+        ),
+    )
+
+    role: str = Field(sa_column=Column("name", String, primary_key=True))

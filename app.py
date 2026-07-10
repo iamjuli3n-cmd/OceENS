@@ -24,7 +24,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from requests import session
-from sqlmodel import Session, SQLModel, create_engine, select, func
+from sqlmodel import Session, SQLModel, create_engine, select, func, delete
 import uvicorn
 from seed import seed_all_if_necessary
 
@@ -39,12 +39,13 @@ from models import (
     Template,
     Option,
     User,
+    Role,
     Submission,
     Program,
 )
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
-from auth import router as auth_router, get_current_user, require_roles
+from auth import router as auth_router, get_current_user
 from sondage_loader import load_sondage_complet
 from services.export_csv import generate_csv_response
 from services.visualisation_data import get_visualisation_context
@@ -55,7 +56,7 @@ load_dotenv()
 VALID_ROLES = {"admin", "student", "program_manager"}
 
 
-def role_to_dashboard_slug(role: str) -> str:
+def role_to_dashboard_slug(roles: List[str]) -> str:
     """
     Convertit le rôle stocké en BDD en slug de route dashboard.
 
@@ -64,12 +65,13 @@ def role_to_dashboard_slug(role: str) -> str:
     "program_manager:MDE_P2027"    → "program_manager"
     "student" (ou autre) → "student"
     """
-    if role.startswith("admin"):
-        return "admin"
-    elif role.startswith("program_manager"):
-        return "program-manager"
-    else:
-        return "student"
+    for role in roles:
+        if role.startswith("admin"):
+            return "admin"
+        elif role.startswith("program_manager"):
+            return "program-manager"
+        else:
+            return "student"
 
 
 def parse_rprm_formations(role: str) -> list[str]:
@@ -83,15 +85,9 @@ def parse_rprm_formations(role: str) -> list[str]:
     "admin:PROGRAM1;PROGRAM2" → ["PROGRAM1", "PROGRAM2"]
     "admin:PROGRAM1"            → ["PROGRAM1"]
     """
-    if not role or not isinstance(role, str):
+    if not role or not isinstance(role, str) or ":" not in role:
         return []
-    role_upper = role.strip()
-    if not (
-        role_upper.startswith("program_manager:") or role_upper.startswith("admin:")
-    ):
-        return []
-    after_colon = role_upper.split(":", 1)[1]
-    return [f.strip() for f in after_colon.split(";") if f.strip()]
+    return [f.strip() for f in role.split(":")[1].split(";")]
 
 
 # └────────────────────────────────────────────────────────────────────────┘
@@ -165,12 +161,77 @@ class SurveySubmission(BaseModel):
 
 
 class RoleUpdate(BaseModel):
-    role: str
+    roles: List[str]
 
 
 import json
 
 # └────────────────────────────────────────────────────────────────────────┘
+
+# ┌─ Fonction utilitaire : Vérification des rôles autorisés ────────────────────┐
+
+
+def check_role(roles: list[str], allowed_roles: list[str]):
+    print(f"CHECK {roles} {allowed_roles}")
+    for role_and_program in roles:
+        if ":" in role_and_program:
+            role = role_and_program.split(":")[0]
+        else:
+            role = role_and_program
+        if role in allowed_roles:
+            return True
+    return False
+
+
+def require_roles(
+    request: Request, session: SessionDep, allowed_roles: list[str]
+) -> dict | None:
+    """
+    Vérifie que l'utilisateur connecté possède un rôle autorisé.
+
+    Logique :
+    1. Récupère l'utilisateur via get_current_user()
+    2. Si pas connecté → retourne None
+    3. Vérifie si le rôle de l'utilisateur correspond à un des rôles autorisés
+       - "admin" → match exact avec "admin"
+       - "program_manager" → match si le rôle commence par "program_manager" (couvre "program_manager:MDE_P2027")
+       - "student" → match exact avec "student"
+    4. Si le rôle ne correspond pas → retourne None
+    5. Si le rôle correspond → retourne le dict utilisateur
+
+    Args :
+        request : L'objet Request FastAPI
+        allowed_roles : Liste de rôles autorisés, ex: ["admin", "program_manager"]
+
+    Return :
+        dict avec {"name", "email", "role"} si autorisé, None sinon
+
+    Exemple :
+        user = require_roles(request, session, ["admin", "program_manager"])
+        if user is None:
+            return RedirectResponse(url="/dashboard/student")
+    """
+    user = get_current_user(request)
+    if not user:
+        return None
+
+    # Get all roles (or student if None)
+    roles_query = session.exec(
+        select(func.group_concat(Role.role))
+        .join(User, Role.user_id == User.user_id, isouter=True)
+        .where(User.mail == user["email"].casefold())
+    ).first()
+    if roles_query:
+        roles = roles_query.split(",")
+    else:
+        roles = ["student"]
+    print(roles)
+
+    if check_role(roles, allowed_roles):
+        return user
+
+    # Aucun rôle autorisé ne correspond
+    return None
 
 
 # ┌─ Fonctions utilitaires ──────────────────────────────────────────────┐
@@ -225,14 +286,25 @@ def create_app():
 
     # ┌─ Route : Page d'accueil (version app.py conservée) ──────────────┐
     @app.get("/", response_class=HTMLResponse)
-    async def index(request: Request):
+    async def index(request: Request, session: SessionDep):
         """
         Page d'accueil. Si l'utilisateur est déjà connecté avec un rôle
         valide, redirection vers son dashboard. Sinon, affichage du login.
         """
         user = get_current_user(request)
-        if user and user.get("role"):
-            slug = role_to_dashboard_slug(user["role"])
+        if user:
+            # Déterminer les formations autorisées pour un RP-RM
+            roles_query = session.exec(
+                select(func.group_concat(Role.role))
+                .join(User, Role.user_id == User.user_id, isouter=True)
+                .where(User.mail == user["email"].casefold())
+            ).first()
+            if roles_query:
+                roles = roles_query.split(",")
+            else:
+                roles = ["student"]
+            print(roles)
+            slug = role_to_dashboard_slug(roles)
             return RedirectResponse(url=f"/dashboard/{slug}")
         return templates.TemplateResponse(request=request, name="index.html")
 
@@ -246,15 +318,27 @@ def create_app():
     @dashboard_router.get("/survey-create", response_class=HTMLResponse)
     def surveys_create(request: Request, session: SessionDep):
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user = require_roles(request, ["admin", "program_manager"])
+        user = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             # Utilisateur non connecté ou rôle insuffisant → redirection
             return RedirectResponse(url="/")
 
         # Déterminer les formations autorisées pour un RP-RM
-        role = user.get("role", "") or ""
-        print(role)
-        allowed_programs = parse_rprm_formations(role)
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        if roles_query:
+            roles = roles_query.split(",")
+        else:
+            roles = ["student"]
+        print(roles)
+
+        allowed_programs = []
+        for role in roles:
+            if role.startswith("program_manager"):
+                allowed_programs.extend(parse_rprm_formations(role))
         print(allowed_programs)
 
         # Fetch all potential templates
@@ -270,9 +354,7 @@ def create_app():
             for teacher in at.split(","):
                 teachers.add(teacher.strip())
 
-        if (allowed_programs is None or allowed_programs == []) and role.startswith(
-            "admin"
-        ):
+        if (allowed_programs is None or allowed_programs == []) and "admin" in roles:
             programs_list = session.exec(select(Program)).all()
         else:
             programs_list = session.exec(
@@ -426,7 +508,7 @@ def create_app():
         Si l'import Excel échoue, le survey est annulé (ROLLBACK).
         """
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user = require_roles(request, ["admin", "program_manager"])
+        user = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(
                 content={"error": "Accès refusé. Rôle Admin ou RP-RM requis."},
@@ -434,16 +516,31 @@ def create_app():
             )
 
         # ── Sécurité : vérifier que la program est autorisée pour le RP-RM ──
-        role = user.get("role", "")
-        if ":" in role:  # RM-RP or Admin with formations
-            allowed = parse_rprm_formations(role)
-            if survey.program not in allowed:
-                return JSONResponse(
-                    content={
-                        "error": f"Formation '{survey.program}' non autorisée pour votre rôle."
-                    },
-                    status_code=403,
-                )
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        session.flush()
+        if roles_query:
+            roles = roles_query.split(",")
+        else:
+            roles = ["student"]
+        print(roles)
+
+        allowed_programs = []
+        for role in roles:
+            if role.startswith("program_manager"):
+                allowed_programs.extend(parse_rprm_formations(role))
+        print(allowed_programs)
+
+        if survey.program not in allowed_programs:
+            return JSONResponse(
+                content={
+                    "error": f"Formation '{survey.program}' non autorisée pour votre rôle."
+                },
+                status_code=403,
+            )
 
         # ── Transaction unique : Survey + Modules + Users + Respondent ──
         nb_crees = 0
@@ -451,21 +548,12 @@ def create_app():
         nb_repondre_inseres = 0
 
         try:
-            with session.begin():
+            with session.begin_nested():
                 with session.no_autoflush:
                     # ── Étape 1 : Créer le survey ──
-                    existing_survey = session.exec(
-                        select(Survey).where(Survey.template_id == survey.template_id)
-                    ).all()
-                    next_survey_id = (
-                        max([s.survey_id for s in existing_survey] + [0]) + 1
-                    )
-
-                    survey_url = f"/api/surveys/{next_survey_id}"
 
                     new_survey = Survey(
                         template_id=survey.template_id,
-                        survey_id=next_survey_id,
                         campus=survey.campus,
                         program=survey.program,
                         semester=survey.semester,
@@ -473,6 +561,9 @@ def create_app():
                         status=0,
                     )
                     session.add(new_survey)
+                    session.flush()  # Pour obtenir survey_id généré
+
+                    survey_id = new_survey.survey_id
 
                     # ── Étape 2 : Créer les modules ──
                     for ue in survey.ues:
@@ -490,7 +581,7 @@ def create_app():
                                 is_optional=ue.is_optional,
                                 one_teacher_in_list=module_data.one_teacher_in_list,
                                 template_id=survey.template_id,
-                                survey_id=next_survey_id,
+                                survey_id=survey_id,
                             )
                             session.add(new_module)
 
@@ -536,7 +627,7 @@ def create_app():
                             existing_respondent_user_ids = session.exec(
                                 select(Respondent.user_id).where(
                                     # Respondent.template_id == survey.template_id,
-                                    Respondent.survey_id == next_survey_id,
+                                    Respondent.survey_id == survey_id,
                                     Respondent.user_id.in_(user_ids),
                                 )
                             ).all()
@@ -551,7 +642,7 @@ def create_app():
                                     continue  # Déjà affecté à ce sondage, on ne fait rien
                                 new_repondre = Respondent(
                                     template_id=survey.template_id,
-                                    survey_id=next_survey_id,
+                                    survey_id=survey_id,
                                     user_id=user_id,
                                     submission_date=None,
                                 )
@@ -577,8 +668,7 @@ def create_app():
 
         result = {
             "message": "Survey créé avec succès",
-            "survey_id": next_survey_id,
-            "survey_url": f"/api/surveys/{next_survey_id}",
+            "survey_id": survey_id,
         }
         if survey.students:
             result.update(
@@ -725,8 +815,7 @@ def create_app():
             ues_data[ue_name]["modules"].append(mod_data)
 
         ues_list = list(ues_data.values())
-        print("survey_is_closed =", survey_is_closed)
-        print("user_has_answered =", user_has_answered)
+
         return templates.TemplateResponse(
             request=request,
             name="survey.html",
@@ -881,7 +970,7 @@ def create_app():
         session: SessionDep,
         status: int = Form(...),
     ):
-        user = require_roles(request, ["admin", "program_manager"])
+        user = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(
                 content={"error": "Accès refusé."},
@@ -904,11 +993,24 @@ def create_app():
                 status_code=404,
             )
 
-        role = user.get("role", "") or ""
-        allowed_programs = parse_rprm_formations(role)
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        if roles_query:
+            roles = roles_query.split(",")
+        else:
+            roles = ["student"]
+
+        allowed_programs = []
+        for role in roles:
+            if role.startswith("program_manager"):
+                allowed_programs.extend(parse_rprm_formations(role))
+        print(allowed_programs)
 
         if (
-            not role.startswith("admin")
+            not "admin" in roles
             and allowed_programs
             and survey.program not in allowed_programs
         ):
@@ -985,19 +1087,29 @@ def create_app():
         if not user:
             return RedirectResponse(url="/")
 
-        role = user.get("role", "")
         print(user)
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        if roles_query:
+            roles = roles_query.split(",")
+        else:
+            roles = ["student"]
+        print(roles)
 
-        if not ("program_manager" in role or "admin" in role):
+        if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
 
-        allowed_programs = parse_rprm_formations(role)
+        allowed_programs = []
+        for role in roles:
+            if role.startswith("program_manager"):
+                allowed_programs.extend(parse_rprm_formations(role))
         print(allowed_programs)
 
         # Admin sans restriction : voit toutes les filières
-        if (allowed_programs is None or allowed_programs == []) and role.startswith(
-            "admin"
-        ):
+        if (allowed_programs is None or allowed_programs == []) and ("admin" in roles):
             db_programs = session.exec(select(Program)).all()
             program_codes = [p.code for p in db_programs]
 
@@ -1084,11 +1196,23 @@ def create_app():
     @dashboard_router.get("/admin", response_class=HTMLResponse)
     async def admin_dashboard(request: Request, session: SessionDep):
         user = get_current_user(request)
-        role = user.get("role", "")
         print(user)
+
         if not user:
             return RedirectResponse(url="/")
-        if not ("admin" in role):
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        if roles_query:
+            roles = roles_query.split(",")
+        else:
+            roles = ["student"]
+        print(roles)
+
+        if not ("admin" in roles):
             return RedirectResponse(url="/")
 
         rows = session.exec(
@@ -1125,14 +1249,19 @@ def create_app():
             for r in rows
         ]
 
-        db_users = session.exec(select(User)).all()
+        db_users = session.exec(
+            select(User, func.group_concat(Role.role))
+            .join(Role, Role.user_id == User.user_id, isouter=True)
+            .group_by(User.user_id)
+        ).all()
+        print(db_users)
         users = [
             {
-                "user_id": u.user_id,
-                "mail": u.mail,
-                "role": u.role,
-                "initials": extract_initials(u.mail),
-                "name": extract_name(u.mail),
+                "user_id": u[0].user_id,
+                "mail": u[0].mail,
+                "roles": u[1].split(",") if u[1] else ["student"],
+                "initials": extract_initials(u[0].mail),
+                "name": extract_name(u[0].mail),
             }
             for u in db_users
         ]
@@ -1156,62 +1285,48 @@ def create_app():
     # └────────────────────────────────────────────────────────────────┘
 
     # ┌─ API : Gestion des rôles utilisateurs (accès restreint Admin) ────┐
-    def _is_valid_role(role: str) -> bool:
-        """Accepte 'admin' ou 'admin:program1,program2', 'student', 'program_manager' ou 'program_manager:program1,program2;...'"""
-        if role in {"student"}:
-            return True
-        if role.startswith("admin"):
-            return True
-        if role.startswith("program_manager"):
-            return True
-        return False
-
-    @api_router.get("/users")
-    def get_users(request: Request, session: SessionDep):
-        # ── Sécurité : seul un Admin peut lister tous les utilisateurs ──
-        user = require_roles(request, ["admin"])
-        if user is None:
-            return JSONResponse(
-                content={"error": "Accès refusé. Rôle Admin requis."},
-                status_code=403,
-            )
-        users = session.exec(select(User)).all()
-        return [{"user_id": u.user_id, "mail": u.mail, "role": u.role} for u in users]
+    def _is_valid_role(roles: List[str]) -> bool:
+        return check_role(roles, ["student", "program_manager", "admin", "facilitator"])
 
     @api_router.put("/users/{user_id}/role")
     def update_user_role(
         request: Request, user_id: int, body: RoleUpdate, session: SessionDep
     ):
         # ── Sécurité : seul un Admin peut modifier les rôles ──
-        admin = require_roles(request, ["admin"])
+        admin = require_roles(request, session, ["admin"])
         if admin is None:
             return JSONResponse(
                 content={"error": "Accès refusé. Rôle Admin requis."},
                 status_code=403,
             )
-        if not _is_valid_role(body.role):
-            return JSONResponse(
-                content={"detail": f"Rôle invalide : '{body.role}'"},
-                status_code=422,
-            )
+
+        for role in body.roles:
+            if not _is_valid_role([role]):
+                return JSONResponse(
+                    content={"detail": f"Rôle invalide : '{role}'"},
+                    status_code=422,
+                )
         user = session.get(User, user_id)
         if not user:
             return JSONResponse(
                 content={"detail": f"Utilisateur {user_id} introuvable"},
                 status_code=404,
             )
-        user.role = body.role
-        session.add(user)
+        # Remove all previous roles
+        session.exec(delete(Role).where(Role.user_id == user_id))
         session.commit()
-        session.refresh(user)
+        for role in body.roles:
+            new_role = Role(user_id=user_id, role=role)
+            session.add(new_role)
+        session.commit()
 
-        return {"user_id": user.user_id, "mail": user.mail, "role": user.role}
+        return {"user_id": user.user_id, "mail": user.mail, "roles": body.roles}
 
     # ┌─ Visualisation & Export CSV ──────────────────────────────────────┐
     def _check_sondage_access_and_status(
         session: Session,
         survey_id: int,
-        role: str,
+        roles: list[str],
         allowed_programs: list[str],
     ):
         """Helper pour vérifier les accès et le statut de participation"""
@@ -1226,7 +1341,7 @@ def create_app():
                 None,
             )
 
-        if role != "admin" and survey.program not in allowed_programs:
+        if "admin" not in roles and survey.program not in allowed_programs:
             return (
                 None,
                 {
@@ -1264,16 +1379,32 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/export")
     def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
-        user = require_roles(request, ["admin", "program_manager"])
+        user = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
 
-        role = user.get("role", "") or ""
-        allowed_programs = parse_rprm_formations(role) if ":" in role else []
-        admin_role = "admin" if role == "admin" else "program_manager"
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        if roles_query:
+            roles = roles_query.split(",")
+        else:
+            roles = ["student"]
+        print(roles)
+
+        if not check_role(roles, ["program_manager", "admin"]):
+            return RedirectResponse(url="/")
+
+        allowed_programs = []
+        for role in roles:
+            if role.startswith("program_manager"):
+                allowed_programs.extend(parse_rprm_formations(role))
+        print(allowed_programs)
 
         survey, error_or_warning, _, _ = _check_sondage_access_and_status(
-            session, survey_id, admin_role, allowed_programs
+            session, survey_id, roles, allowed_programs
         )
         if not survey:
             return JSONResponse(
@@ -1292,17 +1423,33 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
     def visualisation_page(request: Request, survey_id: int, session: SessionDep):
-        user = require_roles(request, ["admin", "program_manager"])
+        user = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return RedirectResponse(url="/")
 
-        role = user.get("role", "") or ""
-        allowed_programs = parse_rprm_formations(role) if ":" in role else []
-        admin_role = "admin" if role == "admin" else "program_manager"
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        if roles_query:
+            roles = roles_query.split(",")
+        else:
+            roles = ["student"]
+        print(roles)
+
+        if not check_role(roles, ["program_manager", "admin"]):
+            return RedirectResponse(url="/")
+
+        allowed_programs = []
+        for role in roles:
+            if role.startswith("program_manager"):
+                allowed_programs.extend(parse_rprm_formations(role))
+        print(allowed_programs)
 
         survey, error_or_warning, respondents_count, answers_count = (
             _check_sondage_access_and_status(
-                session, survey_id, admin_role, allowed_programs
+                session, survey_id, roles, allowed_programs
             )
         )
         if not survey:

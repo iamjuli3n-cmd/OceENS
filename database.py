@@ -12,6 +12,7 @@ Rôles supportés : "student" (défaut), "admin", "program_manager:..." (respons
 
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker
+from models import User
 
 # ┌─ Configuration de la base de données ──────────────────────────────────────┐
 # On utilise désormais la base de données principale du projet
@@ -25,28 +26,6 @@ engine = create_engine(
 
 # ┌─ Déclaration du modèle de base ───────────────────────────────────────────┐
 Base = declarative_base()
-
-
-class UserAuth(Base):
-    """
-    Modèle SQLAlchemy miroir de la table Users existante dans db_oceens.db
-
-    Colonnes :
-    - user_id (INTEGER, PK, auto-increment) : Identifiant unique
-    - mail (STRING) : Adresse email de l'utilisateur
-    - role (STRING) : Rôle de l'utilisateur (défaut: "student")
-
-    Exemple :
-        julien@epfedu.fr   →  student
-        admin@epfedu.fr    →  admin
-        prof@epfedu.fr     →  program_manager:MDE_P2027;MIN_P2027
-    """
-    __tablename__ = "users"
-
-    id_user = Column("user_id", Integer, primary_key=True, autoincrement=True)
-    mail = Column("mail", String)
-    role = Column("role", String, default="student")
-# └───────────────────────────────────────────────────────────────────────────┘
 
 # ┌─ Session factory pour les requêtes à la BDD ──────────────────────────────┐
 SessionLocal = sessionmaker(bind=engine)
@@ -78,23 +57,19 @@ def get_or_create_user(email: str) -> str:
 
     try:
         # Requête : cherche l'utilisateur par email (case-insensitive)
-        user = db.query(UserAuth).filter(
-            UserAuth.mail == email.lower()
+        user = db.query(User).filter(
+            User.mail == email.lower()
         ).first()
 
-        if user:
-            # Utilisateur trouvé → retourne son rôle
-            return user.role if user.role else "student"
+        if not user:
+            # Utilisateur non trouvé → auto-inscription avec rôle par défaut
+            new_user = User(
+                mail=email.lower(),
+            )
+            db.add(new_user)
+            db.commit()
 
-        # Utilisateur non trouvé → auto-inscription avec rôle par défaut
-        new_user = UserAuth(
-            mail=email.lower(),
-            role="student"
-        )
-        db.add(new_user)
-        db.commit()
-
-        return "student"
+        
 
     finally:
         # Ferme proprement la connexion
