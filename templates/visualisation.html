@@ -84,13 +84,15 @@
 
         <!-- KPI Banner -->
         <div class="kpi-banner">
-            <div class="kpi-left">
-                <h2>Taux de satisfaction global</h2>
-                <div class="huge-pct" id="global-sat-val">En cours de dev</div>
-                <p>Calculé sur la question « Formation »
-                    Pourcentage « Plutôt satisfait et + »
-                    <br><strong>{{ survey.program }}</strong> — <span id="global-sat-context">Toutes les UE</span>.
-                </p>
+            <div class="kpi-right">
+                <h3>{{ program_name }}</h3>
+                <div class="huge-pct" id="rec-tricolor-val">{{ survey.campus }} | {{ survey.school_year }} | {{ survey.semester }}</div>
+            </div>
+            <div class="kpi-right">
+                <h3> Taux de réponse : </h3>
+                <div class="huge-pct" id="rec-tricolor-val">
+                    {{ answers_count }} / {{ respondents_count }} ({{ "%.0f"|format(100*answers_count/respondents_count)}}%)
+                </div>
             </div>
             <div class="kpi-right">
                 <h3>Score de recommandation</h3>
@@ -119,31 +121,46 @@
             <div class="summary-list">
                 {% for item in viz_data.summary_items %}
                 <div class="summary-row">
-                    <div class="summary-rank">{{ item.rank }}</div>
+                    <!--<div class="summary-rank">{{ item.rank }}</div>-->
+                    {% if item.ue %}
+                            <span class="ue-tag">{{ item.ue }}</span>
+                            {% else %}
+                            <span></span>
+                            {% endif %}
 
                     <div class="summary-main">
                         <div class="summary-title-line">
                             <span class="summary-title">{{ item.title }}</span>
-
-                            {% if item.ue %}
-                            <span class="ue-tag">{{ item.ue }}</span>
-                            {% endif %}
                         </div>
 
                         {% if item.subtitle %}
-                        <div class="summary-subtitle">{{ item.subtitle }}</div>
+                        <div class="summary-subtitle">{{ item.subtitle }} 
+                            <div class="score-line">
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 60%;"></div>
+                            </div>
+                            <span class="score-value">60%</span>
+                            </div>
+                        </div>
                         {% endif %}
 
                         {% if item.teachers %}
                         <div class="summary-teachers">
                             {% for teacher in item.teachers %}
-                            <div>{{ teacher }}</div>
+                            <div class="summary-subtitle">{{ teacher }}
+                                <div class="score-line">
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 60%;"></div>
+                            </div>
+                            <span class="score-value">60%</span>
+                            </div>
+                            </div>
                             {% endfor %}
                         </div>
                         {% endif %}
                     </div>
 
-                    <div class="summary-score">
+                    <!-- <div class="summary-score">
                         {% if item.type == "module" and item.teacher_scores %}
                         {% for teacher_score in item.teacher_scores %}
                         <div class="teacher-score-row">
@@ -175,7 +192,7 @@
 
                         <div class="score-label">{{ item.score_label }}</div>
                         {% endif %}
-                    </div>
+                    </div> -->
                 </div>
                 {% endfor %}
             </div>

@@ -1361,16 +1361,9 @@ def create_app():
             or 0
         )
 
-        response_rate = (
-            round((answers_count / respondents_count) * 100, 1)
-            if respondents_count > 0
-            else 0
-        )
+        
 
-        warning_msg = (
-            f"Taux de réponse : {response_rate}% "
-            f"({answers_count} sur {respondents_count})"
-        )
+        warning_msg = None
 
         return survey, warning_msg, respondents_count, answers_count
 

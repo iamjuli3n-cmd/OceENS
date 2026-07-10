@@ -38,7 +38,7 @@ def _normalize(value) -> str:
 
 
 # ─────────────────────────────────────────────
-# Score satisfaction : "Plutôt satisfait et +"
+# Score satisfaction : ""
 # ─────────────────────────────────────────────
 POSITIVE_SATISFACTION = {
     "totalement satisfait",
@@ -383,7 +383,7 @@ def get_visualisation_context(
                 "ue": ue_name,
                 "teachers": _split_teachers(teacher_raw),
                 "score": None,
-                "score_label": "Plutôt satisfait et +",
+                "score_label": "",
             }
         )
 
@@ -411,7 +411,7 @@ def get_visualisation_context(
             "score": campus_score["score"],
             "positive_count": campus_score["positive_count"],
             "total_count": campus_score["total_count"],
-            "score_label": "Plutôt satisfait et +",
+            "score_label": "",
         },
         {
             "rank": 2,
@@ -423,7 +423,7 @@ def get_visualisation_context(
             "score": formation_score["score"],
             "positive_count": formation_score["positive_count"],
             "total_count": formation_score["total_count"],
-            "score_label": "Plutôt satisfait et +",
+            "score_label": "",
         },
     ]
 
@@ -441,7 +441,7 @@ def get_visualisation_context(
                     else 0,
                     "positive_count": teacher_score["positive_count"],
                     "total_count": teacher_score["total_count"],
-                    "score_label": "Plutôt satisfait et +",
+                    "score_label": "",
                 }
             )
 
@@ -457,7 +457,7 @@ def get_visualisation_context(
                     else 0,
                     "positive_count": module_score["positive_count"],
                     "total_count": module_score["total_count"],
-                    "score_label": "Plutôt satisfait et +",
+                    "score_label": "",
                 }
             )
 
@@ -474,7 +474,7 @@ def get_visualisation_context(
                 "score": None,
                 "positive_count": 0,
                 "total_count": 0,
-                "score_label": "Plutôt satisfait et +",
+                "score_label": "",
                 "teacher_scores": teacher_scores,
             }
         )
