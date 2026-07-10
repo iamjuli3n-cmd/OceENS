@@ -498,7 +498,7 @@ def create_app():
         if roles_query:
             roles = roles_query.split(',')
         else:
-            roles = []
+            roles = ["student"]
         print(roles)
         
         allowed_programs = []
@@ -979,7 +979,7 @@ def create_app():
         if roles_query:
             roles = roles_query.split(',')
         else:
-            roles = []
+            roles = ["student"]
         print(roles)
         
         allowed_programs = []
@@ -1071,7 +1071,7 @@ def create_app():
         if roles_query:
             roles = roles_query.split(',')
         else:
-            roles = []
+            roles = ["student"]
         print(roles)
         
         if not check_role(roles, ["program_manager","admin"]):
@@ -1183,7 +1183,7 @@ def create_app():
         if roles_query:
             roles = roles_query.split(',')
         else:
-            roles = []
+            roles = ["student"]
         print(roles)
 
         if not ("admin" in roles):
@@ -1223,12 +1223,13 @@ def create_app():
             for r in rows
         ]
 
-        db_users = session.exec(select(User, func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).group_by(User.user_id)).all()
+        db_users = session.exec(select(User, func.group_concat(Role.role)).join(Role, Role.user_id == User.user_id, isouter=True).group_by(User.user_id)).all()
+        print(db_users)
         users = [
             {
                 "user_id": u[0].user_id,
                 "mail": u[0].mail,
-                "roles": u[1].split(","),
+                "roles": u[1].split(",") if u[1] else ["student"],
                 "initials": extract_initials(u[0].mail),
                 "name": extract_name(u[0].mail),
             }
@@ -1357,7 +1358,7 @@ def create_app():
         if roles_query:
             roles = roles_query.split(',')
         else:
-            roles = []
+            roles = ["student"]
         print(roles)
         
         if not check_role(roles, ["program_manager","admin"]):
@@ -1397,7 +1398,7 @@ def create_app():
         if roles_query:
             roles = roles_query.split(',')
         else:
-            roles = []
+            roles = ["student"]
         print(roles)
         
         if not check_role(roles, ["program_manager","admin"]):
