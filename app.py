@@ -1480,11 +1480,7 @@ def create_app():
 
         program_name = program.name if program else survey.program
 
-<<<<<<< HEAD
         viz_context = get_visualisation_context(survey_obj, program_name=program_name)
-=======
-        viz_context = get_visualisation_context(survey_obj)
->>>>>>> 116ae38 (fix :)
 
         context = {
             "user": user,
