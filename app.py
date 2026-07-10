@@ -818,7 +818,6 @@ def create_app():
             ues_data[ue_name]["modules"].append(mod_data)
 
         ues_list = list(ues_data.values())
-
         return templates.TemplateResponse(
             request=request,
             name="survey.html",
