@@ -1,6 +1,21 @@
-import sqlite3
 from dataclasses import dataclass, field
 from typing import List, Dict, Any
+
+from database import engine
+from sqlmodel import Session,select
+from models import (
+    Program,
+    User,
+    Role,
+    Template,
+    Section,
+    Question,
+    Option,
+    Module,
+    Survey,
+    Respondent,
+    Answer,
+)
 
 # -----------------------------------------------------------------------------
 # 0. Fonction utilitaire de nettoyage des textes (Correction Encodage)
@@ -136,143 +151,107 @@ class FullSurvey:
 # -----------------------------------------------------------------------------
 
 
-def load_sondage_complet(db_path: str, survey_id: int) -> FullSurvey:
-    """
-    Se connecte à la base SQLite, extrait les données du survey cible,
-    nettoie les chaînes de caractères et structure le tout sous forme d'objet.
-    """
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row  # Accès aux colonnes par nom
-    cursor = conn.cursor()
+def load_sondage_complet(survey_id: int) -> FullSurvey:
+    
+    session = Session(engine)
 
-    def get_row_field(row: sqlite3.Row, *possible_names) -> str:
-        keys = row.keys()
-        for name in possible_names:
-            if name in keys:
-                return row[name]
-        return ""
-
-    # --- A. Infos du survey ---
-    cursor.execute(
-        "SELECT * FROM surveys WHERE survey_id = ?",
-        (survey_id,),
-    )
-    survey_row = cursor.fetchone()
+    # --- A. Récupération du sondage ---
+    survey_row = session.exec(select(Survey).where(Survey.survey_id==survey_id)).first()
     if not survey_row:
-        conn.close()
         raise ValueError(f"Sondage introuvable ( Sondage: {survey_id})")
 
     survey = FullSurvey(
-        template_id=survey_row["template_id"],
-        survey_id=survey_row["survey_id"],
-        campus=clean_mojibake(survey_row["campus"]),
-        program=clean_mojibake(survey_row["program"]),
-        semester=clean_mojibake(survey_row["semester"]),
-        school_year=clean_mojibake(survey_row["school_year"]),
+        template_id=survey_row.template_id,
+        survey_id=survey_row.survey_id,
+        campus=clean_mojibake(survey_row.campus),
+        program=clean_mojibake(survey_row.program),
+        semester=clean_mojibake(survey_row.semester),
+        school_year=clean_mojibake(survey_row.school_year),
     )
 
     # --- B. Récupération des Modules ---
-    cursor.execute(
-        "SELECT * FROM Modules WHERE survey_id = ?",
-        (survey_id,),
-    )
-    for row in cursor.fetchall():
+    modules_rows = session.exec(select(Module).where(Module.survey_id==survey_id)).all()
+    for row in modules_rows:
         survey.modules.append(
             ModuleData(
-                module_id=row["module_id"],
-                nom=clean_mojibake(row["name"]),
-                ue=clean_mojibake(row["ue"]),
-                teacher=clean_mojibake(row["teacher"]),
+                module_id=row.module_id,
+                nom=clean_mojibake(row.name),
+                ue=clean_mojibake(row.ue),
+                teacher=clean_mojibake(row.teacher),
             )
         )
     modules_by_id = {module.module_id: module for module in survey.modules}
 
     # --- C. Récupération des Sections ---
-    cursor.execute(
-        "SELECT * FROM Sections WHERE template_id = ? ORDER BY 'order'",
-        (survey.template_id,),
-    )
+    sections_rows = session.exec(select(Section).where(Section.template_id==survey.template_id)).all()
     sections_dict = {}
-    for row in cursor.fetchall():
+    for row in sections_rows:
         sec = SectionData(
-            section_id=row["section_id"],
-            nom=clean_mojibake(row["name"]),
-            order=row["order"],
+            section_id=row.section_id,
+            nom=clean_mojibake(row.name),
+            order=row.order,
         )
         sections_dict[sec.section_id] = sec
         survey.sections.append(sec)
 
     # --- D. Récupération des Questions ---
-    cursor.execute(
-        "SELECT * FROM questions WHERE template_id = ?", (survey.template_id,)
-    )
+    questions_rows = session.exec(select(Question).where(Question.template_id==survey.template_id)).all()
     questions_dict = {}
-    for row in cursor.fetchall():
+    for row in questions_rows:
         q = QuestionData(
-            question_id=row["question_id"],
-            text=clean_mojibake(row["text"]),
-            category=clean_mojibake(row["category"]),
-            question_type=clean_mojibake(row["question_type"]),
+            question_id=row.question_id,
+            text=clean_mojibake(row.text),
+            category=clean_mojibake(row.category),
+            question_type=clean_mojibake(row.question_type),
         )
-        questions_dict[(row["section_id"], row["question_id"])] = q
-        if row["section_id"] in sections_dict:
-            sections_dict[row["section_id"]].questions.append(q)
+        questions_dict[(row.section_id, row.question_id)] = q
+        if row.section_id in sections_dict:
+            sections_dict[row.section_id].questions.append(q)
 
     # --- E. Récupération des Options de réponses (QCM/QCU) ---
-    cursor.execute("SELECT * FROM Options WHERE template_id = ?", (survey.template_id,))
-    for row in cursor.fetchall():
+    options_rows = session.exec(select(Option).where(Option.template_id==survey.template_id)).all()
+    for row in options_rows:
         opt = OptionData(
-            option_id=row["option_id"],
-            text=clean_mojibake(row["text"]),
+            option_id=row.option_id,
+            text=clean_mojibake(row.text),
         )
-        q_key = (row["section_id"], row["question_id"])
+        q_key = (row.section_id, row.question_id)
         if q_key in questions_dict:
             questions_dict[q_key].options.append(opt)
 
     # --- F. Récupération des Réponses soumises avec contexte module / UE ---
+    answers_rows = session.exec(select(
+        Answer.answer_id,
+            Answer.value,
+            Answer.submission_id,
+            Answer.section_id,
+            Answer.question_id,
+            Answer.module_id,
+            Answer.teacher.label("answer_teacher"),
 
-    cursor.execute(
-        """
-        SELECT
-            a.answer_id,
-            a.value,
-            a.submission_id,
-            a.section_id,
-            a.question_id,
-            a.module_id,
-            a.teacher AS answer_teacher,
+            Module.name.label("module_name"),
+            Module.ue.label("module_ue"),
+            Module.teacher.label("module_teacher"))
+            .join(Module, Module.module_id == Answer.module_id, isouter=True)
+            .where(Answer.survey_id==survey_id)).all()
+    for row in answers_rows:
+        module_id = row.module_id
 
-            m.name AS module_name,
-            m.ue AS module_ue,
-            m.teacher AS module_teacher
-        FROM Answers a
-        LEFT JOIN Modules m
-            ON m.module_id = a.module_id
-            AND m.survey_id = a.survey_id
-        WHERE a.survey_id = ?
-        """,
-        (survey_id,),
-    )
-
-    for row in cursor.fetchall():
-        module_id = row["module_id"]
-
-        teacher_answer = row["answer_teacher"] if "answer_teacher" in row.keys() else ""
-        module_teacher = row["module_teacher"] if "module_teacher" in row.keys() else ""
+        teacher_answer = row.answer_teacher or ""
+        module_teacher = row.module_teacher or ""
 
         rep = AnswerData(
-            answer_id=row["answer_id"],
-            value=clean_mojibake(row["value"]),
-            submission_id=row["submission_id"] if "submission_id" in row.keys() else None,
+            answer_id=row.answer_id,
+            value=clean_mojibake(row.value),
+            submission_id=row.submission_id or None,
             module_id=module_id,
-            ue=clean_mojibake(row["module_ue"]),
-            module=clean_mojibake(row["module_name"]),
+            ue=clean_mojibake(row.module_ue),
+            module=clean_mojibake(row.module_name),
             teacher=clean_mojibake(teacher_answer or module_teacher),
         )
 
-        q_key = (row["section_id"], row["question_id"])
+        q_key = (row.section_id, row.question_id)
         if q_key in questions_dict:
             questions_dict[q_key].reponses.append(rep)
 
-    conn.close()
     return survey

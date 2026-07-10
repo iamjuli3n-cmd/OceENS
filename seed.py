@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlmodel import Session,delete
 from pathlib import Path
 import csv
 from models import (
@@ -14,10 +14,10 @@ from models import (
     Respondent,
     Answer,
 )
-from database import SessionLocal
+from database import engine
 
 
-def seed_users(db: Session):
+def seed_users(session: Session):
     """Remplit la table users."""
 
     user_data = [
@@ -32,12 +32,12 @@ def seed_users(db: Session):
     ]
     for u_data in user_data:
         user = User(user_id=u_data[0], mail=u_data[1])
-        db.merge(
+        session.merge(
             user
         )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
-    db.commit()
+    session.commit()
 
-def seed_roles(db: Session):
+def seed_roles(session: Session):
     """Remplit la table roles."""
 
     role_data = [
@@ -49,21 +49,21 @@ def seed_roles(db: Session):
     ]
     for r_data in role_data:
         role = Role(user_id=r_data[0], role=r_data[1])
-        db.merge(
+        session.merge(
             role
         )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
-    db.commit()
+    session.commit()
 
 
-def seed_templates(db: Session):
+def seed_templates(session: Session):
     """Remplit la table templates."""
     template_data = {"template_id": 1, "name": "Sondage_Semestriel_2025", "user_id": 1}
     template = Template(**template_data)
-    db.merge(template)
-    db.commit()
+    session.merge(template)
+    session.commit()
 
 
-def seed_sections(db: Session):
+def seed_sections(session: Session):
     """Remplit la table sections."""
     sections_data = [
         {
@@ -97,11 +97,11 @@ def seed_sections(db: Session):
     ]
     for data in sections_data:
         section = Section(**data)
-        db.merge(section)
-    db.commit()
+        session.merge(section)
+    session.commit()
 
 
-def seed_questions(db: Session):
+def seed_questions(session: Session):
     """Remplit la table questions."""
     questions_data = [
         (
@@ -269,11 +269,11 @@ def seed_questions(db: Session):
             language=q_data[5],
             text=q_data[6],
         )
-        db.merge(question)
-    db.commit()
+        session.merge(question)
+    session.commit()
 
 
-def seed_options(db: Session):
+def seed_options(session: Session):
     """Remplit la table options."""
     options_data = [
         (1, 1, 1, 1, "Totalement satisfait / Totally satisfied"),
@@ -401,8 +401,8 @@ def seed_options(db: Session):
             option_id=opt_data[3],
             text=opt_data[4],
         )
-        db.merge(option)
-    db.commit()
+        session.merge(option)
+    session.commit()
 
 
 def _normalize_header(value: str) -> str:
@@ -429,13 +429,16 @@ def _get_csv_value(row: dict, *possible_names: str) -> str:
     return ""
 
 
-def seed_programs(db: Session):
-    """Remplit la table programs depuis database/Liste_Formations.csv."""
+def seed_programs(session: Session):
+    """Remplit la table programs depuis import/Program_list.csv."""
 
-    csv_path = Path("database/Liste_Formations.csv")
+    # Clean table first
+    session.exec(delete(Program))
+
+    csv_path = Path("import/Program_list.csv")
 
     if not csv_path.exists():
-        print("[SEED] database/Liste_Formations.csv introuvable.")
+        print("[SEED] import/Program_list.csv introuvable.")
         return
 
     inserted = 0
@@ -469,16 +472,16 @@ def seed_programs(db: Session):
                 campus=campus,
             )
 
-            db.merge(program)
+            session.merge(program)
             inserted += 1
 
-    db.commit()
+    session.commit()
     print(
         f"[SEED] {inserted} programme(s) inséré(s)/mis à jour depuis Liste_Formations.csv."
     )
 
 
-def seed_surveys(db: Session):
+def seed_surveys(session: Session):
     """Remplit la table surveys."""
     survey_data = {
         "template_id": 1,
@@ -491,11 +494,11 @@ def seed_surveys(db: Session):
         "password": None,
     }
     survey = Survey(**survey_data)
-    db.merge(survey)
-    db.commit()
+    session.merge(survey)
+    session.commit()
 
 
-def seed_modules(db: Session):
+def seed_modules(session: Session):
     """Remplit la table modules."""
     modules_data = [
         (
@@ -711,11 +714,11 @@ def seed_modules(db: Session):
             template_id=m_data[6],
             survey_id=m_data[7],
         )
-        db.merge(module)
-    db.commit()
+        session.merge(module)
+    session.commit()
 
 
-def seed_respondents(db: Session):
+def seed_respondents(session: Session):
     """Remplit la table respondents."""
 
     respondent_data = [
@@ -733,13 +736,13 @@ def seed_respondents(db: Session):
             user_id=r_data[2],
             submission_date=r_data[3],
         )
-        db.merge(
+        session.merge(
             respondent
         )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
-    db.commit()
+    session.commit()
 
 
-def seed_answers(db: Session):
+def seed_answers(session: Session):
     """Remplit la table answers."""
 
     answers_data = [
@@ -4647,26 +4650,30 @@ def seed_answers(db: Session):
             answer_id=r_data[7],
             value=r_data[8],
         )
-        db.merge(
+        session.merge(
             answer
         )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
-    db.commit()
+    session.commit()
 
 
 def seed_all_if_necessary():
-    db = SessionLocal()
-    if db.query(User).first():  # Check if there is at least one user :)
-        return
-    """Exécute le seeding complet dans le bon order de dépendance."""
-    seed_users(db)
-    seed_roles(db)
-    seed_templates(db)
-    seed_sections(db)
-    seed_questions(db)
-    seed_options(db)
-    seed_programs(db)
-    seed_surveys(db)
-    seed_modules(db)
-    seed_respondents(db)
-    seed_answers(db)
-    print("Database seeding completed successfully!")
+    with Session(engine) as session:
+        # We seed program from CSV at each launch
+        seed_programs(session)
+
+        # We seed the rest of the tables only if no users exists
+        if session.query(User).first():  # Check if there is at least one user :)
+            return
+        """Exécute le seeding complet dans le bon order de dépendance."""
+        seed_users(session)
+        seed_roles(session)
+        seed_templates(session)
+        seed_sections(session)
+        seed_questions(session)
+        seed_options(session)
+        
+        seed_surveys(session)
+        seed_modules(session)
+        seed_respondents(session)
+        seed_answers(session)
+        print("Database seeding completed successfully!")

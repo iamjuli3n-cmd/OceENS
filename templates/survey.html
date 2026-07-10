@@ -38,7 +38,7 @@
         {% endif %}
         <!-- En-tête du sondage -->
         <div class="questionnaire-hero">
-            <h1 id="questionnaire-title">Évaluation {{ survey.program }}</h1>
+            <h1 id="questionnaire-title">Évaluation {{ program.name }}</h1>
             <p class="hero-subtitle">
                 Campus <strong>{{ survey.campus }}</strong> &middot;
                 Semestre <strong>{{ survey.semester }}</strong> &middot;
@@ -415,7 +415,8 @@
 
             <!-- Bouton de soumission -->
             <div class="submit-section">
-                <button type="button" class="btn-submit" id="btn-submit" onclick="SurveyModule.submit({{ survey.survey_id }})">
+                <button type="button" class="btn-submit" id="btn-submit"
+                    onclick="SurveyModule.submit({{ survey.survey_id }})">
                     <span class="btn-submit-text">Envoyer les réponses</span>
                     <span class="btn-submit-icon">→</span>
                 </button>
@@ -431,7 +432,7 @@
         </div>
     </main>
 
-   
+
     <script src="/static/js/survey.js"></script>
 </body>
 
