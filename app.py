@@ -24,7 +24,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from requests import session
-from sqlmodel import Session, SQLModel, create_engine, select, func,delete
+from sqlmodel import Session, SQLModel, create_engine, select, func, delete
 import uvicorn
 from seed import seed_all_if_necessary
 
@@ -85,14 +85,12 @@ def parse_rprm_formations(role: str) -> list[str]:
     "admin:PROGRAM1;PROGRAM2" → ["PROGRAM1", "PROGRAM2"]
     "admin:PROGRAM1"            → ["PROGRAM1"]
     """
-    if not role or not isinstance(role, str) or ':' not in role:
+    if not role or not isinstance(role, str) or ":" not in role:
         return []
     return [f.strip() for f in role.split(":")[1].split(";")]
 
 
 # └────────────────────────────────────────────────────────────────────────┘
-
-
 
 
 # ┌─ Configuration de la base de données ──────────────────────────────────┐
@@ -173,7 +171,7 @@ import json
 # ┌─ Fonction utilitaire : Vérification des rôles autorisés ────────────────────┐
 
 
-def check_role(roles: list[str],allowed_roles: list[str]):
+def check_role(roles: list[str], allowed_roles: list[str]):
     print(f"CHECK {roles} {allowed_roles}")
     for role_and_program in roles:
         if ":" in role_and_program:
@@ -184,7 +182,10 @@ def check_role(roles: list[str],allowed_roles: list[str]):
             return True
     return False
 
-def require_roles(request: Request, session: SessionDep, allowed_roles: list[str]) -> dict | None:
+
+def require_roles(
+    request: Request, session: SessionDep, allowed_roles: list[str]
+) -> dict | None:
     """
     Vérifie que l'utilisateur connecté possède un rôle autorisé.
 
@@ -215,9 +216,13 @@ def require_roles(request: Request, session: SessionDep, allowed_roles: list[str
         return None
 
     # Get all roles (or student if None)
-    roles_query = session.exec(select(func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).where(User.mail == user["email"].casefold())).first()
+    roles_query = session.exec(
+        select(func.group_concat(Role.role))
+        .join(User, Role.user_id == User.user_id, isouter=True)
+        .where(User.mail == user["email"].casefold())
+    ).first()
     if roles_query:
-        roles = roles_query.split(',')
+        roles = roles_query.split(",")
     else:
         roles = ["student"]
     print(roles)
@@ -227,6 +232,7 @@ def require_roles(request: Request, session: SessionDep, allowed_roles: list[str
 
     # Aucun rôle autorisé ne correspond
     return None
+
 
 # ┌─ Fonctions utilitaires ──────────────────────────────────────────────┐
 def parse_name(full_name: Optional[str], fallback_id: int) -> Dict[str, Optional[str]]:
@@ -280,7 +286,7 @@ def create_app():
 
     # ┌─ Route : Page d'accueil (version app.py conservée) ──────────────┐
     @app.get("/", response_class=HTMLResponse)
-    async def index(request: Request, session:SessionDep):
+    async def index(request: Request, session: SessionDep):
         """
         Page d'accueil. Si l'utilisateur est déjà connecté avec un rôle
         valide, redirection vers son dashboard. Sinon, affichage du login.
@@ -288,9 +294,13 @@ def create_app():
         user = get_current_user(request)
         if user:
             # Déterminer les formations autorisées pour un RP-RM
-            roles_query = session.exec(select(func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).where(User.mail == user["email"].casefold())).first()
+            roles_query = session.exec(
+                select(func.group_concat(Role.role))
+                .join(User, Role.user_id == User.user_id, isouter=True)
+                .where(User.mail == user["email"].casefold())
+            ).first()
             if roles_query:
-                roles = roles_query.split(',')
+                roles = roles_query.split(",")
             else:
                 roles = ["student"]
             print(roles)
@@ -314,9 +324,13 @@ def create_app():
             return RedirectResponse(url="/")
 
         # Déterminer les formations autorisées pour un RP-RM
-        roles_query = session.exec(select(func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).where(User.mail == user["email"].casefold())).first()
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
         if roles_query:
-            roles = roles_query.split(',')
+            roles = roles_query.split(",")
         else:
             roles = ["student"]
         print(roles)
@@ -502,19 +516,22 @@ def create_app():
             )
 
         # ── Sécurité : vérifier que la program est autorisée pour le RP-RM ──
-        roles_query = session.exec(select(func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).where(User.mail == user["email"].casefold())).first()
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
         if roles_query:
-            roles = roles_query.split(',')
+            roles = roles_query.split(",")
         else:
             roles = ["student"]
         print(roles)
-        
+
         allowed_programs = []
         for role in roles:
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
         print(allowed_programs)
-        
 
         if survey.program not in allowed_programs:
             return JSONResponse(
@@ -804,8 +821,7 @@ def create_app():
             ues_data[ue_name]["modules"].append(mod_data)
 
         ues_list = list(ues_data.values())
-        print("survey_is_closed =", survey_is_closed)
-        print("user_has_answered =", user_has_answered)
+
         return templates.TemplateResponse(
             request=request,
             name="survey.html",
@@ -983,13 +999,16 @@ def create_app():
                 status_code=404,
             )
 
-        roles_query = session.exec(select(func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).where(User.mail == user["email"].casefold())).first()
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
         if roles_query:
-            roles = roles_query.split(',')
+            roles = roles_query.split(",")
         else:
             roles = ["student"]
-        print(roles)
-        
+
         allowed_programs = []
         for role in roles:
             if role.startswith("program_manager"):
@@ -1075,14 +1094,18 @@ def create_app():
             return RedirectResponse(url="/")
 
         print(user)
-        roles_query = session.exec(select(func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).where(User.mail == user["email"].casefold())).first()
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
         if roles_query:
-            roles = roles_query.split(',')
+            roles = roles_query.split(",")
         else:
             roles = ["student"]
         print(roles)
-        
-        if not check_role(roles, ["program_manager","admin"]):
+
+        if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
 
         allowed_programs = []
@@ -1093,7 +1116,6 @@ def create_app():
 
         # Admin sans restriction : voit toutes les filières
         if (allowed_programs is None or allowed_programs == []) and ("admin" in roles):
-        
             db_programs = session.exec(select(Program)).all()
             program_codes = [p.code for p in db_programs]
 
@@ -1181,15 +1203,17 @@ def create_app():
     async def admin_dashboard(request: Request, session: SessionDep):
         user = get_current_user(request)
         print(user)
-        
-        
-        
+
         if not user:
             return RedirectResponse(url="/")
-        
-        roles_query = session.exec(select(func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).where(User.mail == user["email"].casefold())).first()
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
         if roles_query:
-            roles = roles_query.split(',')
+            roles = roles_query.split(",")
         else:
             roles = ["student"]
         print(roles)
@@ -1231,7 +1255,11 @@ def create_app():
             for r in rows
         ]
 
-        db_users = session.exec(select(User, func.group_concat(Role.role)).join(Role, Role.user_id == User.user_id, isouter=True).group_by(User.user_id)).all()
+        db_users = session.exec(
+            select(User, func.group_concat(Role.role))
+            .join(Role, Role.user_id == User.user_id, isouter=True)
+            .group_by(User.user_id)
+        ).all()
         print(db_users)
         users = [
             {
@@ -1242,7 +1270,6 @@ def create_app():
                 "name": extract_name(u[0].mail),
             }
             for u in db_users
-            
         ]
 
         programs = [
@@ -1265,7 +1292,7 @@ def create_app():
 
     # ┌─ API : Gestion des rôles utilisateurs (accès restreint Admin) ────┐
     def _is_valid_role(roles: List[str]) -> bool:
-        return check_role(roles, ["student","program_manager","admin","facilitator"])
+        return check_role(roles, ["student", "program_manager", "admin", "facilitator"])
 
     @api_router.put("/users/{user_id}/role")
     def update_user_role(
@@ -1278,7 +1305,7 @@ def create_app():
                 content={"error": "Accès refusé. Rôle Admin requis."},
                 status_code=403,
             )
-        
+
         for role in body.roles:
             if not _is_valid_role([role]):
                 return JSONResponse(
@@ -1295,11 +1322,11 @@ def create_app():
         session.exec(delete(Role).where(Role.user_id == user_id))
         session.commit()
         for role in body.roles:
-            new_role = Role(user_id = user_id,role = role)
+            new_role = Role(user_id=user_id, role=role)
             session.add(new_role)
         session.commit()
 
-        return {"user_id": user.user_id, "mail": user.mail, "roles":body.roles}
+        return {"user_id": user.user_id, "mail": user.mail, "roles": body.roles}
 
     # ┌─ Visualisation & Export CSV ──────────────────────────────────────┐
     def _check_sondage_access_and_status(
@@ -1362,14 +1389,18 @@ def create_app():
         if user is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
 
-        roles_query = session.exec(select(func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).where(User.mail == user["email"].casefold())).first()
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
         if roles_query:
-            roles = roles_query.split(',')
+            roles = roles_query.split(",")
         else:
             roles = ["student"]
         print(roles)
-        
-        if not check_role(roles, ["program_manager","admin"]):
+
+        if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
 
         allowed_programs = []
@@ -1402,14 +1433,18 @@ def create_app():
         if user is None:
             return RedirectResponse(url="/")
 
-        roles_query = session.exec(select(func.group_concat(Role.role)).join(User, Role.user_id == User.user_id, isouter=True).where(User.mail == user["email"].casefold())).first()
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
         if roles_query:
-            roles = roles_query.split(',')
+            roles = roles_query.split(",")
         else:
             roles = ["student"]
         print(roles)
-        
-        if not check_role(roles, ["program_manager","admin"]):
+
+        if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
 
         allowed_programs = []
