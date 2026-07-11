@@ -9,6 +9,78 @@
         href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="/static/css/visualisation.css">
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script>
+        function satisfaction_histo(rawData, chartTitle, container) {
+
+            // 2. Replicate the 'pd.Categorical' order from your Python code
+            const categories = [
+                'Totalement satisfait / Totally satisfied',
+                'Très satisfait / Very satisfied',
+                'Plutôt satisfait / Somewhat satisfied',
+                'Plutôt pas satisfait / Somewhat dissatisfied',
+                'Pas du tout satisfait / Not at all satisfied',
+                'Totalement insatisfait / Totally dissatisfied'
+            ];
+
+            // 3. Calculate the total sum to compute percentages (replicates stat='percent')
+            const totalCount = Object.values(rawData).reduce((acc, val) => acc + val, 0);
+
+            // 4. Map the fixed categories to their percentage values
+            // If a category doesn't exist in the JSON, we default to 0
+            const seriesData = categories.map(cat => {
+                const count = rawData[cat] || 0;
+                return totalCount > 0 ? (count / totalCount) * 100 : 0;
+            });
+
+            // 5. Initialize Highcharts
+            Highcharts.chart(container, {
+                chart: {
+                    type: 'bar', // 'bar' in Highcharts is horizontal, matching your y=df_series_name
+                    height: (categories.length * 50) // Dynamic height similar to your 'dynamic_height'
+                },
+                title: {
+                    text: chartTitle,
+                    align: 'left',
+                    style: { fontSize: '16px' }
+                },
+                xAxis: {
+                    categories: categories,
+                    title: { text: null },
+                    labels: { style: { fontSize: '11px' } }
+                },
+                yAxis: {
+                    title: { text: null },
+                    labels: {
+                        format: '{value:.0f}%' // Matches your PercentFormatter()
+                    },
+                    min: 0,
+                    max: 100
+                },
+                legend: {
+                    enabled: false // Matches legend=False
+                },
+                plotOptions: {
+                    bar: {
+                        colorByPoint: true, // Matches your 'hue=df_series_name' (different color per bar)
+                        dataLabels: {
+                            enabled: true,
+                            format: '{y:.0f}%', // Matches your ax.bar_label logic
+                            style: {
+                                textOutline: 'none',
+                                fontSize: '11px'
+                            }
+                        }
+                    }
+                },
+                series: [{
+                    name: 'Satisfaction',
+                    data: seriesData
+                }],
+                credits: { enabled: false }
+            });
+        }
+    </script>
 
 </head>
 
@@ -121,6 +193,8 @@
                 </div>
             </div>
 
+            {% set ns = namespace(counter=1) %}
+
             <div class="summary-list">
                 {% for item in viz_data.summary_items %}
                 <div class="summary-row">
@@ -159,8 +233,12 @@
                         </div>
                         <div class="detailled-section" id="detailled-section-{{item.rank}}">
                             <h4>{{item.question}}</h4>
+                            <div id="satisfaction-histo-{{item.rank}}"></div>
 
-                            {{item.histo | tojson}}
+                            <script>
+                                document.addEventListener('DOMContentLoaded', () => {
+                                    satisfaction_histo({{ item.histo | tojson | safe }}, "title", "satisfaction-histo-{{item.rank}}");
+}); </script>
 
                         </div>
                         {% endif %}
@@ -189,9 +267,19 @@
                             {% endfor %}
                         </div>
                         <div class="detailled-section" id="detailled-section-{{item.rank}}">
+                            {% set ns.counter = 0 %}
                             {% for teacher_score in item.teacher_scores %}
+                            {% if teacher_score.total_count > 0%}
+
+                            {% set ns.counter = ns.counter + 1 %}
                             <h4>{{teacher_score.question}}</h4>
-                            {{teacher_score.histo | tojson}}
+                            <div id="satisfaction-histo-{{item.rank}}-{{ns.counter}}"></div>
+
+                            <script>
+                                document.addEventListener('DOMContentLoaded', () => {
+                                    satisfaction_histo({{ teacher_score.histo | tojson | safe }}, "", "satisfaction-histo-{{item.rank}}-{{ns.counter}}");
+}); </script>
+                            {% endif %}
                             {% endfor %}
 
                         </div>
