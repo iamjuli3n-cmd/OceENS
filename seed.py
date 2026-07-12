@@ -13,6 +13,7 @@ from models import (
     Survey,
     Respondent,
     Answer,
+    Submission,
 )
 from database import engine
 
@@ -738,6 +739,28 @@ def seed_respondents(session: Session):
         )
         session.merge(
             respondent
+        )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
+    session.commit()
+
+def seed_submissions(session: Session):
+    """Remplit la table submissions."""
+
+    submission_data = [
+        (1, 1, "2026-06-30 16:24:04"),
+        (1, 2, "2026-06-30 16:27:04"),
+        (1, 3, "2026-06-30 16:22:04"),
+        (1, 4, "2026-06-30 16:26:04"),
+        (1, 5, "2026-06-30 16:32:04"),
+        (1, 6, "2026-06-30 16:32:04"),
+    ]
+    for s_data in submission_data:
+        submission = Submission(
+            survey_id=s_data[0],
+            submission_id=s_data[1],
+            submission_date=s_data[2],
+        )
+        session.merge(
+            submission
         )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
     session.commit()
 
@@ -4671,7 +4694,7 @@ def seed_all_if_necessary():
         seed_sections(session)
         seed_questions(session)
         seed_options(session)
-        
+        seed_submissions(session)
         seed_surveys(session)
         seed_modules(session)
         seed_respondents(session)

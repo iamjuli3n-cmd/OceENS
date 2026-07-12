@@ -16,6 +16,7 @@ from models import (
     Survey,
     Respondent,
     Answer,
+    Submission,
 )
 
 
@@ -446,6 +447,7 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
                 "program_name": "",
                 "respondents_count": 0,
                 "answers_count": 0,
+                "submissions_count": 0,
                 "warning_msg": "Survey introuvable.",
                 "viz_data": {
                     "filters": {"ues": [], "modules": []},
@@ -494,6 +496,15 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
                 select(func.count(Respondent.user_id)).where(
                     Respondent.survey_id == survey_id,
                     Respondent.submission_date != None,
+                )
+            ).first()
+            or 0
+        )
+
+        submissions_count = (
+            session.exec(
+                select(func.count(Submission.submission_id)).where(
+                    Submission.survey_id == survey_id,
                 )
             ).first()
             or 0
@@ -634,9 +645,7 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
         else 0
     )
 
-    warning_msg = (
-        f"Taux de réponse : {response_rate}% ({answers_count} sur {respondents_count})"
-    )
+    warning_msg = None
 
     return {
         "survey": survey,
@@ -647,6 +656,7 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
         },
         "respondents_count": respondents_count,
         "answers_count": answers_count,
+        "submissions_count": submissions_count,
         "warning_msg": warning_msg,
         "viz_data": {
             "filters": {

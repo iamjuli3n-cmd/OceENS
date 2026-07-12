@@ -1116,8 +1116,19 @@ def create_app():
             .group_by(Survey.survey_id)
             .order_by(Survey.survey_id.desc())
         ).all()
-
+        db_programs = session.exec(select(Program)).all()
         program_name_by_code = {p.code: p.name for p in db_programs}
+
+        submissions_rows = session.exec(
+            select(
+                Submission.survey_id,
+                func.count(Submission.submission_id).label("submissions_count"),
+            )
+            .group_by(Submission.survey_id)
+            .order_by(Submission.survey_id.desc())
+        ).all()
+
+        submissions_count = {r[0]:r[1] for r in submissions_rows}
 
         surveys = [
             {
@@ -1130,6 +1141,7 @@ def create_app():
                 "is_closed": (r[5] == 0),
                 "respondents_count": r[6],
                 "answers_count": r[7],
+                "submissions_count": submissions_count[r[0]],
             }
             for r in rows
         ]
@@ -1209,6 +1221,17 @@ def create_app():
         db_programs = session.exec(select(Program)).all()
         program_name_by_code = {p.code: p.name for p in db_programs}
 
+        submissions_rows = session.exec(
+            select(
+                Submission.survey_id,
+                func.count(Submission.submission_id).label("submissions_count"),
+            )
+            .group_by(Submission.survey_id)
+            .order_by(Submission.survey_id.desc())
+        ).all()
+
+        submissions_count = {r[0]:r[1] for r in submissions_rows}
+
         surveys = [
             {
                 "survey_id": r[0],
@@ -1220,6 +1243,7 @@ def create_app():
                 "is_closed": (r[5] == 0),
                 "respondents_count": r[6],
                 "answers_count": r[7],
+                "submissions_count": submissions_count[r[0]],
             }
             for r in rows
         ]

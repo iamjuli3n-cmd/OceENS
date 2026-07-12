@@ -19,16 +19,19 @@
   </a>
 
   <div style="text-align: right; margin-right: 12px; margin-left: 12px; min-width: 100px;">
-    <div style="font-size: 13px; font-weight: 500; color: #111;">{{ survey['answers_count'] }} / {{
-      survey['respondents_count'] }}</div>
+    <div style="font-size: 13px; font-weight: 500; color: #111;">{% if survey['submissions_count'] != survey['answers_count'] %}<a style="font-size:11px; vertical-align: top; cursor: default;" title="Attention le nombre de répondants ({{survey['answers_count']}}) et de soumissions ({{survey['submissions_count']}}) ne collent pas !">⚠️</a>{% endif %}{{
+      survey['submissions_count'] }} / {{
+      survey['respondents_count'] }} </div>
     <div style="font-size: 10px; color: #aaa;">ont répondu / inscrits</div>
     <div
       style="height: 4px; border-radius: 99px; width: 72px; background: var(--border); margin-top: 4px; margin-left: auto;">
       <div
-        style="height: 100%; border-radius: 99px; background: #470a68; width: {% if survey['respondents_count'] > 0 %}{{ (survey['answers_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
+        style="height: 100%; border-radius: 99px; background: #470a68; width: {% if survey['respondents_count'] > 0 %}{{ (survey['submissions_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
       </div>
     </div>
+
   </div>
+  
   <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
     {% if survey['is_closed'] %}
     <input type="hidden" name="status" value="1">

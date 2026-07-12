@@ -181,6 +181,13 @@
         </div>
         {% endif %}
 
+        {% if submissions_count != answers_count %}
+        <div
+            style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; color: #b45309; font-size: 14px; font-weight: 500;">
+            ⚠️ Attention le nombre de répondants ({{answers_count}}) et de soumissions ({{submissions_count}}) ne collent pas !"
+        </div>
+        {% endif %}
+
         <!-- Filters -->
         <div class="filters-bar">
             <div class="filter-item">
@@ -237,8 +244,8 @@
             <div class="kpi-right">
                 <h3> Taux de réponse : </h3>
                 <div class="huge-pct" id="rec-tricolor-val">
-                    {{ answers_count }} / {{ respondents_count }} ({{
-                    "%.0f"|format(100*answers_count/respondents_count)}}%)
+                    {{ submissions_count }} / {{ respondents_count }} ({{
+                    "%.0f"|format(100*submissions_count/respondents_count)}}%)
                 </div>
             </div>
             <div class="kpi-right">
