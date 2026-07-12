@@ -11,74 +11,146 @@
     <link rel="stylesheet" href="/static/css/visualisation.css">
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script>
-        function satisfaction_histo(rawData, chartTitle, container) {
+        function renderSatisfactionChart(dataSourceId, chartTitle, container, chartType = 'bar') {
 
-            // 2. Replicate the 'pd.Categorical' order from your Python code
-            const categories = [
-                'Totalement satisfait / Totally satisfied',
-                'Très satisfait / Very satisfied',
-                'Plutôt satisfait / Somewhat satisfied',
-                'Plutôt pas satisfait / Somewhat dissatisfied',
-                'Pas du tout satisfait / Not at all satisfied',
-                'Totalement insatisfait / Totally dissatisfied'
+            var dynamic_height = 40; // Small value = Denser graph
+
+            const categoryConfig = [
+                { label: 'Totalement satisfait / Totally satisfied', color: '#5dbb47' },
+                { label: 'Très satisfait / Very satisfied', color: '#b8d432' },
+                { label: 'Plutôt satisfait / Somewhat satisfied', color: '#e4e014' },
+                { label: 'Plutôt pas satisfait / Somewhat dissatisfied', color: '#f1ac16' },
+                { label: 'Pas du tout satisfait / Not at all satisfied', color: '#ea761f' },
+                { label: 'Totalement insatisfait / Totally dissatisfied', color: '#f02024' }
             ];
+
+
+            // 1. Find the hidden script tag containing the JSON
+            const scriptTag = document.getElementById(dataSourceId);
+            if (!scriptTag) return;
+
+            // 2. Parse the text content into a real JavaScript Object
+            const rawData = JSON.parse(scriptTag.textContent);
 
             // 3. Calculate the total sum to compute percentages (replicates stat='percent')
             const totalCount = Object.values(rawData).reduce((acc, val) => acc + val, 0);
 
+            // 2. Derive categories and data from the config above
+            const categories = categoryConfig.map(item => item.label);
+
             // 4. Map the fixed categories to their percentage values
             // If a category doesn't exist in the JSON, we default to 0
-            const seriesData = categories.map(cat => {
-                const count = rawData[cat] || 0;
-                return totalCount > 0 ? (count / totalCount) * 100 : 0;
-            });
+            const seriesData = categoryConfig.reduce((acc, item) => {
+                const count = rawData[item.label] || 0;
+                const percentage = totalCount > 0 ? (count / totalCount) * 100 : 0;
 
-            // 5. Initialize Highcharts
-            Highcharts.chart(container, {
-                chart: {
-                    type: 'bar', // 'bar' in Highcharts is horizontal, matching your y=df_series_name
-                    height: (categories.length * 50) // Dynamic height similar to your 'dynamic_height'
-                },
+                if (chartType === 'pie') {
+                    // PIE MODE: Only add to the array if count > 0
+                    if (count > 0) {
+                        acc.push({
+                            name: item.label,
+                            y: count,
+                            color: item.color
+                        });
+                    }
+                } else {
+                    // BAR MODE: Always add (we want to see the 0% bars to show the scale)
+                    acc.push({
+                        y: percentage,
+                        color: item.color,
+                        rawCount: count,
+                        category: item.label
+                    });
+                }
+
+                return acc;
+            }, []); // Start with an empty array []
+
+            const baseConfig = {
                 title: {
                     text: chartTitle,
                     align: 'left',
                     style: { fontSize: '16px' }
                 },
-                xAxis: {
-                    categories: categories,
-                    title: { text: null },
-                    labels: { style: { fontSize: '11px' } }
-                },
-                yAxis: {
-                    title: { text: null },
-                    labels: {
-                        format: '{value:.0f}%' // Matches your PercentFormatter()
-                    },
-                    min: 0,
-                    max: 100
-                },
-                legend: {
-                    enabled: false // Matches legend=False
-                },
-                plotOptions: {
-                    bar: {
-                        colorByPoint: true, // Matches your 'hue=df_series_name' (different color per bar)
-                        dataLabels: {
-                            enabled: true,
-                            format: '{y:.0f}%', // Matches your ax.bar_label logic
-                            style: {
-                                textOutline: 'none',
-                                fontSize: '11px'
-                            }
-                        }
-                    }
-                },
+                credits: { enabled: false },
                 series: [{
                     name: 'Satisfaction',
                     data: seriesData
                 }],
-                credits: { enabled: false }
-            });
+
+                legend: {
+                    enabled: false
+                }
+            };
+
+            // 3. Type-Specific Configuration
+            let typeSpecificConfig = {};
+
+            if (chartType === 'pie') {
+                typeSpecificConfig = {
+                    chart: {
+                        type: 'pie',
+                        height: (categoryConfig.length * dynamic_height)
+                    },
+                    tooltip: {
+                        // Pie charts use 'name' instead of 'category'
+                        formatter: function () {
+                            return `<b>${this.point.name}</b><br/>${this.y} person(s) (${this.percentage.toFixed(0)}%)`;
+                        }
+                    },
+                    plotOptions: {
+                        pie: {
+                            dataLabels: {
+                                enabled: true,
+                                format: '<b>{point.name}</b>: {point.percentage:.0f}%'
+                            },
+                        }
+                    }
+                };
+            } else {
+                // Default to Bar
+                typeSpecificConfig = {
+                    chart: {
+                        type: 'bar',
+                        height: (categoryConfig.length * dynamic_height)
+                    },
+                    xAxis: {
+                        categories: categoryConfig.map(c => c.label),
+                        title: { text: null },
+                        labels: { style: { fontSize: '11px' } }
+                    },
+                    yAxis: {
+                        min: 0, max: 100,
+                        title: { text: null },
+                        labels: { format: '{value:.0f}%' }
+                    },
+                    tooltip: {
+                        useHTML: true,
+                        formatter: function () {
+                            const color = this.point.color;
+                            const label = this.point.category;
+                            const count = this.point.rawCount;
+                            return `<span style="color:${color}; font-size: 1.2em;">●</span> 
+                                <b>${label}</b><br/>
+                                <span>${count} person(s)</span>`;
+                        }
+                    },
+                    plotOptions: {
+                        bar: {
+                            colorByPoint: false,
+                            dataLabels: {
+                                enabled: true,
+                                format: '{y:.0f}%',
+                                style: { textOutline: 'none', fontSize: '11px' }
+                            }
+                        }
+                    }
+                };
+            }
+
+            // 4. Merge and Render
+            // Object.assign merges the base configuration with the type-specific logic
+            Highcharts.chart(container, Object.assign({}, baseConfig, typeSpecificConfig));
         }
     </script>
 
@@ -232,14 +304,35 @@
                             {% endif %}
                         </div>
                         <div class="detailled-section" id="detailled-section-{{item.rank}}">
-                            <h4>{{item.question}}</h4>
-                            <div id="satisfaction-histo-{{item.rank}}"></div>
 
-                            <script>
-                                document.addEventListener('DOMContentLoaded', () => {
-                                    satisfaction_histo({{ item.histo | tojson | safe }}, "title", "satisfaction-histo-{{item.rank}}");
+                            <!-- 1. THE HIDDEN DATA: The JSON is stored here. -->
+                            <script type="application/json" id="data-{{item.rank}}">
+                                {{ item.histo | tojson | safe }}
+                            </script>
+                            <div class="chart-container-wrapper">
+                                <!-- The Graph -->
+                                <div id="satisfaction-histo-{{item.rank}}"></div>
+
+                                <!-- The Floating Controls -->
+                                <div class="chart-controls-overlay">
+                                    <button class="btn-control" title="Pie Chart"
+                                        onclick='renderSatisfactionChart("data-{{item.rank}}", "{{item.question}}", "satisfaction-histo-{{item.rank}}", "pie");'>
+                                        <img src="/static/img/pie-chart.svg" height="22px">
+                                    </button>
+
+                                    <button class="btn-control" title="Bar Chart"
+                                        onclick='renderSatisfactionChart("data-{{item.rank}}", "{{item.question}}", "satisfaction-histo-{{item.rank}}", "bar");'>
+                                        <img src="/static/img/horizontal-bar-chart.svg" height="22px">
+                                    </button>
+                                </div>
+
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', () => {
+                                        renderSatisfactionChart("data-{{item.rank}}", "{{item.question}}", "satisfaction-histo-{{item.rank}}");
+                                
 }); </script>
 
+                            </div>
                         </div>
                         {% endif %}
 
@@ -272,13 +365,37 @@
                             {% if teacher_score.total_count > 0%}
 
                             {% set ns.counter = ns.counter + 1 %}
-                            <h4>{{teacher_score.question}}</h4>
-                            <div id="satisfaction-histo-{{item.rank}}-{{ns.counter}}"></div>
 
-                            <script>
-                                document.addEventListener('DOMContentLoaded', () => {
-                                    satisfaction_histo({{ teacher_score.histo | tojson | safe }}, "", "satisfaction-histo-{{item.rank}}-{{ns.counter}}");
+                            <!-- 1. THE HIDDEN DATA: The JSON is stored here. -->
+                            <script type="application/json" id="data-{{item.rank}}-{{ns.counter}}">
+                                {{ teacher_score.histo | tojson | safe }}
+                            </script>
+                            <div class="chart-container-wrapper">
+                                <!-- The Graph -->
+                                <div id="satisfaction-histo-{{item.rank}}-{{ns.counter}}"></div>
+
+                                <!-- The Floating Controls -->
+                                <div class="chart-controls-overlay">
+                                    <button class="btn-control" title="Pie Chart"
+                                        onclick='renderSatisfactionChart("data-{{item.rank}}-{{ns.counter}}", "{{teacher_score.question}}", "satisfaction-histo-{{item.rank}}-{{ns.counter}}", "pie");'>
+                                        <img src="/static/img/pie-chart.svg" height="22px">
+                                    </button>
+
+                                    <button class="btn-control" title="Bar Chart"
+                                        onclick='renderSatisfactionChart("data-{{item.rank}}-{{ns.counter}}", "{{teacher_score.question}}", "satisfaction-histo-{{item.rank}}-{{ns.counter}}", "bar");'>
+                                        <img src="/static/img/horizontal-bar-chart.svg" height="22px">
+                                    </button>
+                                </div>
+
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', () => {
+                                        renderSatisfactionChart("data-{{item.rank}}-{{ns.counter}}", "{{teacher_score.question}}", "satisfaction-histo-{{item.rank}}-{{ns.counter}}");
+                                
 }); </script>
+
+                            </div>
+
+                            
                             {% endif %}
                             {% endfor %}
 

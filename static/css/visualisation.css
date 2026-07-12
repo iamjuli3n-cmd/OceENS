@@ -528,4 +528,63 @@ body {
 
 .detailled-section {
     display:none;
+    max-width:600px;
+}
+
+/* The container for the chart and the buttons */
+.chart-container-wrapper {
+    position: relative; /* Required to anchor the absolute buttons */
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+/* The floating button group */
+.chart-controls-overlay {
+    position: absolute;
+    bottom: 10px;    /* Distance from bottom of graph */
+    left: 10px;  /* Distance from left of graph */
+    z-index: 10;  /* Ensures buttons stay above the Highcharts SVG */
+    display: flex;
+    gap: 5px;
+    padding: 4px;
+    
+    /* Glassmorphism effect */
+    background: rgba(255, 255, 255, 0.6); 
+    backdrop-filter: blur(4px);
+    border-radius: 25px;
+    border: 1px solid rgba(25 overlap, 0, 0, 0.1);
+    
+    /* Discrete appearance: semi-transparent by default */
+    opacity: 0.4;
+    transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+/* Make buttons visible on hover */
+.chart-container-wrapper:hover .chart-controls-overlay {
+    opacity: 1;
+}
+
+/* Minimalist button styling */
+.btn-control {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s ease;
+}
+
+.btn-control:hover {
+    transform: scale(1.1);
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+}
+
+.btn-control img {
+    filter: grayscale(100%); /* Makes icons look more professional/discrete */
+    transition: filter 0.3s ease;
+}
+
+.btn-control:hover img {
+    filter: grayscale(0%); /* Color returns on hover */
 }

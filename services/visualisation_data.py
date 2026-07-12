@@ -551,7 +551,7 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
             "positive_count": campus_score["positive_count"],
             "total_count": campus_score["total_count"],
             "histo":campus_score["histo"],
-            "question":campus_score["question"],
+            "question":campus_score["question"].replace("[CAMPUS]",campus),
             "score_label": "",
         },
         {
@@ -565,7 +565,7 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
             "positive_count": formation_score["positive_count"],
             "total_count": formation_score["total_count"],
             "histo":formation_score["histo"],
-            "question":formation_score["question"],
+            "question":formation_score["question"].replace("[CAMPUS]",campus).replace("[FORMATION]",program_name),
             "score_label": "",
         },
     ]
