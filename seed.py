@@ -757,7 +757,7 @@ def seed_submissions(session: Session):
         submission = Submission(
             survey_id=s_data[0],
             submission_id=s_data[1],
-            submission_date=s_data[2],
+            created_at=s_data[2],
         )
         session.merge(
             submission

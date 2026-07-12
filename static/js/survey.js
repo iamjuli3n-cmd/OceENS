@@ -302,7 +302,7 @@ const SurveyModule = {
         document.querySelectorAll(`.exclusive-prof-block[data-module-id="${moduleId}"]`).forEach(block => {
             block.style.display = 'none';
             // Réinitialiser les réponses des profs non sélectionnés
-            if (block.dataset.teacher !== selectedProf) {
+            if (block.dataset.prof !== selectedProf) {
                 block.querySelectorAll('input[type="radio"]:checked').forEach(r => r.checked = false);
                 block.querySelectorAll('input[type="checkbox"]:checked').forEach(c => c.checked = false);
                 block.querySelectorAll('textarea').forEach(t => t.value = '');
@@ -453,7 +453,7 @@ const SurveyModule = {
                 value: r.value,
             };
             if (r.dataset.module) rep.module_id = parseInt(r.dataset.module);
-            if (r.dataset.teacher) rep.teacher = r.dataset.teacher;
+            if (r.dataset.prof) rep.teacher = r.dataset.prof;
             answers.push(rep);
         });
 
@@ -468,7 +468,7 @@ const SurveyModule = {
                     question_id: parseInt(c.dataset.question),
                     values: [],
                     module_id: c.dataset.module ? parseInt(c.dataset.module) : null,
-                    teacher: c.dataset.teacher || null,
+                    teacher: c.dataset.prof || null,
                 };
             }
             checkboxGroups[key].values.push(c.value);
@@ -499,7 +499,7 @@ const SurveyModule = {
                 value: val,
             };
             if (ta.dataset.module) rep.module_id = parseInt(ta.dataset.module);
-            if (ta.dataset.teacher) rep.teacher = ta.dataset.teacher;
+            if (ta.dataset.prof) rep.teacher = ta.dataset.prof;
             answers.push(rep);
         });
 
