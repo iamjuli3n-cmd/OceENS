@@ -282,6 +282,7 @@ def _get_recommendation_score(records: list[dict]) -> dict:
     recommendation_candidates = []
 
     for record in records:
+
         if not _is_recommendation_record(record):
             continue
 
@@ -388,68 +389,58 @@ def _score_for_module_teacher(records: list[dict], module: dict, teacher: str) -
 
 
 # ─────────────────────────────────────────────
-# Détail des questions d'insatisfaction
+# Détail des questions
 # ─────────────────────────────────────────────
-def _get_insatisfaction_details(
+def _get_answers_details(
     records: list[dict],
-    category: str | None = None,
-    module_id: int | None = None,
-    teacher: str | None = None,
 ) -> list[dict]:
 
-    questions = defaultdict(dict)
+    sections = defaultdict(dict)
+
+    print(len(records))
+
+    
 
     for record in records:
-        unique_question_key = (
-            f"{record['template_id']}_{record['section_id']}_{record['question_id']}"
-        )
+
+        sections[record["category"]]={"questions":defaultdict(dict)}
+
+        if record['question_id']==13:
+            print("TTT")
+            print(record)
+            print("TTT")
+
+        unique_question_key =  f"{record['question_id']}_{record['module']}_{record['teacher']}" if record['module'] else f"{record['question_id']}"
+        
 
         if (
-            unique_question_key not in questions.keys()
+            unique_question_key not in sections[record["category"]]["questions"].keys()
         ):  # We found a new question, we need to initialize its histogram
+            
             with Session(engine) as session:
                 options = session.exec(
                     select(Option.text).where(
-                        Option.template_id == record["template_id"],
-                        Option.section_id == record["section_id"],
                         Option.question_id == record["question_id"],
                     )
                 ).all()
-
+            
             if options:
-                questions[unique_question_key] = {
-                    "question": record["question"],
+                sections[record["category"]]["questions"][unique_question_key] = {
+                    "question": record["question"].replace("[CAMPUS]",record["campus"]).replace("[FORMATION]",record["program_name"]).replace("[MODULE]",record["module"]).replace("[ENSEIGNANT]",record["teacher"]),
                     "histo": {option: 0 for option in options},
                 }
             else:
-                questions[unique_question_key] = {
+                sections[record["category"]]["questions"][unique_question_key] = {
                     "question": record["question"],
                     "histo": defaultdict(int),
                 }
 
-        # Filtre Campus ou Formation
-        if category is not None and record.get("category") != category:
-            continue
+        sections[record["category"]]["questions"][unique_question_key]["histo"][record["value"]] += 1
 
-        # Filtre Module
-        if module_id is not None:
-            record_module_id = _record_module_id(record)
-
-            if record_module_id is None:
-                continue
-
-            if str(record_module_id) != str(module_id):
-                continue
-
-        # Filtre Enseignant
-        if teacher is not None:
-            if _normalize(_record_teacher(record)) != _normalize(teacher):
-                continue
-
-        questions[unique_question_key]["histo"][record["value"]] += 1
+    print(sections['Module / Enseignant']['questions'].keys())
 
     return {
-        "questions": questions,
+        "sections": sections,
     }
 
 
@@ -458,63 +449,72 @@ def _get_insatisfaction_details(
 # ─────────────────────────────────────────────
 
 
-def _build_records_from_db(
-    survey: Survey,
-    program: Program | None,
-    sections: list[Section],
-    questions: list[Question],
-    modules: list[Module],
-    answers: list[Answer],
-) -> list[dict]:
-    sections_by_id = {section.section_id: section for section in sections}
+# def _build_records_from_db(
+#     survey: Survey,
+#     program: Program | None,
+#     sections: list[Section],
+#     questions: list[Question],
+#     modules: list[Module],
+#     answers: list[Answer],
+# ) -> list[dict]:
+#     sections_by_id = {section.section_id: section for section in sections}
 
-    questions_by_key = {
-        (question.section_id, question.question_id): question for question in questions
-    }
+#     questions_by_key = {
+#         (question.section_id, question.question_id): question for question in questions
+#     }
 
-    modules_by_id = {module.module_id: module for module in modules}
+#     modules_by_id = {module.module_id: module for module in modules}
 
-    records = []
+#     records = []
 
-    for answer in answers:
-        section = sections_by_id.get(answer.section_id)
-        question = questions_by_key.get((answer.section_id, answer.question_id))
-        module = modules_by_id.get(answer.module_id)
+#     for answer in answers:
+#         section = sections_by_id.get(answer.section_id)
+#         question = questions_by_key.get((answer.section_id, answer.question_id))
+#         module = modules_by_id.get(answer.module_id)
 
-        records.append(
-            {
-                "campus": survey.campus,
-                "program": survey.program,
-                "program_name": program.name if program else survey.program,
-                "semester": survey.semester,
-                "school_year": survey.school_year,
-                "section": section.name if section else "",
-                "template_id": survey.template_id,
-                "section_id": answer.section_id,
-                "question_id": answer.question_id,
-                "question": question.text if question else "",
-                "question_type": question.question_type if question else "",
-                "category": question.category if question else "",
-                "answer_id": answer.answer_id,
-                "submission_id": answer.submission_id,
-                "value": answer.value,
-                "module_id": answer.module_id,
-                "module": module.name if module else "",
-                "ue": module.ue if module else "",
-                "teacher": answer.teacher or (module.teacher if module else ""),
-            }
-        )
+#         records.append(
+#             {
+#                 "campus": survey.campus,
+#                 "program": survey.program,
+#                 "program_name": program.name if program else survey.program,
+#                 "semester": survey.semester,
+#                 "school_year": survey.school_year,
+#                 "template_id": survey.template_id,
+#                 "section_id": answer.section_id,
+#                 "question_id": answer.question_id,
+#                 "question": question.text if question else "",
+#                 "question_type": question.question_type if question else "",
+#                 "category": section.name if question else "",
+#                 "answer_id": answer.answer_id,
+#                 "submission_id": answer.submission_id,
+#                 "value": answer.value,
+#                 "module_id": answer.module_id,
+#                 "module": module.name if module else "",
+#                 "ue": module.ue if module else "",
+#                 "teacher": answer.teacher or (module.teacher if module else ""),
+#             }
+#         )
 
-    return records
+#     return records
 
 
 def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
     with Session(engine) as session:
-        survey = session.exec(
-            select(Survey).where(Survey.survey_id == survey_id)
-        ).first()
 
-        if not survey:
+        answers = session.exec(
+            select(Program.campus, Program.code, Program.name, Survey.semester,Survey.school_year,Section.name.label("Section_name"),Question.question_id,Question.question_type,Question.text.label("question_text"),Module.ue, Module.name, Answer.teacher, Answer.value,Option.text.label("option_text"))
+            .join(Submission,Submission.submission_id==Answer.submission_id)
+            .join(Survey,Survey.survey_id==Submission.survey_id)
+            .join(Option,Option.option_id==Answer.option_id,isouter=True)
+            .join(Question,Question.question_id==Answer.question_id)
+            .join(Section,Section.section_id==Question.section_id)
+            .join(Program,Program.code==Survey.program)
+            .join(Module,Module.module_id==Answer.module_id,isouter=True)
+            .where(Survey.survey_id == survey_id)
+            .order_by(Section.order,Module.module_id,Answer.teacher,Question.question_id)
+        ).all()
+
+        if not answers:
             return {
                 "survey": None,
                 "program_name": "",
@@ -536,48 +536,18 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
                 },
             }
 
-        program = session.exec(
-            select(Program).where(Program.code == survey.program)
-        ).first()
-
-        sections = session.exec(
-            select(Section)
-            .where(Section.template_id == survey.template_id)
-            .order_by(Section.order)
-        ).all()
-
-        questions = session.exec(
-            select(Question).where(Question.template_id == survey.template_id)
-        ).all()
-
-        modules_db = session.exec(
-            select(Module)
-            .where(Module.survey_id == survey_id)
-            .order_by(Module.ue, Module.name)
-        ).all()
-
-        answers = session.exec(
-            select(Answer).where(Answer.survey_id == survey_id)
-        ).all()
-
-        respondents_count = (
-            session.exec(
-                select(func.count(Respondent.user_id)).where(
+        row = session.exec(
+                select(func.count(Respondent.user_id),func.count(Respondent.submission_date)).where(
                     Respondent.survey_id == survey_id
                 )
             ).first()
-            or 0
-        )
-
-        answers_count = (
-            session.exec(
-                select(func.count(Respondent.user_id)).where(
-                    Respondent.survey_id == survey_id,
-                    Respondent.submission_date != None,
-                )
-            ).first()
-            or 0
-        )
+        if row:
+            respondents_count=row[0]
+            answers_count = row[1]
+        else:
+            respondents_count=0
+            answers_count = 0
+        
 
         submissions_count = (
             session.exec(
@@ -588,20 +558,35 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
             or 0
         )
 
-    records = _build_records_from_db(
-        survey=survey,
-        program=program,
-        sections=sections,
-        questions=questions,
-        modules=modules_db,
-        answers=answers,
-    )
+    records = [{
+                "campus": a[0],
+                "program": a[1],
+                "program_name": a[2],
+                "semester": a[3],
+                "school_year": a[4],
+                "category": a[5],
+                "question_id" : a[6],
+                "question_type": a[7],
+                "question": a[8],
+                "ue": a[9],
+                "module": a[10] or '',
+                "teacher": a[11],
+                "value": a[13] or a[12],
+            } for a in answers]
 
-    campus = survey.campus or ""
-    program_name = program.name if program else survey.program
+    campus = records[0]["campus"] or ""
+    program_name = records[0]["program_name"]
     recommendation = _get_recommendation_score(records)
 
+
     modules = []
+
+    modules_db = session.exec(
+            select(Module)
+            .where(Module.survey_id == survey_id)
+            .order_by(Module.ue, Module.name)
+        ).all()
+    
 
     for module in modules_db:
         modules.append(
@@ -628,15 +613,10 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
     campus_score = _score_for_campus(records)
     formation_score = _score_for_formation(records)
 
-    campus_insatisfaction = _get_insatisfaction_details(
-        records,
-        category="Campus",
-    )
+    full_answers=_get_answers_details(records)
 
-    formation_insatisfaction = _get_insatisfaction_details(
-        records,
-        category="Formation",
-    )
+    print(full_answers)
+    
 
     summary_items = [
         {
@@ -651,7 +631,6 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
             "total_count": campus_score["total_count"],
             "histo": campus_score["histo"],
             "question": campus_score["question"].replace("[CAMPUS]", campus),
-            "insatisfaction_details": campus_insatisfaction,
             "score_label": "",
         },
         {
@@ -670,7 +649,6 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
                 .replace("[CAMPUS]", campus)
                 .replace("[FORMATION]", program_name)
             ),
-            "insatisfaction_details": formation_insatisfaction,
             "score_label": "",
         },
     ]
@@ -681,11 +659,7 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
         for teacher in module["teachers"]:
             teacher_score = _score_for_module_teacher(records, module, teacher)
 
-            teacher_insatisfaction = _get_insatisfaction_details(
-                records,
-                module_id=module["id"],
-                teacher=teacher,
-            )
+          
 
             teacher_scores.append(
                 {
@@ -707,7 +681,6 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
                         .replace("[ENSEIGNANT]", teacher)
                         .replace("[MODULE]", module["name"])
                     ),
-                    "insatisfaction_details": teacher_insatisfaction,
                     "score_label": "",
                 }
             )
@@ -715,10 +688,6 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
         if not teacher_scores:
             module_score = _score_for_module(records, module)
 
-            module_insatisfaction = _get_insatisfaction_details(
-                records,
-                module_id=module["id"],
-            )
 
             teacher_scores.append(
                 {
@@ -732,7 +701,6 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
                     "total_count": module_score["total_count"],
                     "histo": module_score["histo"] or {},
                     "question": module_score["question"],
-                    "insatisfaction_details": module_insatisfaction,
                     "score_label": "",
                 }
             )
@@ -757,11 +725,10 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
 
     warning_msg = None
 
-    print("Campus:", campus_insatisfaction)
-    print("Formation:", formation_insatisfaction)
-
-    for module in modules:
-        print(module["name"], module["teacher_scores"])
+   
+    survey = session.exec(
+            select(Survey).where(Survey.survey_id == survey_id)
+        ).first()
 
     return {
         "survey": survey,

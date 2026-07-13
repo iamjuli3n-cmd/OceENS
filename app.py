@@ -668,11 +668,13 @@ def create_app():
             )
         ).first()
 
+        if not survey:
+            return HTMLResponse(content="Survey introuvable.", status_code=404)
+
         program = session.exec(
             select(Program).where(Program.code == survey.program)
         ).first()
-        if not survey:
-            return HTMLResponse(content="Survey introuvable.", status_code=404)
+        
 
         # ── État du sondage ─────────────────────────────────────────────
         survey_is_closed = survey.status == 0
@@ -705,12 +707,19 @@ def create_app():
         ).all()
 
         questions = session.exec(
-            select(Question).where(Question.template_id == survey.template_id)
+            select(Question)
+            .join(Section,Section.section_id==Question.section_id)
+            .where(Section.template_id == survey.template_id)
         ).all()
 
         options = session.exec(
-            select(Option).where(Option.template_id == survey.template_id)
+            select(Option)
+            .join(Question,Question.question_id==Option.question_id)
+            .join(Section,Section.section_id==Question.section_id)
+            .where(Section.template_id == survey.template_id)
         ).all()
+
+        
 
         modules = session.exec(
             select(Module).where(Module.survey_id == survey_id)
@@ -728,7 +737,7 @@ def create_app():
                 q_options = [
                     o
                     for o in options
-                    if o.section_id == sec.section_id and o.question_id == q.question_id
+                    if o.question_id == q.question_id
                 ]
                 q_options.sort(key=lambda o: o.option_id)
 
@@ -737,7 +746,7 @@ def create_app():
                         "question_id": q.question_id,
                         "text": q.text,
                         "question_type": q.question_type,
-                        "category": q.category,
+                        "category": sec.name,
                         "options": [
                             {
                                 "option_id": o.option_id,
@@ -802,7 +811,7 @@ def create_app():
                 "survey": {
                     "template_id": survey.template_id,
                     "survey_id": survey.survey_id,
-                    "campus": survey.campus,
+                    "campus": program.campus if program else "Campus non trouvé",
                     "program": survey.program,
                     "semester": survey.semester,
                     "school_year": survey.school_year,
@@ -1206,7 +1215,6 @@ def create_app():
             select(
                 Survey.survey_id,
                 Survey.program,
-                Survey.campus,
                 Survey.semester,
                 Survey.school_year,
                 Survey.status,
@@ -1218,8 +1226,9 @@ def create_app():
             .group_by(Survey.survey_id)
             .order_by(Survey.survey_id.desc())
         ).all()
+
         db_programs = session.exec(select(Program)).all()
-        program_name_by_code = {p.code: p.name for p in db_programs}
+        program_name_by_code = {p.code: {"name":p.name,"campus":p.campus}  for p in db_programs}
 
         submissions_rows = session.exec(
             select(
@@ -1236,13 +1245,13 @@ def create_app():
             {
                 "survey_id": r[0],
                 "program": r[1],
-                "program_name": program_name_by_code.get(r[1], r[1]),
-                "campus": r[2],
-                "semester": r[3],
-                "school_year": r[4],
-                "is_closed": (r[5] == 0),
-                "respondents_count": r[6],
-                "answers_count": r[7],
+                "program_name": program_name_by_code[r[1]]["name"] if r[1] in program_name_by_code.keys() else r[1],
+                "campus" : program_name_by_code[r[1]]["campus"] if r[1] in program_name_by_code.keys() else "Campus not found",
+                "semester": r[2],
+                "school_year": r[3],
+                "is_closed": (r[4] == 0),
+                "respondents_count": r[5],
+                "answers_count": r[6],
                 "submissions_count": submissions_count[r[0]] if r[0] in submissions_count.keys() else 0,
             }
             for r in rows

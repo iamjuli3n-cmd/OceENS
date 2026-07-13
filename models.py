@@ -41,8 +41,6 @@ class Survey(SQLModel, table=True):
         ),
     )
 
-    campus: Optional[str] = Field(default=None, sa_column=Column("campus", String))
-
     program: Optional[str] = Field(
         default=None,
         sa_column=Column(
@@ -88,26 +86,16 @@ class Section(SQLModel, table=True):
 class Question(SQLModel, table=True):
     __tablename__ = "questions"
 
-    # Composite Primary Key (template_id,section_id,question_id)
-    template_id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            "template_id",
-            Integer,
-            ForeignKey("templates.template_id"),
-            primary_key=True,
-        ),
-    )
+    
     section_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
-            "section_id", Integer, ForeignKey("sections.section_id"), primary_key=True
+            "section_id", Integer, ForeignKey("sections.section_id")
         ),
     )
     question_id: Optional[int] = Field(
         default=None, sa_column=Column("question_id", Integer, primary_key=True)
     )
-    category: Optional[str] = Field(default=None, sa_column=Column("category", String))
     question_type: Optional[str] = Field(
         default=None, sa_column=Column("question_type", String)
     )
@@ -118,28 +106,12 @@ class Question(SQLModel, table=True):
 class Option(SQLModel, table=True):
     __tablename__ = "options"
 
-    template_id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            "template_id",
-            Integer,
-            ForeignKey("templates.template_id"),
-            primary_key=True,
-        ),
-    )
-    section_id: Optional[int] = Field(
-        default=None,
-        sa_column=Column(
-            "section_id", Integer, ForeignKey("sections.section_id"), primary_key=True
-        ),
-    )
     question_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
             "question_id",
             Integer,
             ForeignKey("questions.question_id"),
-            primary_key=True,
         ),
     )
     option_id: Optional[int] = Field(
@@ -187,16 +159,6 @@ class Answer(SQLModel, table=True):
         ),
     )
 
-    survey_id: Optional[int] = Field(
-        default=None,
-        sa_column=Column("survey_id", Integer, ForeignKey("surveys.survey_id")),
-    )
-
-    section_id: Optional[int] = Field(
-        default=None,
-        sa_column=Column("section_id", Integer, ForeignKey("questions.section_id")),
-    )
-
     module_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
@@ -215,6 +177,11 @@ class Answer(SQLModel, table=True):
     question_id: Optional[int] = Field(
         default=None,
         sa_column=Column("question_id", Integer, ForeignKey("questions.question_id")),
+    )
+
+    option_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column("option_id", Integer, ForeignKey("options.option_id")),
     )
 
     value: Optional[str] = Field(default=None, sa_column=Column("value", Text))

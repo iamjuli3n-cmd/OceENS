@@ -244,8 +244,10 @@
             <div class="kpi-right">
                 <h3> Taux de réponse : </h3>
                 <div class="huge-pct" id="rec-tricolor-val">
+                    {% if respondents_count > 0 %}
                     {{ submissions_count }} / {{ respondents_count }} ({{
                     "%.0f"|format(100*submissions_count/respondents_count)}}%)
+                    {% endif %}
                 </div>
             </div>
             <div class="kpi-right">
