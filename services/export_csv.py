@@ -16,6 +16,12 @@ EXPORT_COLUMNS = [
     "category",
     "question_type",
     "question_id",
+    "question_text_fr",
+    "question_text_en",
+    "option_id",
+    "option_text_fr",
+    "option_text_en",
+    "is_positive",
     "submission_id",
     "answer_value",
 ]
@@ -68,7 +74,7 @@ def generate_csv_response(survey_obj) -> Response:
             df[col] = None
 
     # Garantit un tri numérique correct pour les IDs
-    for col in ["question_id", "submission_id"]:
+    for col in ["question_id", "option_id", "submission_id"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
 
