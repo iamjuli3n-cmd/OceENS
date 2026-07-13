@@ -510,7 +510,7 @@ def create_app():
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
 
-        if survey.program not in allowed_programs:
+        if "admin" not in roles and survey.program not in allowed_programs:
             return JSONResponse(
                 content={
                     "error": f"Formation '{survey.program}' non autorisée pour votre rôle."
