@@ -1,4 +1,4 @@
-from sqlmodel import Session,delete
+from sqlmodel import Session, delete
 from pathlib import Path
 import csv
 from models import (
@@ -37,6 +37,7 @@ def seed_users(session: Session):
             user
         )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
     session.commit()
+
 
 def seed_roles(session: Session):
     """Remplit la table roles."""
@@ -741,6 +742,7 @@ def seed_respondents(session: Session):
             respondent
         )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
     session.commit()
+
 
 def seed_submissions(session: Session):
     """Remplit la table submissions."""
@@ -4681,22 +4683,26 @@ def seed_answers(session: Session):
 
 def seed_all_if_necessary():
     with Session(engine) as session:
-        # We seed program from CSV at each launch
+        # Toujours synchroniser les programmes depuis le CSV
         seed_programs(session)
 
-        # We seed the rest of the tables only if no users exists
-        if session.query(User).first():  # Check if there is at least one user :)
+        # Seeder le reste uniquement si la base est vide
+        if session.query(User).first():
             return
-        """Exécute le seeding complet dans le bon order de dépendance."""
+
         seed_users(session)
         seed_roles(session)
+
         seed_templates(session)
         seed_sections(session)
         seed_questions(session)
         seed_options(session)
-        seed_submissions(session)
+
         seed_surveys(session)
         seed_modules(session)
         seed_respondents(session)
+        seed_submissions(session)
+
         seed_answers(session)
+
         print("Database seeding completed successfully!")
