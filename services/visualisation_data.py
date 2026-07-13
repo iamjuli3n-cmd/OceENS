@@ -405,10 +405,10 @@ def _get_answers_details(
 
         sections[record["category"]]={"questions":defaultdict(dict)}
 
-        if record['question_id']==13:
-            print("TTT")
-            print(record)
-            print("TTT")
+        # if record['question_id']==13:
+        #     print("TTT")
+        #     print(record)
+        #     print("TTT")
 
         unique_question_key =  f"{record['question_id']}_{record['module']}_{record['teacher']}" if record['module'] else f"{record['question_id']}"
         
@@ -419,7 +419,7 @@ def _get_answers_details(
             
             with Session(engine) as session:
                 options = session.exec(
-                    select(Option.text).where(
+                    select(Option.text_fr).where(
                         Option.question_id == record["question_id"],
                     )
                 ).all()
@@ -434,8 +434,13 @@ def _get_answers_details(
                     "question": record["question"],
                     "histo": defaultdict(int),
                 }
-
-        sections[record["category"]]["questions"][unique_question_key]["histo"][record["value"]] += 1
+        try:
+            sections[record["category"]]["questions"][unique_question_key]["histo"][record["value"]] += 1
+        except KeyError as e:
+            print(f"Error {e}")
+            print(f"Record : {record}")
+            #print(f"Sections : {sections}")
+            print(f"Histo : {sections[record["category"]]["questions"][unique_question_key]["histo"]}")
 
     print(sections['Module / Enseignant']['questions'].keys())
 
@@ -502,7 +507,7 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
     with Session(engine) as session:
 
         answers = session.exec(
-            select(Program.campus, Program.code, Program.name, Survey.semester,Survey.school_year,Section.name.label("Section_name"),Question.question_id,Question.question_type,Question.text.label("question_text"),Module.ue, Module.name, Answer.teacher, Answer.value,Option.text.label("option_text"))
+            select(Program.campus, Program.code, Program.name, Survey.semester,Survey.school_year,Section.name.label("Section_name"),Question.question_id,Question.question_type,Question.text_fr.label("question_text"),Module.ue, Module.name, Answer.teacher, Answer.value,Option.text_fr.label("option_text"))
             .join(Submission,Submission.submission_id==Answer.submission_id)
             .join(Survey,Survey.survey_id==Submission.survey_id)
             .join(Option,Option.option_id==Answer.option_id,isouter=True)

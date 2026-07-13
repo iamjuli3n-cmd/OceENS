@@ -132,7 +132,7 @@
 5;11;5;Maksim K.;24;
 1;12;5;Maksim K.;26;
 3;12;5;Maksim K.;26;
-4;12;5;Maksim K.;;Pas du tout satisfait / Not at all satisfied
+4;12;5;Maksim K.;30;
 5;12;5;Maksim K.;31;
 5;13;5;Maksim K.;33;
 5;13;5;Maksim K.;36;
@@ -252,7 +252,7 @@
 3;11;11;Joey B. F.;24;
 4;11;11;Joey B. F.;24;
 5;11;11;Joey B. F.;24;
-1;12;11;Joey B. F.;;Très satisfait / Very satisfied
+1;12;11;Joey B. F.;27;
 3;12;11;Joey B. F.;26;
 4;12;11;Joey B. F.;29;
 5;12;11;Joey B. F.;31;
@@ -312,7 +312,7 @@
 1;12;12;Sonia T.;26;
 3;12;12;Sonia T.;26;
 4;12;12;Sonia T.;29;
-5;12;12;Sonia T.;;Pas du tout satisfait / Not at all satisfied
+5;12;12;Sonia T.;30;
 5;13;12;Sonia T.;32;
 5;13;12;Sonia T.;38;
 6;13;12;Sonia T.;32;
@@ -364,7 +364,7 @@
 3;11;16;Domenico M.;24;
 4;11;16;Domenico M.;24;
 5;11;16;Domenico M.;24;
-1;12;16;Domenico M.;;Très satisfait / Very satisfied
+1;12;16;Domenico M.;27;
 3;12;16;Domenico M.;26;
 4;12;16;Domenico M.;29;
 5;12;16;Domenico M.;31;
@@ -382,7 +382,7 @@
 3;11;15;Guillaume D.;24;
 4;11;15;Guillaume D.;24;
 5;11;15;Guillaume D.;24;
-1;12;15;Guillaume D.;;Très satisfait / Very satisfied
+1;12;15;Guillaume D.;27;
 3;12;15;Guillaume D.;26;
 4;12;15;Guillaume D.;29;
 5;12;15;Guillaume D.;31;
@@ -402,7 +402,7 @@
 3;11;17;Abelle C.;24;
 4;11;17;Abelle C.;24;
 5;11;17;Abelle C.;24;
-1;12;17;Abelle C.;;Très satisfait / Very satisfied
+1;12;17;Abelle C.;27;
 3;12;17;Abelle C.;26;
 4;12;17;Abelle C.;29;
 5;12;17;Abelle C.;31;
@@ -462,7 +462,7 @@
 5;14;20;Louis G.;;Le module est utile sur le principe, mais il pourrait être plus concret.
 6;14;20;Louis G.;;Le cours manque clairement de structure. On passe d’un sujet à l’autre sans vraie logique, ce qui rend la compréhension très difficile.
 5;15;20;Louis G.;;Certaines séances donnent l’impression d’être trop générales par rapport aux besoins réels des étudiants.
-1;12;18;Olivier D.;;Plutôt satisfait / Somewhat satisfied
+1;12;18;Olivier D.;28;
 3;12;18;Olivier D.;26;
 4;12;18;Olivier D.;29;
 5;12;18;Olivier D.;31;
@@ -475,7 +475,7 @@
 6;14;18;Olivier D.;;Je suis globalement déçu par ce cours. Je n’ai pas eu l’impression de progresser malgré le temps passé dessus.
 5;15;18;Olivier D.;;Les retours sont parfois trop généraux et ne permettent pas toujours d’améliorer efficacement l’organisation du projet.
 4;16;18;Olivier D.;;Notre projet de Semestre avec google cest très bien passé :)
-1;12;19;Thalita D.;;Très satisfait / Very satisfied
+1;12;19;Thalita D.;27;
 3;12;19;Thalita D.;26;
 4;12;19;Thalita D.;29;
 5;12;19;Thalita D.;31;

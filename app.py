@@ -744,13 +744,13 @@ def create_app():
                 questions_data.append(
                     {
                         "question_id": q.question_id,
-                        "text": q.text,
+                        "text": q.text_fr,
                         "question_type": q.question_type,
                         "category": sec.name,
                         "options": [
                             {
                                 "option_id": o.option_id,
-                                "text": o.text,
+                                "text": o.text_fr,
                             }
                             for o in q_options
                         ],

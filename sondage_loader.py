@@ -213,7 +213,7 @@ def load_sondage_complet(survey_id: int) -> FullSurvey:
     for row in options_rows:
         opt = OptionData(
             option_id=row.option_id,
-            text=clean_mojibake(row.text),
+            text=clean_mojibake(row.text_fr),
         )
         q_key = (row.section_id, row.question_id)
         if q_key in questions_dict:

@@ -100,7 +100,8 @@ class Question(SQLModel, table=True):
         default=None, sa_column=Column("question_type", String)
     )
     language: Optional[str] = Field(default=None, sa_column=Column("language", String))
-    text: Optional[str] = Field(default=None, sa_column=Column("text", Text))
+    text_fr: Optional[str] = Field(default=None, sa_column=Column("text_fr", Text))
+    text_en: Optional[str] = Field(default=None, sa_column=Column("text_en", Text))
 
 
 class Option(SQLModel, table=True):
@@ -117,7 +118,11 @@ class Option(SQLModel, table=True):
     option_id: Optional[int] = Field(
         default=None, sa_column=Column("option_id", Integer, primary_key=True)
     )
-    text: Optional[str] = Field(default=None, sa_column=Column("text", Text))
+    text_fr: Optional[str] = Field(default=None, sa_column=Column("text_fr", Text))
+    text_en: Optional[str] = Field(default=None, sa_column=Column("text_en", Text))
+    is_positive: Optional[int] = Field(
+        default=None, sa_column=Column("is_positive", Integer)
+    )
 
 
 class Module(SQLModel, table=True):
