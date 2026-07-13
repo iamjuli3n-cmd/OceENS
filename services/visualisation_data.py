@@ -1,759 +1,871 @@
-from typing import Dict, Any
+from collections import OrderedDict
+from typing import Any, Dict, Optional
 import unicodedata
 
-from collections import defaultdict
+from sqlalchemy.orm import aliased
+from sqlmodel import Session, func, select
 
-from requests import session
 from database import engine
-from sqlmodel import Session, select, func
 from models import (
-    Program,
-    User,
-    Role,
-    Template,
-    Section,
-    Question,
-    Option,
-    Module,
-    Survey,
-    Respondent,
     Answer,
+    Module,
+    Option,
+    Program,
+    Question,
+    Respondent,
+    Section,
     Submission,
+    Survey,
 )
 
 
-# ─────────────────────────────────────────────
-# Helpers génériques
-# ─────────────────────────────────────────────
-def _get_record_field(record: dict, *names, default=""):
-    for name in names:
-        if name in record and record[name] is not None:
-            return record[name]
-    return default
-
-
-def _get_attr(obj, *names, default=None):
-    for name in names:
-        if hasattr(obj, name):
-            value = getattr(obj, name)
-            if value is not None:
-                return value
-    return default
-
-
-def _split_teachers(value: str) -> list[str]:
-    if not value:
-        return []
-
-    return [teacher.strip() for teacher in str(value).split(",") if teacher.strip()]
-
-
-def _normalize(value) -> str:
+def _normalize(value: Any) -> str:
     value = str(value or "").strip().lower()
     value = unicodedata.normalize("NFD", value)
-    value = "".join(c for c in value if unicodedata.category(c) != "Mn")
-    value = value.replace("’", "'")
-    value = " ".join(value.split())
-    return value
+    return "".join(char for char in value if unicodedata.category(char) != "Mn")
 
 
-# ─────────────────────────────────────────────
-# Score satisfaction : ""
-# ─────────────────────────────────────────────
-POSITIVE_SATISFACTION = {
-    "totalement satisfait",
-    "totally satisfied",
-    "tres satisfait",
-    "very satisfied",
-    "plutot satisfait",
-    "somewhat satisfied",
-}
+def _count_labels(question_type: str) -> dict[str, str]:
+    """Return wording matching what is actually counted by a chart."""
 
-ALL_SATISFACTION = POSITIVE_SATISFACTION | {
-    "plutot pas satisfait",
-    "somewhat dissatisfied",
-    "pas du tout satisfait",
-    "not at all satisfied",
-    "totalement insatisfait",
-    "totally dissatisfied",
-}
-
-
-def _answer_labels(value) -> list[str]:
-    return [_normalize(part) for part in str(value or "").split("/") if part.strip()]
-
-
-def _is_satisfaction_answer(value) -> bool:
-    labels = _answer_labels(value)
-    return any(label in ALL_SATISFACTION for label in labels)
-
-
-def _is_positive_satisfaction(value) -> bool:
-    labels = _answer_labels(value)
-    return any(label in POSITIVE_SATISFACTION for label in labels)
-
-
-def _is_satisfaction_record(record: dict) -> bool:
-    question_type = _normalize(
-        _get_record_field(record, "question_type", "Type_Question")
-    )
-
-    value = _get_record_field(
-        record,
-        "value",
-        "answer_value",
-        "Valeur_Reponse",
-        "Valeur",
-    )
-
-    return "satisfaction" in question_type or _is_satisfaction_answer(value)
-
-
-def _record_text(record: dict) -> str:
-    return _normalize(
-        " ".join(
-            [
-                str(_get_record_field(record, "section", "Section")),
-                str(_get_record_field(record, "category", "Categorie")),
-                str(_get_record_field(record, "question", "Question")),
-            ]
-        )
-    )
-
-
-def _record_module_id(record: dict):
-    return _get_record_field(
-        record,
-        "module_id",
-        "Module_ID",
-        "Id_Module",
-        default=None,
-    )
-
-
-def _record_module_name(record: dict) -> str:
-    return str(
-        _get_record_field(
-            record,
-            "module",
-            "Module",
-            "module_name",
-            default="",
-        )
-    )
-
-
-def _record_has_module(record: dict) -> bool:
-    return bool(_record_module_id(record) or _record_module_name(record))
-
-
-def _score_from_records(records: list[dict]) -> dict:
-    total = 0
-    positive = 0
-
-    histo = defaultdict(int)
-
-    for record in records:
-        if not _is_satisfaction_record(record):
-            continue
-        histo[record["value"]] += 1
-
-        value = _get_record_field(
-            record,
-            "value",
-            "answer_value",
-            "Valeur_Reponse",
-            "Valeur",
-        )
-
-        if not _is_satisfaction_answer(value):
-            continue
-
-        total += 1
-
-        if _is_positive_satisfaction(value):
-            positive += 1
-
-    if records and len(records) > 0 and "question" in records[0].keys():
-        question = records[0]["question"]
-    else:
-        question = ""
-    if total == 0:
+    if _normalize(question_type) == "qcm_insatisfaction":
         return {
-            "question": question,
-            "score": None,
-            "histo": None,
-            "positive_count": 0,
-            "total_count": 0,
+            "count_label": "choix sélectionné(s)",
+            "series_name": "Choix sélectionnés",
+            "axis_title": "Nombre de choix sélectionnés",
+            "allow_pie": False,
         }
-
     return {
-        "question": question,
-        "score": round((positive / total) * 100),
-        "histo": histo,
-        "positive_count": positive,
-        "total_count": total,
+        "count_label": "réponse(s)",
+        "series_name": "Réponses",
+        "axis_title": "Nombre de réponses",
+        "allow_pie": True,
     }
 
 
-def _score_for_campus(records: list[dict]) -> dict:
-    filtered = []
-
-    for record in records:
-        text = _record_text(record)
-
-        if (
-            record["category"] == "Campus"
-            and record["question_type"] == "QCU_Satisfaction"
-        ):
-            filtered.append(record)
-
-    return _score_from_records(filtered)
+def _bilingual(text_fr: Optional[str], text_en: Optional[str]) -> str:
+    parts = [text.strip() for text in (text_fr, text_en) if text and text.strip()]
+    return " / ".join(dict.fromkeys(parts))
 
 
-def _score_for_formation(records: list[dict]) -> dict:
-    filtered = []
-
-    for record in records:
-        text = _record_text(record)
-
-        if (
-            record["category"] == "Formation"
-            and record["question_type"] == "QCU_Satisfaction"
-        ):
-            filtered.append(record)
-
-    return _score_from_records(filtered)
+def _split_teachers(value: Optional[str]) -> list[str]:
+    return [teacher.strip() for teacher in str(value or "").split(",") if teacher.strip()]
 
 
-def _score_for_module(records: list[dict], module: dict) -> dict:
-    module_id = module.get("id")
-    module_name = _normalize(module.get("name"))
-
-    filtered = []
-
-    for record in records:
-        record_module_id = _record_module_id(record)
-        record_module_name = _normalize(_record_module_name(record))
-
-        if module_id is not None and record_module_id is not None:
-            if str(record_module_id) == str(module_id):
-                filtered.append(record)
-            continue
-
-        if module_name and record_module_name == module_name:
-            filtered.append(record)
-
-    return _score_from_records(filtered)
-
-
-# ─────────────────────────────────────────────
-# Score recommandation
-# ─────────────────────────────────────────────
-def _to_score_1_10(value):
-    try:
-        score = float(str(value).replace(",", ".").strip())
-    except (TypeError, ValueError):
-        return None
-
-    if 1 <= score <= 10:
-        return score
-
-    return None
-
-
-def _is_recommendation_record(record: dict) -> bool:
-    question_type = _normalize(
-        _get_record_field(record, "question_type", "Type_Question")
+def _replace_placeholders(text: str, record: dict) -> str:
+    return (
+        (text or "")
+        .replace("[CAMPUS]", record.get("campus") or "")
+        .replace("[FORMATION]", record.get("program_name") or record.get("program") or "")
+        .replace("[MODULE]", record.get("module") or "")
+        .replace("[ENSEIGNANT]", record.get("teacher") or "")
     )
 
-    section = _normalize(
-        _get_record_field(record, "section", "Section", "category", "Categorie")
-    )
 
-    question = _normalize(_get_record_field(record, "question", "Question"))
+def _nps_options() -> list[dict[str, Any]]:
+    """Return a fresh 1-to-10 option catalog for NPS questions."""
 
-    text = f"{question_type} {section} {question}"
-
-    return "nps" in text or "recommand" in text or "recommend" in text
-
-
-def _get_recommendation_score(records: list[dict]) -> dict:
-    recommendation_candidates = []
-
-    for record in records:
-
-        if not _is_recommendation_record(record):
-            continue
-
-        value = _get_record_field(
-            record,
-            "value",
-            "answer_value",
-            "Valeur_Reponse",
-            "Valeur",
-        )
-
-        score = _to_score_1_10(value)
-
-        if score is None:
-            continue
-
-        question_id = _get_record_field(
-            record,
-            "question_id",
-            "Question_ID",
-            default=0,
-        )
-
-        recommendation_candidates.append(
-            {
-                "question_id": int(question_id or 0),
-                "score": score,
-                "question": _get_record_field(record, "question", "Question"),
-            }
-        )
-
-    if not recommendation_candidates:
-        return {
-            "score": None,
-            "count": 0,
-            "question": "",
+    return [
+        {
+            "option_id": f"nps:{score}",
+            "text_fr": str(score),
+            "text_en": str(score),
+            "label": str(score),
+            "is_positive": None,
         }
-
-    last_question_id = max(item["question_id"] for item in recommendation_candidates)
-
-    last_question_scores = [
-        item
-        for item in recommendation_candidates
-        if item["question_id"] == last_question_id
+        for score in range(1, 11)
     ]
 
+
+def _make_chart_item(
+    label: str,
+    *,
+    text_fr: str = "",
+    text_en: str = "",
+    is_positive: Optional[bool] = None,
+    count: int = 0,
+) -> dict[str, Any]:
+    """Build the common representation consumed by every answer chart."""
+
     return {
-        "score": round(
-            sum(item["score"] for item in last_question_scores)
-            / len(last_question_scores),
-            1,
-        ),
-        "count": len(last_question_scores),
-        "question": last_question_scores[0]["question"],
+        "label": label,
+        "text_fr": text_fr or label,
+        "text_en": text_en,
+        "is_positive": is_positive,
+        "count": count,
     }
 
 
-def _record_teacher(record: dict) -> str:
-    return str(
-        _get_record_field(
-            record,
-            "teacher",
-            "Enseignant",
-            "answer_teacher",
-            default="",
-        )
-    )
+def get_answers_details(survey_id: int) -> Optional[Dict[str, Any]]:
+    """Load every datum needed by the visualisation in one service call.
 
+    The answer query is deliberately bulk-oriented: it loads selected options and
+    every possible option for each answered question at once. This removes the old
+    query-per-answer behaviour and lets chart categories be generated from data.
+    """
+    selected_option = aliased(Option, name="selected_option")
 
-def _score_for_module_teacher(records: list[dict], module: dict, teacher: str) -> dict:
-    module_id = module.get("id")
-    module_name = _normalize(module.get("name"))
-    teacher_name = _normalize(teacher)
-
-    filtered = []
-
-    for record in records:
-        record_module_id = _record_module_id(record)
-        record_module_name = _normalize(_record_module_name(record))
-        record_teacher = _normalize(_record_teacher(record))
-
-        # Filtre module
-        same_module = False
-
-        if module_id is not None and record_module_id is not None:
-            same_module = str(record_module_id) == str(module_id)
-        elif module_name and record_module_name == module_name:
-            same_module = True
-
-        if not same_module:
-            continue
-
-        # Filtre enseignant
-        if not teacher_name:
-            continue
-
-        if record["question_type"] != "QCU_Satisfaction":
-            continue
-
-        if record_teacher == teacher_name:
-            filtered.append(record)
-
-    return _score_from_records(filtered)
-
-
-# ─────────────────────────────────────────────
-# Détail des questions
-# ─────────────────────────────────────────────
-def _get_answers_details(
-    records: list[dict],
-) -> list[dict]:
-
-    sections = defaultdict(dict)
-
-    print(len(records))
-
-    
-
-    for record in records:
-
-        sections[record["category"]]={"questions":defaultdict(dict)}
-
-        # if record['question_id']==13:
-        #     print("TTT")
-        #     print(record)
-        #     print("TTT")
-
-        unique_question_key =  f"{record['question_id']}_{record['module']}_{record['teacher']}" if record['module'] else f"{record['question_id']}"
-        
-
-        if (
-            unique_question_key not in sections[record["category"]]["questions"].keys()
-        ):  # We found a new question, we need to initialize its histogram
-            
-            with Session(engine) as session:
-                options = session.exec(
-                    select(Option.text_fr).where(
-                        Option.question_id == record["question_id"],
-                    )
-                ).all()
-            
-            if options:
-                sections[record["category"]]["questions"][unique_question_key] = {
-                    "question": record["question"].replace("[CAMPUS]",record["campus"]).replace("[FORMATION]",record["program_name"]).replace("[MODULE]",record["module"]).replace("[ENSEIGNANT]",record["teacher"]),
-                    "histo": {option: 0 for option in options},
-                }
-            else:
-                sections[record["category"]]["questions"][unique_question_key] = {
-                    "question": record["question"],
-                    "histo": defaultdict(int),
-                }
-        try:
-            sections[record["category"]]["questions"][unique_question_key]["histo"][record["value"]] += 1
-        except KeyError as e:
-            print(f"Error {e}")
-            print(f"Record : {record}")
-            #print(f"Sections : {sections}")
-            print(f"Histo : {sections[record["category"]]["questions"][unique_question_key]["histo"]}")
-
-    print(sections['Module / Enseignant']['questions'].keys())
-
-    return {
-        "sections": sections,
-    }
-
-
-# ─────────────────────────────────────────────
-# Context principal
-# ─────────────────────────────────────────────
-
-
-# def _build_records_from_db(
-#     survey: Survey,
-#     program: Program | None,
-#     sections: list[Section],
-#     questions: list[Question],
-#     modules: list[Module],
-#     answers: list[Answer],
-# ) -> list[dict]:
-#     sections_by_id = {section.section_id: section for section in sections}
-
-#     questions_by_key = {
-#         (question.section_id, question.question_id): question for question in questions
-#     }
-
-#     modules_by_id = {module.module_id: module for module in modules}
-
-#     records = []
-
-#     for answer in answers:
-#         section = sections_by_id.get(answer.section_id)
-#         question = questions_by_key.get((answer.section_id, answer.question_id))
-#         module = modules_by_id.get(answer.module_id)
-
-#         records.append(
-#             {
-#                 "campus": survey.campus,
-#                 "program": survey.program,
-#                 "program_name": program.name if program else survey.program,
-#                 "semester": survey.semester,
-#                 "school_year": survey.school_year,
-#                 "template_id": survey.template_id,
-#                 "section_id": answer.section_id,
-#                 "question_id": answer.question_id,
-#                 "question": question.text if question else "",
-#                 "question_type": question.question_type if question else "",
-#                 "category": section.name if question else "",
-#                 "answer_id": answer.answer_id,
-#                 "submission_id": answer.submission_id,
-#                 "value": answer.value,
-#                 "module_id": answer.module_id,
-#                 "module": module.name if module else "",
-#                 "ue": module.ue if module else "",
-#                 "teacher": answer.teacher or (module.teacher if module else ""),
-#             }
-#         )
-
-#     return records
-
-
-def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
     with Session(engine) as session:
-
-        answers = session.exec(
-            select(Program.campus, Program.code, Program.name, Survey.semester,Survey.school_year,Section.name.label("Section_name"),Question.question_id,Question.question_type,Question.text_fr.label("question_text"),Module.ue, Module.name, Answer.teacher, Answer.value,Option.text_fr.label("option_text"))
-            .join(Submission,Submission.submission_id==Answer.submission_id)
-            .join(Survey,Survey.survey_id==Submission.survey_id)
-            .join(Option,Option.option_id==Answer.option_id,isouter=True)
-            .join(Question,Question.question_id==Answer.question_id)
-            .join(Section,Section.section_id==Question.section_id)
-            .join(Program,Program.code==Survey.program)
-            .join(Module,Module.module_id==Answer.module_id,isouter=True)
+        survey_row = session.exec(
+            select(Survey, Program)
+            .join(Program, Program.code == Survey.program, isouter=True)
             .where(Survey.survey_id == survey_id)
-            .order_by(Section.order,Module.module_id,Answer.teacher,Question.question_id)
-        ).all()
+        ).first()
+        if not survey_row:
+            return None
 
-        if not answers:
-            return {
-                "survey": None,
-                "program_name": "",
-                "respondents_count": 0,
-                "answers_count": 0,
-                "submissions_count": 0,
-                "warning_msg": "Survey introuvable.",
-                "viz_data": {
-                    "filters": {"ues": [], "modules": []},
-                    "modules": [],
-                    "summary_items": [],
-                    "recommendation": {
-                        "question": "",
-                        "score": None,
-                        "histo": None,
-                        "count": 0,
-                    },
-                    "records": [],
-                },
-            }
+        survey, program = survey_row
+        survey_data = {
+            "survey_id": survey.survey_id,
+            "template_id": survey.template_id,
+            "program": survey.program,
+            "campus": program.campus if program else "",
+            "semester": survey.semester,
+            "school_year": survey.school_year,
+            "status": survey.status,
+        }
+        program_data = {
+            "code": survey.program,
+            "name": program.name if program else survey.program,
+            "campus": program.campus if program else "",
+        }
 
-        row = session.exec(
-                select(func.count(Respondent.user_id),func.count(Respondent.submission_date)).where(
-                    Respondent.survey_id == survey_id
-                )
-            ).first()
-        if row:
-            respondents_count=row[0]
-            answers_count = row[1]
-        else:
-            respondents_count=0
-            answers_count = 0
-        
-
-        submissions_count = (
+        respondent_counts = session.exec(
+            select(
+                func.count(Respondent.user_id),
+                func.count(Respondent.submission_date),
+            ).where(Respondent.survey_id == survey_id)
+        ).first()
+        respondents_count = int(respondent_counts[0] or 0) if respondent_counts else 0
+        answers_count = int(respondent_counts[1] or 0) if respondent_counts else 0
+        submissions_count = int(
             session.exec(
                 select(func.count(Submission.submission_id)).where(
-                    Submission.survey_id == survey_id,
+                    Submission.survey_id == survey_id
                 )
-            ).first()
+            ).one()
             or 0
         )
 
-    records = [{
-                "campus": a[0],
-                "program": a[1],
-                "program_name": a[2],
-                "semester": a[3],
-                "school_year": a[4],
-                "category": a[5],
-                "question_id" : a[6],
-                "question_type": a[7],
-                "question": a[8],
-                "ue": a[9],
-                "module": a[10] or '',
-                "teacher": a[11],
-                "value": a[13] or a[12],
-            } for a in answers]
-
-    campus = records[0]["campus"] or ""
-    program_name = records[0]["program_name"]
-    recommendation = _get_recommendation_score(records)
-
-
-    modules = []
-
-    modules_db = session.exec(
+        module_rows = session.exec(
             select(Module)
             .where(Module.survey_id == survey_id)
-            .order_by(Module.ue, Module.name)
+            .order_by(Module.ue, Module.name, Module.module_id)
         ).all()
-    
-
-    for module in modules_db:
-        modules.append(
+        modules = [
             {
                 "id": module.module_id,
                 "name": module.name or "Module sans nom",
                 "ue": module.ue or "",
                 "teachers": _split_teachers(module.teacher),
-                "score": None,
-                "score_label": "",
             }
-        )
+            for module in module_rows
+        ]
 
-    modules = sorted(
-        modules,
-        key=lambda m: (
-            (m["ue"] or "").lower(),
-            (m["name"] or "").lower(),
-        ),
+        catalog_rows = session.exec(
+            select(
+                Section.section_id,
+                Section.name.label("section_name"),
+                Section.order.label("section_order"),
+                Question.question_id,
+                Question.question_type,
+                Question.text_fr.label("question_text_fr"),
+                Question.text_en.label("question_text_en"),
+                Option.option_id,
+                Option.text_fr.label("option_text_fr"),
+                Option.text_en.label("option_text_en"),
+                Option.is_positive,
+            )
+            .join(Question, Question.section_id == Section.section_id)
+            .join(Option, Option.question_id == Question.question_id, isouter=True)
+            .where(Section.template_id == survey.template_id)
+            .order_by(Section.order, Question.question_id, Option.option_id)
+        ).all()
+
+        rows = session.exec(
+            select(
+                Answer.answer_id,
+                Answer.submission_id,
+                Answer.question_id,
+                Answer.module_id,
+                Answer.teacher,
+                Answer.option_id,
+                Answer.value.label("answer_value"),
+                Section.section_id,
+                Section.name.label("section_name"),
+                Section.order.label("section_order"),
+                Question.question_type,
+                Question.language,
+                Question.text_fr.label("question_text_fr"),
+                Question.text_en.label("question_text_en"),
+                Module.ue,
+                Module.name.label("module_name"),
+                selected_option.text_fr.label("selected_text_fr"),
+                selected_option.text_en.label("selected_text_en"),
+                selected_option.is_positive.label("selected_is_positive"),
+            )
+            .join(Submission, Submission.submission_id == Answer.submission_id)
+            .join(Survey, Survey.survey_id == Submission.survey_id)
+            .join(Program, Program.code == Survey.program, isouter=True)
+            .join(Question, Question.question_id == Answer.question_id)
+            .join(Section, Section.section_id == Question.section_id)
+            .join(Module, Module.module_id == Answer.module_id, isouter=True)
+            .join(
+                selected_option,
+                selected_option.option_id == Answer.option_id,
+                isouter=True,
+            )
+            .where(Survey.survey_id == survey_id)
+            .order_by(
+                Section.order,
+                Module.ue,
+                Module.name,
+                Answer.teacher,
+                Question.question_id,
+                Answer.answer_id,
+            )
+        ).all()
+
+    question_catalog_by_id: OrderedDict[int, dict] = OrderedDict()
+    section_positions: dict[int, dict[int, int]] = {}
+    for row in catalog_rows:
+        if row.question_id not in question_catalog_by_id:
+            positions = section_positions.setdefault(row.section_id, {})
+            positions.setdefault(row.question_id, len(positions) + 1)
+            question_catalog_by_id[row.question_id] = {
+                "section_id": row.section_id,
+                "section_name": row.section_name or "Sans section",
+                "section_order": row.section_order or 0,
+                "question_id": row.question_id,
+                "question_position": positions[row.question_id],
+                "question_type": row.question_type or "",
+                "question_text_fr": row.question_text_fr or "",
+                "question_text_en": row.question_text_en or "",
+                "question": _bilingual(row.question_text_fr, row.question_text_en),
+                "options": [],
+            }
+        if row.option_id:
+            question_catalog_by_id[row.question_id]["options"].append(
+                {
+                    "option_id": row.option_id,
+                    "text_fr": row.option_text_fr or "",
+                    "text_en": row.option_text_en or "",
+                    "label": _bilingual(row.option_text_fr, row.option_text_en),
+                    "is_positive": (
+                        None if row.is_positive is None else bool(row.is_positive)
+                    ),
+                }
+            )
+
+    for question in question_catalog_by_id.values():
+        if _normalize(question["question_type"]) == "nps" and not question["options"]:
+            question["options"] = _nps_options()
+
+    records_by_answer: OrderedDict[int, dict] = OrderedDict()
+    for row in rows:
+        selected_text_fr = row.selected_text_fr or ""
+        selected_text_en = row.selected_text_en or ""
+        records_by_answer[row.answer_id] = {
+            "answer_id": row.answer_id,
+            "submission_id": row.submission_id,
+            "campus": survey_data["campus"],
+            "program": survey_data["program"],
+            "program_name": program_data["name"],
+            "semester": survey_data["semester"],
+            "school_year": survey_data["school_year"],
+            "section_id": row.section_id,
+            "section_order": row.section_order,
+            "category": row.section_name or "Sans section",
+            "question_id": row.question_id,
+            "question_type": row.question_type or "",
+            "language": row.language or "",
+            "question_text_fr": row.question_text_fr or "",
+            "question_text_en": row.question_text_en or "",
+            "question": _bilingual(row.question_text_fr, row.question_text_en),
+            "module_id": row.module_id or None,
+            "ue": row.ue or "",
+            "module": row.module_name or "",
+            "teacher": row.teacher or "",
+            "option_id": row.option_id or None,
+            "option_text_fr": selected_text_fr,
+            "option_text_en": selected_text_en,
+            "is_positive": (
+                None
+                if row.selected_is_positive is None
+                else bool(row.selected_is_positive)
+            ),
+            "answer_value": row.answer_value or "",
+            "value": selected_text_fr or selected_text_en or row.answer_value or "",
+        }
+
+    records = list(records_by_answer.values())
+    for record in records:
+        question = question_catalog_by_id.get(record["question_id"], {})
+        record["options"] = [dict(option) for option in question.get("options", [])]
+        if record["option_id"] is None and record["value"]:
+            normalized_value = _normalize(record["value"])
+            matching_option = next(
+                (
+                    option
+                    for option in record["options"]
+                    if normalized_value
+                    in {_normalize(option["text_fr"]), _normalize(option["text_en"])}
+                ),
+                None,
+            )
+            if matching_option:
+                record.update(
+                    {
+                        "option_id": matching_option["option_id"],
+                        "option_text_fr": matching_option["text_fr"],
+                        "option_text_en": matching_option["text_en"],
+                        "is_positive": matching_option["is_positive"],
+                        "value": matching_option["text_fr"]
+                        or matching_option["text_en"],
+                    }
+                )
+
+    return {
+        "survey": survey_data,
+        "program": program_data,
+        "respondents_count": respondents_count,
+        "answers_count": answers_count,
+        "submissions_count": submissions_count,
+        "modules": modules,
+        "questions": list(question_catalog_by_id.values()),
+        "records": records,
+    }
+
+
+def _is_satisfaction_record(record: dict) -> bool:
+    return _normalize(record.get("question_type")) in {
+        "qcu_satisfaction",
+        "satisfaction",
+    }
+
+
+def _legacy_positive(value: Any) -> bool:
+    normalized = _normalize(value)
+    return any(
+        label in normalized
+        for label in (
+            "totalement satisfait",
+            "totally satisfied",
+            "tres satisfait",
+            "very satisfied",
+            "plutot satisfait",
+            "somewhat satisfied",
+        )
     )
 
-    ues = sorted({module["ue"] for module in modules if module.get("ue")})
 
-    campus_score = _score_for_campus(records)
-    formation_score = _score_for_formation(records)
+def _score_from_records(records: list[dict]) -> dict:
+    satisfaction_records = [record for record in records if _is_satisfaction_record(record)]
+    if not satisfaction_records:
+        return {
+            "question": "",
+            "score": None,
+            "histo": {},
+            "chart": [],
+            "positive_count": 0,
+            "total_count": 0,
+        }
 
-    full_answers=_get_answers_details(records)
+    chart_by_key: OrderedDict[Any, dict] = OrderedDict()
+    for record in satisfaction_records:
+        for option in record.get("options", []):
+            chart_by_key.setdefault(
+                option["option_id"],
+                _make_chart_item(
+                    option["label"],
+                    text_fr=option["text_fr"],
+                    text_en=option["text_en"],
+                    is_positive=option["is_positive"],
+                ),
+            )
 
-    print(full_answers)
-    
+    positive_count = 0
+    histo: OrderedDict[str, int] = OrderedDict()
+    for record in satisfaction_records:
+        key: Any = record.get("option_id")
+        label = _bilingual(record.get("option_text_fr"), record.get("option_text_en"))
+        label = label or str(record.get("value") or "Sans réponse")
+        if key is None:
+            key = f"value:{label}"
+        chart_by_key.setdefault(
+            key,
+            _make_chart_item(
+                label,
+                text_fr=record.get("option_text_fr") or label,
+                text_en=record.get("option_text_en") or "",
+                is_positive=record.get("is_positive"),
+            ),
+        )
+        chart_by_key[key]["count"] += 1
+        histo[label] = histo.get(label, 0) + 1
 
+        is_positive = record.get("is_positive")
+        if is_positive is True or (
+            is_positive is None and _legacy_positive(record.get("value"))
+        ):
+            positive_count += 1
+
+    question = _replace_placeholders(
+        satisfaction_records[0].get("question") or "", satisfaction_records[0]
+    )
+    total_count = len(satisfaction_records)
+    return {
+        "question": question,
+        "score": round(100 * positive_count / total_count),
+        "histo": dict(histo),
+        "chart": list(chart_by_key.values()),
+        "positive_count": positive_count,
+        "total_count": total_count,
+    }
+
+
+def _same_module(record: dict, module: dict) -> bool:
+    if record.get("module_id") is not None and module.get("id") is not None:
+        return str(record["module_id"]) == str(module["id"])
+    return _normalize(record.get("module")) == _normalize(module.get("name"))
+
+
+def _teachers_for_module(records: list[dict], module: dict) -> list[str]:
+    """Merge configured and observed teachers while preserving their order."""
+
+    answer_teachers = [
+        record.get("teacher") or ""
+        for record in records
+        if _same_module(record, module) and record.get("teacher")
+    ]
+    return list(dict.fromkeys([*module.get("teachers", []), *answer_teachers]))
+
+
+def _build_attendance_data(
+    records: list[dict], module: dict, teachers: list[str]
+) -> dict[str, Any]:
+    """Aggregate distinct students attending a module and each of its teachers."""
+
+    attendance_records = [
+        record
+        for record in records
+        if _same_module(record, module)
+        and _normalize(record.get("question_type")) == "qcu_oui_non"
+        and (
+            record.get("is_positive") is True
+            or _normalize(record.get("value")) in {"oui", "yes"}
+        )
+    ]
+    attendance_total = len(
+        {
+            record.get("submission_id") or record.get("answer_id")
+            for record in attendance_records
+        }
+    )
+    attendance_chart = []
+    for teacher in teachers:
+        teacher_count = len(
+            {
+                record.get("submission_id") or record.get("answer_id")
+                for record in attendance_records
+                if _normalize(record.get("teacher")) == _normalize(teacher)
+            }
+        )
+        attendance_chart.append(
+            _make_chart_item(teacher, text_fr=teacher, count=teacher_count)
+        )
+
+    return {
+        "total": attendance_total,
+        "chart_data": {
+            "title": "Étudiants ayant suivi le module par enseignant",
+            "items": attendance_chart,
+            "mode": "count",
+            "count_label": "étudiant(s)",
+            "series_name": "Étudiants",
+            "axis_title": "Nombre d'étudiants",
+        },
+    }
+
+
+def _score_for_section(records: list[dict], section_name: str) -> dict:
+    return _score_from_records(
+        [record for record in records if _normalize(record.get("category")) == _normalize(section_name)]
+    )
+
+
+def _score_for_module(records: list[dict], module: dict, teacher: Optional[str] = None) -> dict:
+    filtered = [record for record in records if _same_module(record, module)]
+    if teacher is not None:
+        filtered = [
+            record
+            for record in filtered
+            if _normalize(record.get("teacher")) == _normalize(teacher)
+        ]
+    return _score_from_records(filtered)
+
+
+def _to_score_1_10(value: Any) -> Optional[float]:
+    try:
+        score = float(str(value).replace(",", ".").strip())
+    except (TypeError, ValueError):
+        return None
+    return score if 1 <= score <= 10 else None
+
+
+def _get_recommendation_score(records: list[dict]) -> dict:
+    candidates = []
+    for record in records:
+        if _normalize(record.get("question_type")) != "nps":
+            continue
+        score = _to_score_1_10(record.get("value"))
+        if score is not None:
+            candidates.append((record, score))
+    if not candidates:
+        return {"score": None, "count": 0, "question": ""}
+    return {
+        "score": round(sum(score for _, score in candidates) / len(candidates), 1),
+        "count": len(candidates),
+        "question": _replace_placeholders(candidates[0][0]["question"], candidates[0][0]),
+    }
+
+
+def _finalize_detail(detail: dict, chart_index: int) -> None:
+    """Convert one accumulated detail into the payload expected by the template."""
+
+    detail["chart"] = list(detail["chart"].values())
+    detail["respondent_count"] = len(detail.pop("_respondent_ids"))
+    detail["chart_id"] = f"answer-detail-{chart_index}"
+    detail["chart_data"] = {
+        "title": detail["question"],
+        "items": detail["chart"],
+        "mode": "percent",
+        "count_label": detail["count_label"],
+        "series_name": detail["series_name"],
+        "axis_title": detail["axis_title"],
+        "percentage_denominator": detail["respondent_count"],
+        "allow_pie": detail["allow_pie"],
+    }
+
+
+def build_answer_details(
+    records: list[dict],
+    questions: Optional[list[dict]] = None,
+    modules: Optional[list[dict]] = None,
+    survey: Optional[dict] = None,
+    program: Optional[dict] = None,
+) -> dict:
+    """Group every question under the summary row that owns it."""
+    sections: OrderedDict[int, dict] = OrderedDict()
+    groups: OrderedDict[tuple, dict] = OrderedDict()
+    questions = questions or []
+    modules = modules or []
+    survey = survey or {}
+    program = program or {}
+
+    def ensure_detail(record: dict) -> dict:
+        section_id = record["section_id"]
+        section = sections.setdefault(
+            section_id,
+            {
+                "section_id": section_id,
+                "name": record["category"],
+                "order": record.get("section_order") or 0,
+                "questions": [],
+            },
+        )
+        key = (
+            record["question_id"],
+            record.get("module_id"),
+            record.get("teacher") or "",
+        )
+        if key in groups:
+            return groups[key]
+
+        context = " · ".join(
+            value
+            for value in (
+                record.get("ue") or "",
+                record.get("module") or "",
+                record.get("teacher") or "",
+            )
+            if value
+        )
+        option_chart = OrderedDict(
+            (
+                option["option_id"],
+                _make_chart_item(
+                    option["label"],
+                    text_fr=option["text_fr"],
+                    text_en=option["text_en"],
+                    is_positive=option["is_positive"],
+                ),
+            )
+            for option in record.get("options", [])
+        )
+        detail = {
+            "section_id": section_id,
+            "question_id": record["question_id"],
+            "question_position": record.get("question_position"),
+            "question_type": record["question_type"],
+            "question": _replace_placeholders(record["question"], record),
+            "context": context,
+            "module_id": record.get("module_id"),
+            "module": record.get("module") or "",
+            "ue": record.get("ue") or "",
+            "teacher": record.get("teacher") or "",
+            "is_open": not bool(record.get("options")),
+            "answers": [],
+            "chart": option_chart,
+            "total_count": 0,
+            "_respondent_ids": set(),
+            **_count_labels(record["question_type"]),
+        }
+        groups[key] = detail
+        section["questions"].append(detail)
+        return detail
+
+    teachers_by_module = {
+        module.get("id"): _teachers_for_module(records, module)
+        for module in modules
+    }
+
+    for question in questions:
+        base_record = {
+            "campus": survey.get("campus") or "",
+            "program": survey.get("program") or "",
+            "program_name": program.get("name") or survey.get("program") or "",
+            "section_id": question["section_id"],
+            "section_order": question.get("section_order") or 0,
+            "category": question["section_name"],
+            "question_id": question["question_id"],
+            "question_position": question.get("question_position"),
+            "question_type": question["question_type"],
+            "question": question["question"],
+            "options": question.get("options", []),
+            "module_id": None,
+            "module": "",
+            "ue": "",
+            "teacher": "",
+        }
+        section_name = _normalize(question["section_name"])
+        is_module_question = "module" in section_name and "enseignant" in section_name
+        if not is_module_question:
+            ensure_detail(base_record)
+            continue
+
+        for module in modules:
+            teachers = teachers_by_module.get(module.get("id")) or [""]
+            for teacher in teachers:
+                ensure_detail(
+                    {
+                        **base_record,
+                        "module_id": module.get("id"),
+                        "module": module.get("name") or "",
+                        "ue": module.get("ue") or "",
+                        "teacher": teacher,
+                    }
+                )
+
+    question_positions = {
+        question["question_id"]: question.get("question_position")
+        for question in questions
+    }
+    for record in records:
+        detail = ensure_detail(
+            {
+                **record,
+                "question_position": question_positions.get(record["question_id"]),
+            }
+        )
+        detail["total_count"] += 1
+        detail["_respondent_ids"].add(
+            record.get("submission_id") or record.get("answer_id")
+        )
+        if detail["is_open"]:
+            if record.get("value"):
+                detail["answers"].append(record["value"])
+            continue
+
+        option_key: Any = record.get("option_id")
+        label = _bilingual(record.get("option_text_fr"), record.get("option_text_en"))
+        label = label or str(record.get("value") or "Sans réponse")
+        if option_key is None:
+            option_key = f"value:{label}"
+        detail["chart"].setdefault(
+            option_key,
+            _make_chart_item(
+                label,
+                text_fr=record.get("option_text_fr") or label,
+                text_en=record.get("option_text_en") or "",
+                is_positive=record.get("is_positive"),
+            ),
+        )
+        detail["chart"][option_key]["count"] += 1
+
+    chart_index = 0
+    for section in sections.values():
+        section["questions"].sort(
+            key=lambda detail: (
+                detail.get("question_position") or detail["question_id"],
+                detail.get("module_id") or 0,
+                _normalize(detail.get("teacher")),
+            )
+        )
+        for detail in section["questions"]:
+            chart_index += 1
+            _finalize_detail(detail, chart_index)
+
+    return {"sections": list(sections.values())}
+
+
+def _chart_data(score: dict) -> dict:
+    return {"title": score["question"], "items": score["chart"]}
+
+
+def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
+    details = get_answers_details(survey_id)
+    if details is None:
+        return {
+            "survey": None,
+            "program_name": "",
+            "program": {"code": "", "name": ""},
+            "respondents_count": 0,
+            "answers_count": 0,
+            "submissions_count": 0,
+            "warning_msg": "Survey introuvable.",
+            "viz_data": {
+                "filters": {"ues": [], "modules": []},
+                "modules": [],
+                "summary_items": [],
+                "recommendation": {"score": None, "count": 0, "question": ""},
+                "details": {"sections": []},
+                "records": [],
+            },
+        }
+
+    records = details["records"]
+    survey = details["survey"]
+    program = details["program"]
+    modules = details["modules"]
+    answer_details = build_answer_details(
+        records,
+        questions=details["questions"],
+        modules=modules,
+        survey=survey,
+        program=program,
+    )
+    detail_sections = {
+        _normalize(section["name"]): section["questions"]
+        for section in answer_details["sections"]
+    }
+
+    campus_score = _score_for_section(records, "Campus")
+    formation_score = _score_for_section(records, "Formation")
     summary_items = [
         {
             "rank": 1,
             "type": "campus",
             "title": "Campus",
-            "subtitle": campus,
+            "subtitle": survey["campus"],
             "ue": None,
             "teachers": [],
-            "score": campus_score["score"],
-            "positive_count": campus_score["positive_count"],
-            "total_count": campus_score["total_count"],
-            "histo": campus_score["histo"],
-            "question": campus_score["question"].replace("[CAMPUS]", campus),
-            "score_label": "",
+            "details": detail_sections.get(_normalize("Campus"), []),
+            **campus_score,
+            "chart_data": _chart_data(campus_score),
         },
         {
             "rank": 2,
             "type": "formation",
             "title": "Formation",
-            "subtitle": program_name,
+            "subtitle": program["name"],
             "ue": None,
             "teachers": [],
-            "score": formation_score["score"],
-            "positive_count": formation_score["positive_count"],
-            "total_count": formation_score["total_count"],
-            "histo": formation_score["histo"],
-            "question": (
-                formation_score["question"]
-                .replace("[CAMPUS]", campus)
-                .replace("[FORMATION]", program_name)
-            ),
-            "score_label": "",
+            "details": detail_sections.get(_normalize("Formation"), []),
+            **formation_score,
+            "chart_data": _chart_data(formation_score),
         },
     ]
 
-    for index, module in enumerate(modules, start=3):
+    for rank, module in enumerate(modules, start=3):
+        teachers = _teachers_for_module(records, module)
         teacher_scores = []
-
-        for teacher in module["teachers"]:
-            teacher_score = _score_for_module_teacher(records, module, teacher)
-
-          
-
+        if teachers:
+            for teacher in teachers:
+                score = _score_for_module(records, module, teacher)
+                teacher_scores.append(
+                    {
+                        "name": teacher,
+                        **score,
+                        "chart_data": _chart_data(score),
+                    }
+                )
+        else:
+            score = _score_for_module(records, module)
             teacher_scores.append(
+                {"name": "", **score, "chart_data": _chart_data(score)}
+            )
+
+        module["teachers"] = teachers
+        module["teacher_scores"] = teacher_scores
+        module_details = [
+            detail
+            for section_name, section_details in detail_sections.items()
+            if "module" in section_name and "enseignant" in section_name
+            for detail in section_details
+            if str(detail.get("module_id")) == str(module.get("id"))
+        ]
+        attendance = _build_attendance_data(records, module, teachers)
+
+        teacher_groups = []
+        group_names = teachers or [""]
+        for teacher in group_names:
+            teacher_groups.append(
                 {
                     "name": teacher,
-                    "score": (
-                        teacher_score["score"]
-                        if teacher_score["score"] is not None
-                        else 0
-                    ),
-                    "positive_count": teacher_score["positive_count"],
-                    "total_count": teacher_score["total_count"],
-                    "histo": (
-                        teacher_score["histo"]
-                        if teacher_score["histo"] is not None
-                        else {}
-                    ),
-                    "question": (
-                        teacher_score["question"]
-                        .replace("[ENSEIGNANT]", teacher)
-                        .replace("[MODULE]", module["name"])
-                    ),
-                    "score_label": "",
+                    "questions": [
+                        detail
+                        for detail in module_details
+                        if _normalize(detail.get("teacher")) == _normalize(teacher)
+                        and _normalize(detail.get("question_type")) != "qcu_oui_non"
+                    ],
                 }
             )
-
-        if not teacher_scores:
-            module_score = _score_for_module(records, module)
-
-
-            teacher_scores.append(
-                {
-                    "name": "",
-                    "score": (
-                        module_score["score"]
-                        if module_score["score"] is not None
-                        else 0
-                    ),
-                    "positive_count": module_score["positive_count"],
-                    "total_count": module_score["total_count"],
-                    "histo": module_score["histo"] or {},
-                    "question": module_score["question"],
-                    "score_label": "",
-                }
-            )
-
-        module["teacher_scores"] = teacher_scores
-
         summary_items.append(
             {
-                "rank": index,
+                "rank": rank,
                 "type": "module",
                 "title": module["name"],
                 "subtitle": "",
                 "ue": module["ue"],
-                "teachers": module["teachers"],
+                "teachers": teachers,
                 "score": None,
                 "positive_count": 0,
                 "total_count": 0,
-                "score_label": "",
                 "teacher_scores": teacher_scores,
+                "attendance_total": attendance["total"],
+                "attendance_chart_data": attendance["chart_data"],
+                "teacher_groups": teacher_groups,
             }
         )
 
-    warning_msg = None
-
-   
-    survey = session.exec(
-            select(Survey).where(Survey.survey_id == survey_id)
-        ).first()
+    ues = sorted({module["ue"] for module in modules if module.get("ue")})
+    warning_msg = None if records else "Aucune réponse n'est encore disponible."
 
     return {
         "survey": survey,
-        "program_name": program_name,
-        "program": {
-            "code": survey.program,
-            "name": program_name,
-        },
-        "respondents_count": respondents_count,
-        "answers_count": answers_count,
-        "submissions_count": submissions_count,
+        "program_name": program["name"],
+        "program": program,
+        "respondents_count": details["respondents_count"],
+        "answers_count": details["answers_count"],
+        "submissions_count": details["submissions_count"],
         "warning_msg": warning_msg,
         "viz_data": {
-            "filters": {
-                "ues": ues,
-                "modules": modules,
-            },
+            "filters": {"ues": ues, "modules": modules},
             "modules": modules,
             "summary_items": summary_items,
-            "recommendation": recommendation,
+            "recommendation": _get_recommendation_score(records),
+            "details": answer_details,
             "records": records,
         },
     }

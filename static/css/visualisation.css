@@ -552,7 +552,7 @@ body {
     background: rgba(255, 255, 255, 0.6); 
     backdrop-filter: blur(4px);
     border-radius: 25px;
-    border: 1px solid rgba(25 overlap, 0, 0, 0.1);
+    border: 1px solid rgba(25, 0, 0, 0.1);
     
     /* Discrete appearance: semi-transparent by default */
     opacity: 0.4;
@@ -587,4 +587,64 @@ body {
 
 .btn-control:hover img {
     filter: grayscale(0%); /* Color returns on hover */
+}
+
+.visualisation-warning {
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.answers-detail-card {
+    margin-top: 24px;
+}
+
+.answers-section {
+    margin-top: 24px;
+}
+
+.answers-section > h2 {
+    margin: 0 0 14px;
+    color: var(--epf-purple);
+}
+
+.answer-question-card {
+    margin-bottom: 18px;
+    padding: 18px;
+    border: 1px solid #e7e2eb;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.answer-question-card h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+}
+
+.answer-context,
+.answer-count {
+    margin: 4px 0;
+    color: #6b6570;
+    font-size: 13px;
+}
+
+.verbatim-list {
+    display: grid;
+    gap: 8px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.verbatim-list li {
+    padding: 10px 12px;
+    border-left: 3px solid #7350a3;
+    border-radius: 4px;
+    background: #f7f4fa;
+    white-space: pre-wrap;
 }
