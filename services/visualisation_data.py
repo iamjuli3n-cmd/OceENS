@@ -2,6 +2,8 @@ from typing import Dict, Any
 import unicodedata
 
 from collections import defaultdict
+
+from requests import session
 from database import engine
 from sqlmodel import Session, select, func
 from models import (
@@ -149,12 +151,12 @@ def _score_from_records(records: list[dict]) -> dict:
     total = 0
     positive = 0
 
-    histo=defaultdict(int)
+    histo = defaultdict(int)
 
     for record in records:
         if not _is_satisfaction_record(record):
             continue
-        histo[record['value']]+=1
+        histo[record["value"]] += 1
 
         value = _get_record_field(
             record,
@@ -172,7 +174,7 @@ def _score_from_records(records: list[dict]) -> dict:
         if _is_positive_satisfaction(value):
             positive += 1
 
-    if records and len(records)>0 and "question" in records[0].keys():
+    if records and len(records) > 0 and "question" in records[0].keys():
         question = records[0]["question"]
     else:
         question = ""
@@ -180,20 +182,17 @@ def _score_from_records(records: list[dict]) -> dict:
         return {
             "question": question,
             "score": None,
-            "histo":None,
+            "histo": None,
             "positive_count": 0,
             "total_count": 0,
-            
         }
 
     return {
-        "question": records[0]["question"] or "",
+        "question": question,
         "score": round((positive / total) * 100),
-        "histo":histo,
+        "histo": histo,
         "positive_count": positive,
         "total_count": total,
-        
-        
     }
 
 
@@ -203,7 +202,10 @@ def _score_for_campus(records: list[dict]) -> dict:
     for record in records:
         text = _record_text(record)
 
-        if record["category"]== "Campus" and record["question_type"] == "QCU_Satisfaction":
+        if (
+            record["category"] == "Campus"
+            and record["question_type"] == "QCU_Satisfaction"
+        ):
             filtered.append(record)
 
     return _score_from_records(filtered)
@@ -215,7 +217,10 @@ def _score_for_formation(records: list[dict]) -> dict:
     for record in records:
         text = _record_text(record)
 
-        if record["category"]== "Formation" and record["question_type"] == "QCU_Satisfaction":
+        if (
+            record["category"] == "Formation"
+            and record["question_type"] == "QCU_Satisfaction"
+        ):
             filtered.append(record)
 
     return _score_from_records(filtered)
@@ -383,6 +388,72 @@ def _score_for_module_teacher(records: list[dict], module: dict, teacher: str) -
 
 
 # ─────────────────────────────────────────────
+# Détail des questions d'insatisfaction
+# ─────────────────────────────────────────────
+def _get_insatisfaction_details(
+    records: list[dict],
+    category: str | None = None,
+    module_id: int | None = None,
+    teacher: str | None = None,
+) -> list[dict]:
+
+    questions = defaultdict(dict)
+
+    for record in records:
+        unique_question_key = (
+            f"{record['template_id']}_{record['section_id']}_{record['question_id']}"
+        )
+
+        if (
+            unique_question_key not in questions.keys()
+        ):  # We found a new question, we need to initialize its histogram
+            with Session(engine) as session:
+                options = session.exec(
+                    select(Option.text).where(
+                        Option.template_id == record["template_id"],
+                        Option.section_id == record["section_id"],
+                        Option.question_id == record["question_id"],
+                    )
+                ).all()
+
+            if options:
+                questions[unique_question_key] = {
+                    "question": record["question"],
+                    "histo": {option: 0 for option in options},
+                }
+            else:
+                questions[unique_question_key] = {
+                    "question": record["question"],
+                    "histo": defaultdict(int),
+                }
+
+        # Filtre Campus ou Formation
+        if category is not None and record.get("category") != category:
+            continue
+
+        # Filtre Module
+        if module_id is not None:
+            record_module_id = _record_module_id(record)
+
+            if record_module_id is None:
+                continue
+
+            if str(record_module_id) != str(module_id):
+                continue
+
+        # Filtre Enseignant
+        if teacher is not None:
+            if _normalize(_record_teacher(record)) != _normalize(teacher):
+                continue
+
+        questions[unique_question_key]["histo"][record["value"]] += 1
+
+    return {
+        "questions": questions,
+    }
+
+
+# ─────────────────────────────────────────────
 # Context principal
 # ─────────────────────────────────────────────
 
@@ -418,6 +489,8 @@ def _build_records_from_db(
                 "semester": survey.semester,
                 "school_year": survey.school_year,
                 "section": section.name if section else "",
+                "template_id": survey.template_id,
+                "section_id": answer.section_id,
                 "question_id": answer.question_id,
                 "question": question.text if question else "",
                 "question_type": question.question_type if question else "",
@@ -453,7 +526,12 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
                     "filters": {"ues": [], "modules": []},
                     "modules": [],
                     "summary_items": [],
-                    "recommendation": {"question":"", "score": None, "histo":None, "count": 0, "question": ""},
+                    "recommendation": {
+                        "question": "",
+                        "score": None,
+                        "histo": None,
+                        "count": 0,
+                    },
                     "records": [],
                 },
             }
@@ -550,6 +628,16 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
     campus_score = _score_for_campus(records)
     formation_score = _score_for_formation(records)
 
+    campus_insatisfaction = _get_insatisfaction_details(
+        records,
+        category="Campus",
+    )
+
+    formation_insatisfaction = _get_insatisfaction_details(
+        records,
+        category="Formation",
+    )
+
     summary_items = [
         {
             "rank": 1,
@@ -561,8 +649,9 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
             "score": campus_score["score"],
             "positive_count": campus_score["positive_count"],
             "total_count": campus_score["total_count"],
-            "histo":campus_score["histo"],
-            "question":campus_score["question"].replace("[CAMPUS]",campus),
+            "histo": campus_score["histo"],
+            "question": campus_score["question"].replace("[CAMPUS]", campus),
+            "insatisfaction_details": campus_insatisfaction,
             "score_label": "",
         },
         {
@@ -575,8 +664,13 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
             "score": formation_score["score"],
             "positive_count": formation_score["positive_count"],
             "total_count": formation_score["total_count"],
-            "histo":formation_score["histo"],
-            "question":formation_score["question"].replace("[CAMPUS]",campus).replace("[FORMATION]",program_name),
+            "histo": formation_score["histo"],
+            "question": (
+                formation_score["question"]
+                .replace("[CAMPUS]", campus)
+                .replace("[FORMATION]", program_name)
+            ),
+            "insatisfaction_details": formation_insatisfaction,
             "score_label": "",
         },
     ]
@@ -587,20 +681,33 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
         for teacher in module["teachers"]:
             teacher_score = _score_for_module_teacher(records, module, teacher)
 
-
-            print(module)
+            teacher_insatisfaction = _get_insatisfaction_details(
+                records,
+                module_id=module["id"],
+                teacher=teacher,
+            )
 
             teacher_scores.append(
                 {
                     "name": teacher,
-                    "score": teacher_score["score"]
-                    if teacher_score["score"] is not None
-                    else 0,
+                    "score": (
+                        teacher_score["score"]
+                        if teacher_score["score"] is not None
+                        else 0
+                    ),
                     "positive_count": teacher_score["positive_count"],
                     "total_count": teacher_score["total_count"],
-                    "histo": teacher_score["histo"] if teacher_score["histo"] is not None
-                    else {},
-                    "question": teacher_score["question"].replace("[ENSEIGNANT]",teacher).replace("[MODULE]",module["name"]),
+                    "histo": (
+                        teacher_score["histo"]
+                        if teacher_score["histo"] is not None
+                        else {}
+                    ),
+                    "question": (
+                        teacher_score["question"]
+                        .replace("[ENSEIGNANT]", teacher)
+                        .replace("[MODULE]", module["name"])
+                    ),
+                    "insatisfaction_details": teacher_insatisfaction,
                     "score_label": "",
                 }
             )
@@ -608,15 +715,24 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
         if not teacher_scores:
             module_score = _score_for_module(records, module)
 
+            module_insatisfaction = _get_insatisfaction_details(
+                records,
+                module_id=module["id"],
+            )
+
             teacher_scores.append(
                 {
                     "name": "",
-                    "score": module_score["score"]
-                    if module_score["score"] is not None
-                    else 0,
+                    "score": (
+                        module_score["score"]
+                        if module_score["score"] is not None
+                        else 0
+                    ),
                     "positive_count": module_score["positive_count"],
                     "total_count": module_score["total_count"],
-                    "histo": module_score["histo"],
+                    "histo": module_score["histo"] or {},
+                    "question": module_score["question"],
+                    "insatisfaction_details": module_insatisfaction,
                     "score_label": "",
                 }
             )
@@ -639,13 +755,13 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
             }
         )
 
-    response_rate = (
-        round((answers_count / respondents_count) * 100, 1)
-        if respondents_count > 0
-        else 0
-    )
-
     warning_msg = None
+
+    print("Campus:", campus_insatisfaction)
+    print("Formation:", formation_insatisfaction)
+
+    for module in modules:
+        print(module["name"], module["teacher_scores"])
 
     return {
         "survey": survey,

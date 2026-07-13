@@ -1452,31 +1452,12 @@ def create_app():
                 status_code=error_or_warning["status_code"],
             )
 
-        # Utilisation de la BDD locale pour le loader sqlite3 natif
-        #survey_obj = load_sondage_complet(survey_id)
 
-     
-        # program = session.exec(
-        #     select(Program).where(Program.code == survey.program)
-        # ).first()
-
-        # program_name = program.name if program else survey.program
 
         context = get_visualisation_context(survey_id)
         context["user"]=user
 
-        # context = {
-        #     "user": user,
-        #     "survey": survey,
-        #     "program_name": program_name,
-        #     "respondents_count": respondents_count,
-        #     "answers_count": answers_count,
-        #     "warning_msg": error_or_warning
-        #     if isinstance(error_or_warning, str)
-        #     else None,
-        #     "viz_data": viz_context,
-        #     "survey_obj": survey_obj
-        # }
+
 
         return templates.TemplateResponse(
             request=request, name="visualisation.html", context=context

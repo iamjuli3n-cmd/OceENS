@@ -248,7 +248,7 @@ def seed_questions(session: Session):
             "Module / Enseignant",
             "Question_ouverte",
             "FR_EN",
-            "(Facultatif) Expliquez précisément en quoi vous êtes satisfait par l'expérience de ce module avec cet teacher(e). N'hésitez pas à illustrer votre avis par des exemples. / Explain precisely why you might feel satisfied by your experience in this course with this teacher. Don't hesitate to illustrate your opinion with examples.",
+            "(Facultatif) Expliquez précisément en quoi vous êtes satisfait par l'expérience de ce module avec cet enseignant(e). N'hésitez pas à illustrer votre avis par des exemples. / Explain precisely why you might feel satisfied by your experience in this course with this teacher. Don't hesitate to illustrate your opinion with examples.",
         ),
         (
             1,
@@ -367,7 +367,7 @@ def seed_options(session: Session):
             3,
             3,
             37,
-            "Les explications et les retours de l'teacher / The teacher's explanations and feedback",
+            "Les explications et les retours de l'enseignant / The teacher's explanations and feedback",
         ),
         (
             1,
@@ -381,7 +381,7 @@ def seed_options(session: Session):
             3,
             3,
             39,
-            "L'attitude professionnelle et juste de l'teacher / The teacher's professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (1, 4, 1, 2, "1"),
         (1, 4, 1, 3, "2"),
@@ -1324,9 +1324,7 @@ def seed_answers(session: Session):
             "Ikram C.",
             6,
             155,
-            "L"
-            "enseignante est très investie et sait rendre les cours intéressants. Les explications sont claires, les exemples sont pertinents et l’ambiance en cours donne envie de participer. Le cours m"
-            "intéresse bien pour plus tard",
+            "L'enseignante est très investie et sait rendre les cours intéressants. Les explications sont claires, les exemples sont pertinents et l’ambiance en cours donne envie de participer. Le cours m'intéresse bien pour plus tard",
         ),
         (
             4,
@@ -1792,7 +1790,7 @@ def seed_answers(session: Session):
             None,
             2,
             219,
-            "Lexpérience associative / The associative experience",
+            "L'expérience associative / The associative experience",
         ),
         (
             5,
@@ -1825,8 +1823,7 @@ def seed_answers(session: Session):
             "Xavier C.",
             3,
             222,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -1848,8 +1845,7 @@ def seed_answers(session: Session):
             "Xavier C.",
             3,
             224,
-            "L"
-            "intérêt du module dans le cursus / The relevance of the module in the program",
+            "L'intérêt du module dans le cursus / The relevance of the module in the program",
         ),
         (
             5,
@@ -1871,8 +1867,7 @@ def seed_answers(session: Session):
             "Thalita D.",
             3,
             226,
-            "L"
-            "intérêt du module dans le cursus / The relevance of the module in the program",
+            "L'intérêt du module dans le cursus / The relevance of the module in the program",
         ),
         (
             5,
@@ -1883,10 +1878,7 @@ def seed_answers(session: Session):
             "Thalita D.",
             3,
             227,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -1908,8 +1900,7 @@ def seed_answers(session: Session):
             "Maksim K.",
             3,
             229,
-            "L"
-            "intérêt du module dans le cursus / The relevance of the module in the program",
+            "L'intérêt du module dans le cursus / The relevance of the module in the program",
         ),
         (
             5,
@@ -1920,10 +1911,7 @@ def seed_answers(session: Session):
             "Maksim K.",
             3,
             230,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -1934,8 +1922,7 @@ def seed_answers(session: Session):
             "Enzo F.",
             3,
             231,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -1946,8 +1933,7 @@ def seed_answers(session: Session):
             "Enzo F.",
             3,
             232,
-            "L"
-            "intérêt du module dans le cursus / The relevance of the module in the program",
+            "L'intérêt du module dans le cursus / The relevance of the module in the program",
         ),
         (
             5,
@@ -1958,10 +1944,7 @@ def seed_answers(session: Session):
             "Enzo F.",
             3,
             233,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -1972,8 +1955,7 @@ def seed_answers(session: Session):
             "Cédrine M.",
             3,
             234,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -1995,10 +1977,7 @@ def seed_answers(session: Session):
             "Cédrine M.",
             3,
             236,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -2009,8 +1988,7 @@ def seed_answers(session: Session):
             "Daniel B.",
             3,
             237,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2032,10 +2010,7 @@ def seed_answers(session: Session):
             "Daniel B.",
             3,
             239,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -2046,8 +2021,7 @@ def seed_answers(session: Session):
             "Florian L.",
             3,
             240,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2058,8 +2032,7 @@ def seed_answers(session: Session):
             "Florian L.",
             3,
             241,
-            "L"
-            "intérêt du module dans le cursus / The relevance of the module in the program",
+            "L'intérêt du module dans le cursus / The relevance of the module in the program",
         ),
         (
             5,
@@ -2081,10 +2054,7 @@ def seed_answers(session: Session):
             "Issame B.",
             3,
             243,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             5,
@@ -2095,8 +2065,7 @@ def seed_answers(session: Session):
             "Ikram C.",
             3,
             244,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2107,10 +2076,7 @@ def seed_answers(session: Session):
             "Ikram C.",
             3,
             245,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -2121,8 +2087,7 @@ def seed_answers(session: Session):
             "Joey B. F.",
             3,
             246,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2133,10 +2098,7 @@ def seed_answers(session: Session):
             "Joey B. F.",
             3,
             247,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             5,
@@ -2147,8 +2109,7 @@ def seed_answers(session: Session):
             "Robert R.",
             3,
             248,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2159,9 +2120,7 @@ def seed_answers(session: Session):
             "Robert R.",
             3,
             249,
-            "Les explications et les retours de l"
-            "teacher / The teacher"
-            "s explanations and feedback",
+            "Les explications et les retours de l'enseignant / The teacher's explanations and feedback",
         ),
         (
             5,
@@ -2172,8 +2131,7 @@ def seed_answers(session: Session):
             "Hannah G.",
             3,
             250,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2184,10 +2142,7 @@ def seed_answers(session: Session):
             "Hannah G.",
             3,
             251,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -2198,8 +2153,7 @@ def seed_answers(session: Session):
             "Sonia T.",
             3,
             252,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2210,10 +2164,7 @@ def seed_answers(session: Session):
             "Sonia T.",
             3,
             253,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -2224,8 +2175,7 @@ def seed_answers(session: Session):
             "Sylvie M.",
             3,
             254,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2247,8 +2197,7 @@ def seed_answers(session: Session):
             "Valentin B.",
             3,
             256,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2270,10 +2219,7 @@ def seed_answers(session: Session):
             "Valentin B.",
             3,
             258,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -2306,10 +2252,7 @@ def seed_answers(session: Session):
             "Abdoul Salam D.",
             3,
             261,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             5,
@@ -2320,8 +2263,7 @@ def seed_answers(session: Session):
             "Guillaume D.",
             3,
             262,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2343,10 +2285,7 @@ def seed_answers(session: Session):
             "Guillaume D.",
             3,
             264,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             5,
@@ -2357,8 +2296,7 @@ def seed_answers(session: Session):
             "Domenico M.",
             3,
             265,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2369,8 +2307,7 @@ def seed_answers(session: Session):
             "Domenico M.",
             3,
             266,
-            "L"
-            "intérêt du module dans le cursus / The relevance of the module in the program",
+            "L'intérêt du module dans le cursus / The relevance of the module in the program",
         ),
         (
             5,
@@ -2381,10 +2318,7 @@ def seed_answers(session: Session):
             "Domenico M.",
             3,
             267,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             5,
@@ -2406,10 +2340,7 @@ def seed_answers(session: Session):
             "Abelle C.",
             3,
             269,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -2420,8 +2351,7 @@ def seed_answers(session: Session):
             "Olivier D.",
             3,
             270,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2443,10 +2373,7 @@ def seed_answers(session: Session):
             "Olivier D.",
             3,
             272,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             5,
@@ -2457,8 +2384,7 @@ def seed_answers(session: Session):
             "Thalita D.",
             3,
             273,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2469,10 +2395,7 @@ def seed_answers(session: Session):
             "Thalita D.",
             3,
             274,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             5,
@@ -2483,10 +2406,7 @@ def seed_answers(session: Session):
             "Thalita D.",
             3,
             275,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             5,
@@ -2497,8 +2417,7 @@ def seed_answers(session: Session):
             "Louis G.",
             3,
             276,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             5,
@@ -2520,10 +2439,7 @@ def seed_answers(session: Session):
             "Louis G.",
             3,
             278,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (5, 1, 1, 1, None, None, 3, 279, "pas assez dasso"),
         (5, 1, 1, 1, None, None, 4, 280, "plus dassociation notmaent de sport"),
@@ -3379,7 +3295,7 @@ def seed_answers(session: Session):
             None,
             2,
             383,
-            "Lexpérience associative / The associative experience",
+            "L'expérience associative / The associative experience",
         ),
         (
             6,
@@ -3390,9 +3306,9 @@ def seed_answers(session: Session):
             None,
             2,
             384,
-            "Lambiance avec le personnel / The atmosphere with staff",
+            "L'ambiance avec le personnel / The atmosphere with staff",
         ),
-        (6, 1, 1, 2, None, None, 2, 385, "Lemploi du temps / Timetable"),
+        (6, 1, 1, 2, None, None, 2, 385, "L'emploi du temps / Timetable"),
         (
             6,
             1,
@@ -3413,8 +3329,7 @@ def seed_answers(session: Session):
             None,
             2,
             387,
-            "L"
-            "accompagnement du Responsable Pédagogique / Support from the Academic Advisor",
+            "L'accompagnement du Responsable Pédagogique / Support from the Academic Advisor",
         ),
         (
             6,
@@ -3425,8 +3340,7 @@ def seed_answers(session: Session):
             "Théo B.",
             3,
             388,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3448,10 +3362,7 @@ def seed_answers(session: Session):
             "Théo B.",
             3,
             390,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3462,8 +3373,7 @@ def seed_answers(session: Session):
             "Xavier C.",
             3,
             391,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3474,8 +3384,7 @@ def seed_answers(session: Session):
             "Xavier C.",
             3,
             392,
-            "L"
-            "intérêt du module dans le cursus / The relevance of the module in the program",
+            "L'intérêt du module dans le cursus / The relevance of the module in the program",
         ),
         (
             6,
@@ -3486,10 +3395,7 @@ def seed_answers(session: Session):
             "Xavier C.",
             3,
             393,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3500,8 +3406,7 @@ def seed_answers(session: Session):
             "Xavier C.",
             3,
             394,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3523,10 +3428,7 @@ def seed_answers(session: Session):
             "Xavier C.",
             3,
             396,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3537,8 +3439,7 @@ def seed_answers(session: Session):
             "Thalita D.",
             3,
             397,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3560,10 +3461,7 @@ def seed_answers(session: Session):
             "Thalita D.",
             3,
             399,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3574,8 +3472,7 @@ def seed_answers(session: Session):
             "Maksim K.",
             3,
             400,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3597,10 +3494,7 @@ def seed_answers(session: Session):
             "Maksim K.",
             3,
             402,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3611,8 +3505,7 @@ def seed_answers(session: Session):
             "Enzo F.",
             3,
             403,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3634,10 +3527,7 @@ def seed_answers(session: Session):
             "Enzo F.",
             3,
             405,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3648,8 +3538,7 @@ def seed_answers(session: Session):
             "Cédrine M.",
             3,
             406,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3671,10 +3560,7 @@ def seed_answers(session: Session):
             "Cédrine M.",
             3,
             408,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3685,8 +3571,7 @@ def seed_answers(session: Session):
             "Daniel B.",
             3,
             409,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3697,8 +3582,7 @@ def seed_answers(session: Session):
             "Daniel B.",
             3,
             410,
-            "L"
-            "intérêt du module dans le cursus / The relevance of the module in the program",
+            "L'intérêt du module dans le cursus / The relevance of the module in the program",
         ),
         (
             6,
@@ -3709,10 +3593,7 @@ def seed_answers(session: Session):
             "Daniel B.",
             3,
             411,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3723,8 +3604,7 @@ def seed_answers(session: Session):
             "Florian L.",
             3,
             412,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3746,10 +3626,7 @@ def seed_answers(session: Session):
             "Florian L.",
             3,
             414,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3760,8 +3637,7 @@ def seed_answers(session: Session):
             "Issame B.",
             3,
             415,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3783,10 +3659,7 @@ def seed_answers(session: Session):
             "Issame B.",
             3,
             417,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3797,8 +3670,7 @@ def seed_answers(session: Session):
             "Ikram C.",
             3,
             418,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3809,8 +3681,7 @@ def seed_answers(session: Session):
             "Ikram C.",
             3,
             419,
-            "L"
-            "intérêt du module dans le cursus / The relevance of the module in the program",
+            "L'intérêt du module dans le cursus / The relevance of the module in the program",
         ),
         (
             6,
@@ -3821,10 +3692,7 @@ def seed_answers(session: Session):
             "Ikram C.",
             3,
             420,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3835,8 +3703,7 @@ def seed_answers(session: Session):
             "Joey B. F.",
             3,
             421,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3858,10 +3725,7 @@ def seed_answers(session: Session):
             "Joey B. F.",
             3,
             423,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3872,8 +3736,7 @@ def seed_answers(session: Session):
             "Robert R.",
             3,
             424,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3884,10 +3747,7 @@ def seed_answers(session: Session):
             "Robert R.",
             3,
             425,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3898,8 +3758,7 @@ def seed_answers(session: Session):
             "Hannah G.",
             3,
             426,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3921,10 +3780,7 @@ def seed_answers(session: Session):
             "Hannah G.",
             3,
             428,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3935,8 +3791,7 @@ def seed_answers(session: Session):
             "Sonia T.",
             3,
             429,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3947,8 +3802,7 @@ def seed_answers(session: Session):
             "Sonia T.",
             3,
             430,
-            "L"
-            "intérêt du module dans le cursus / The relevance of the module in the program",
+            "L'intérêt du module dans le cursus / The relevance of the module in the program",
         ),
         (
             6,
@@ -3959,10 +3813,7 @@ def seed_answers(session: Session):
             "Sonia T.",
             3,
             431,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -3973,8 +3824,7 @@ def seed_answers(session: Session):
             "Sylvie M.",
             3,
             432,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -3996,10 +3846,7 @@ def seed_answers(session: Session):
             "Sylvie M.",
             3,
             434,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -4010,8 +3857,7 @@ def seed_answers(session: Session):
             "Valentin B.",
             3,
             435,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -4033,10 +3879,7 @@ def seed_answers(session: Session):
             "Valentin B.",
             3,
             437,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -4047,8 +3890,7 @@ def seed_answers(session: Session):
             "Abdoul Salam D.",
             3,
             438,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -4070,10 +3912,7 @@ def seed_answers(session: Session):
             "Abdoul Salam D.",
             3,
             440,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -4084,8 +3923,7 @@ def seed_answers(session: Session):
             "Guillaume D.",
             3,
             441,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -4096,10 +3934,7 @@ def seed_answers(session: Session):
             "Guillaume D.",
             3,
             442,
-            "L"
-            "implication et la disponibilité de l"
-            "teacher / The teacher"
-            "s involvement and availability",
+            "L'implication et la disponibilité de l'enseignant / The teacher's involvement and availability",
         ),
         (
             6,
@@ -4110,10 +3945,7 @@ def seed_answers(session: Session):
             "Guillaume D.",
             3,
             443,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -4124,8 +3956,7 @@ def seed_answers(session: Session):
             "Domenico M.",
             3,
             444,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -4136,9 +3967,7 @@ def seed_answers(session: Session):
             "Domenico M.",
             3,
             445,
-            "Les explications et les retours de l"
-            "teacher / The teacher"
-            "s explanations and feedback",
+            "Les explications et les retours de l'enseignant / The teacher's explanations and feedback",
         ),
         (
             6,
@@ -4160,10 +3989,7 @@ def seed_answers(session: Session):
             "Abelle C.",
             3,
             447,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -4196,8 +4022,7 @@ def seed_answers(session: Session):
             "Olivier D.",
             3,
             450,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
@@ -4208,10 +4033,7 @@ def seed_answers(session: Session):
             "Olivier D.",
             3,
             451,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -4233,10 +4055,7 @@ def seed_answers(session: Session):
             "Thalita D.",
             3,
             453,
-            "L"
-            "attitude professionnelle et juste de l"
-            "teacher / The teacher"
-            "s professional and fair attitude",
+            "L'attitude professionnelle et juste de l'enseignant / The teacher's professional and fair attitude",
         ),
         (
             6,
@@ -4247,8 +4066,7 @@ def seed_answers(session: Session):
             "Louis G.",
             3,
             454,
-            "L"
-            "organisation des séances et du module / The organization of the sessions and of the module",
+            "L'organisation des séances et du module / The organization of the sessions and of the module",
         ),
         (
             6,
