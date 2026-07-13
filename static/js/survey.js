@@ -167,6 +167,8 @@ const SurveyModule = {
     // ─── Logique de satisfaction ─────────────────────────
     // Appelé quand Q1 (satisfaction globale) est répondue
     handleSatisfaction(radio) {
+        if (!radio.checked) // Prevent invalid call
+            return;
         const value = radio.value.toLowerCase();
         const isSatisfied = this.SATISFIED_KEYWORDS.some(kw => value.includes(kw));
 
@@ -250,6 +252,8 @@ const SurveyModule = {
 
     // ─── Toggle UE Filter (UE optionnelle) ──────────────
     toggleUeFilter(radio) {
+        if (!radio.checked) // Prevent invalid call
+            return;
         const filterBlock = radio.closest('.ue-filter-block');
         if (!filterBlock) return;
 
@@ -275,6 +279,8 @@ const SurveyModule = {
 
     // ─── Toggle Prof Block (mode INCLUSIF) ──────────────
     toggleProfBlock(radio) {
+        if (!radio.checked) // Prevent invalid call
+            return;
         const profBlock = radio.closest('.prof-block-optional');
         if (!profBlock) return;
 
@@ -296,6 +302,10 @@ const SurveyModule = {
 
     // ─── Select Exclusive Prof (mode EXCLUSIF) ──────────
     selectExclusiveProf(radio) {
+        console.log("selectExclusiveProf")
+        console.log(radio);
+        if (!radio.checked) // Prevent invalid call
+            return;
         const moduleId = radio.dataset.module;
         const selectedProf = radio.value;
 

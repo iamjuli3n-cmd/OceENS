@@ -79,10 +79,10 @@
                     <div class="options-grid">
                         {% for opt in question.options %}
                         <label class="option-radio">
-                            <input type="radio" name="q_{{ section.section_id }}_{{ question.question_id }}"
-                                value="{{ opt.text }}" data-section="{{ section.section_id }}"
-                                data-question="{{ question.question_id }}" {% if question.question_id==1
-                                %}onchange="SurveyModule.handleSatisfaction(this)" {% endif %}>
+                            <input type="radio" class="radio_satisf"
+                                name="q_{{ section.section_id }}_{{ question.question_id }}" value="{{ opt.text }}"
+                                data-section="{{ section.section_id }}" data-question="{{ question.question_id }}" {% if
+                                question.question_id==1 %}onchange="SurveyModule.handleSatisfaction(this)" {% endif %}>
                             <span class="option-label">{{ opt.text }}</span>
                         </label>
                         {% endfor %}
@@ -110,6 +110,7 @@
                 {% endfor %}
             </div>
             {% endif %}
+
             {% endfor %}
 
             {# ══════ Section dynamique : Modules / Enseignants groupés par UE ══════ #}
@@ -168,18 +169,18 @@
                             </div>
                             <div class="options-grid">
                                 <label class="option-radio">
-                                    <input type="radio" name="q_mod_{{ module.module_id }}_exclusive_prof"
-                                        value="__none__" data-section="3" data-question="1"
-                                        data-module="{{ module.module_id }}"
+                                    <input type="radio" class="selectExclu"
+                                        name="q_mod_{{ module.module_id }}_exclusive_prof" value="__none__"
+                                        data-section="3" data-question="1" data-module="{{ module.module_id }}"
                                         onchange="SurveyModule.selectExclusiveProf(this)">
                                     <span class="option-label">Je n'ai pas suivi ce module / I did not take this
                                         module</span>
                                 </label>
                                 {% for teacher in module.teachers %}
                                 <label class="option-radio">
-                                    <input type="radio" name="q_mod_{{ module.module_id }}_exclusive_prof"
-                                        value="{{ teacher }}" data-section="3" data-question="1"
-                                        data-module="{{ module.module_id }}"
+                                    <input type="radio" class="selectExclu"
+                                        name="q_mod_{{ module.module_id }}_exclusive_prof" value="{{ teacher }}"
+                                        data-section="3" data-question="1" data-module="{{ module.module_id }}"
                                         onchange="SurveyModule.selectExclusiveProf(this)">
                                     <span class="option-label">{{ teacher }}</span>
                                 </label>
@@ -213,7 +214,7 @@
                                 <div class="options-grid">
                                     {% for opt in question.options %}
                                     <label class="option-radio">
-                                        <input type="radio"
+                                        <input type="radio" class="radio_satisf"
                                             name="q_mod_{{ module.module_id }}_{{ teacher | replace(' ', '_') }}_{{ question.question_id }}"
                                             value="{{ opt.text }}" data-section="{{ section.section_id }}"
                                             data-question="{{ question.question_id }}"
@@ -277,7 +278,7 @@
                                 <div class="options-grid">
                                     {% for opt in question.options %}
                                     <label class="option-radio">
-                                        <input type="radio"
+                                        <input type="radio" class="toggleProf"
                                             name="q_mod_{{ module.module_id }}_{{ teacher | replace(' ', '_') }}_{{ question.question_id }}"
                                             value="{{ opt.text }}" data-section="{{ section.section_id }}"
                                             data-question="{{ question.question_id }}"
@@ -316,7 +317,7 @@
                                     <div class="options-grid">
                                         {% for opt in question.options %}
                                         <label class="option-radio">
-                                            <input type="radio"
+                                            <input type="radio" class="radio_satisf"
                                                 name="q_mod_{{ module.module_id }}_{{ teacher | replace(' ', '_') }}_{{ question.question_id }}"
                                                 value="{{ opt.text }}" data-section="{{ section.section_id }}"
                                                 data-question="{{ question.question_id }}"
@@ -434,6 +435,47 @@
 
 
     <script src="/static/js/survey.js"></script>
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Handle refresh of the page with the conditional blocks
+            document.querySelectorAll('.radio_satisf').forEach(r => {
+                SurveyModule.handleSatisfaction(r);
+            })
+            document.querySelectorAll('.toggleProf').forEach(r => {
+                SurveyModule.toggleProfBlock(r);
+            })
+            document.querySelectorAll('.toggleUeFilter').forEach(r => {
+                SurveyModule.toggleUeFilter(r);
+            })
+            document.querySelectorAll('.selectExclu').forEach(r => {
+                SurveyModule.selectExclusiveProf(r);
+            })
+
+            document.querySelectorAll('.question-block[data-q-role="middle"]').forEach(block => {
+                const inputs = block.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+                const textarea = block.querySelector('textarea.open-answer');
+
+                inputs.forEach(input => {
+                    if (input.checked) {
+                        SurveyModule.revealNextQuestion(block);
+                    }
+                });
+            
+
+            if (textarea) {
+
+                if (textarea.value.trim().length > 0) {
+                    SurveyModule.revealNextQuestion(block);
+                }
+
+            }
+        });
+              
+             
+             
+             
+             })</script>
 </body>
 
 </html>
