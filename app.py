@@ -1141,7 +1141,7 @@ def create_app():
                 "is_closed": (r[5] == 0),
                 "respondents_count": r[6],
                 "answers_count": r[7],
-                "submissions_count": submissions_count[r[0]],
+                "submissions_count": submissions_count[r[0]] if r[0] in submissions_count.keys() else 0,
             }
             for r in rows
         ]
@@ -1243,7 +1243,7 @@ def create_app():
                 "is_closed": (r[5] == 0),
                 "respondents_count": r[6],
                 "answers_count": r[7],
-                "submissions_count": submissions_count[r[0]],
+                "submissions_count": submissions_count[r[0]] if r[0] in submissions_count.keys() else 0,
             }
             for r in rows
         ]
