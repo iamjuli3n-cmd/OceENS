@@ -18,6 +18,49 @@ from models import (
 from database import engine
 
 
+ADDITIONAL_STUDENT_USERS = [
+    (9, "oceens.student07@epf.fr"),
+    (10, "oceens.student08@epf.fr"),
+    (11, "oceens.student09@epf.fr"),
+    (12, "oceens.student10@epf.fr"),
+    (13, "oceens.student11@epf.fr"),
+    (14, "oceens.student12@epf.fr"),
+    (15, "oceens.student13@epf.fr"),
+    (16, "oceens.student14@epf.fr"),
+    (17, "oceens.student15@epf.fr"),
+    (18, "oceens.student16@epf.fr"),
+    (19, "oceens.student17@epf.fr"),
+    (20, "oceens.student18@epf.fr"),
+    (21, "oceens.student19@epf.fr"),
+    (22, "oceens.student20@epf.fr"),
+]
+
+
+# submission_id, user_id, created_at
+SEEDED_SUBMISSIONS = [
+    (1, 1, "2026-06-30 16:24:04"),
+    (2, 2, "2026-06-30 16:27:04"),
+    (3, 3, "2026-06-30 16:22:04"),
+    (4, 4, "2026-06-30 16:26:04"),
+    (5, 5, "2026-06-30 16:32:04"),
+    (6, 6, "2026-06-30 16:32:04"),
+    (7, 9, "2026-06-30 16:36:04"),
+    (8, 10, "2026-06-30 16:39:04"),
+    (9, 11, "2026-06-30 16:43:04"),
+    (10, 12, "2026-06-30 16:47:04"),
+    (11, 13, "2026-06-30 16:51:04"),
+    (12, 14, "2026-06-30 16:55:04"),
+    (13, 15, "2026-06-30 16:59:04"),
+    (14, 16, "2026-06-30 17:03:04"),
+    (15, 17, "2026-06-30 17:07:04"),
+    (16, 18, "2026-06-30 17:11:04"),
+    (17, 19, "2026-06-30 17:15:04"),
+    (18, 20, "2026-06-30 17:19:04"),
+    (19, 21, "2026-06-30 17:23:04"),
+    (20, 22, "2026-06-30 17:27:04"),
+]
+
+
 def seed_users(session: Session):
     """Remplit la table users."""
 
@@ -30,6 +73,7 @@ def seed_users(session: Session):
         (6, "yassine.gharbi@epfedu.fr"),
         (7, "arnaud.jousset@epf.fr"),
         (8, "etienne.gibaud@epf.fr"),
+        *ADDITIONAL_STUDENT_USERS,
     ]
     for u_data in user_data:
         user = User(user_id=u_data[0], mail=u_data[1])
@@ -593,20 +637,11 @@ def seed_modules(session: Session):
 def seed_respondents(session: Session):
     """Remplit la table respondents."""
 
-    respondent_data = [
-        (1, 1, 1, "2026-06-30 16:24:04"),
-        (1, 1, 2, "2026-06-30 16:27:04"),
-        (1, 1, 3, "2026-06-30 16:22:04"),
-        (1, 1, 4, "2026-06-30 16:26:04"),
-        (1, 1, 5, "2026-06-30 16:32:04"),
-        (1, 1, 6, "2026-06-30 16:32:04"),
-    ]
-    for r_data in respondent_data:
+    for _submission_id, user_id, created_at in SEEDED_SUBMISSIONS:
         respondent = Respondent(
-            template_id=r_data[0],
-            survey_id=r_data[1],
-            user_id=r_data[2],
-            submission_date=r_data[3],
+            survey_id=1,
+            user_id=user_id,
+            submission_date=created_at,
         )
         session.merge(
             respondent
@@ -617,19 +652,11 @@ def seed_respondents(session: Session):
 def seed_submissions(session: Session):
     """Remplit la table submissions."""
 
-    submission_data = [
-        (1, 1, "2026-06-30 16:24:04"),
-        (1, 2, "2026-06-30 16:27:04"),
-        (1, 3, "2026-06-30 16:22:04"),
-        (1, 4, "2026-06-30 16:26:04"),
-        (1, 5, "2026-06-30 16:32:04"),
-        (1, 6, "2026-06-30 16:32:04"),
-    ]
-    for s_data in submission_data:
+    for submission_id, _user_id, created_at in SEEDED_SUBMISSIONS:
         submission = Submission(
-            survey_id=s_data[0],
-            submission_id=s_data[1],
-            created_at=s_data[2],
+            survey_id=1,
+            submission_id=submission_id,
+            created_at=created_at,
         )
         session.merge(
             submission
@@ -647,19 +674,19 @@ def seed_answers(session: Session):
         return
 
     with csv_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
-        reader = csv.reader(csv_file,delimiter=";")
+        reader = csv.reader(csv_file, delimiter=";")
         next(reader, None)  # skip the headers
         for r_data in reader:
             answer = Answer(
-                submission_id=r_data[0],
-                question_id=r_data[1],
-                module_id=r_data[2],
-                teacher=r_data[3],
-                option_id=r_data[4],
-                value=r_data[5],
+                submission_id=int(r_data[0]),
+                question_id=int(r_data[1]),
+                module_id=int(r_data[2]) if r_data[2] else None,
+                teacher=r_data[3] or None,
+                option_id=int(r_data[4]) if r_data[4] else None,
+                value=r_data[5] or None,
             )
 
-            session.merge(answer)
+            session.add(answer)
 
     session.commit()
 
