@@ -207,7 +207,7 @@
                                 <div class="question-label">
                                     <span class="q-number">{{ question.question_id }}.</span>
                                     {{ question.text | replace("[MODULE]", module.name) | replace("[ENSEIGNANT]",
-                                    prof) }}
+                                    teacher) }}
                                 </div>
                                 {% if question.question_type == "QCU_Satisfaction" %}
                                 <div class="options-grid">

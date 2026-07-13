@@ -443,7 +443,7 @@ const SurveyModule = {
 
         // Collecter les radios
         form.querySelectorAll('input[type="radio"]:checked').forEach(r => {
-            if (r.name.includes('_exclusive_prof')) return;
+            //if (r.name.includes('_exclusive_prof')) return;
             if (r.name.startsWith('ue_filter_')) return;
             if (!isVisible(r)) return;
 
