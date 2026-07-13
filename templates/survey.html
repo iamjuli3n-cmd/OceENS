@@ -80,9 +80,11 @@
                         {% for opt in question.options %}
                         <label class="option-radio">
                             <input type="radio" class="radio_satisf"
-                                name="q_{{ section.section_id }}_{{ question.question_id }}" value="{{ opt.text }}"
-                                data-section="{{ section.section_id }}" data-question="{{ question.question_id }}" {% if
-                                question.question_id==1 %}onchange="SurveyModule.handleSatisfaction(this)" {% endif %}>
+                                name="q_{{ section.section_id }}_{{ question.question_id }}" value="{{ opt.value }}"
+                                data-section="{{ section.section_id }}" data-question="{{ question.question_id }}"
+                                data-option-id="{{ opt.option_id }}"
+                                data-is-positive="{{ 'true' if opt.is_positive is true else 'false' if opt.is_positive is false else '' }}"
+                                {% if question.question_type == "QCU_Satisfaction" %}onchange="SurveyModule.handleSatisfaction(this)"{% endif %}>
                             <span class="option-label">{{ opt.text }}</span>
                         </label>
                         {% endfor %}
@@ -94,8 +96,10 @@
                         {% for opt in question.options %}
                         <label class="option-checkbox">
                             <input type="checkbox" name="q_{{ section.section_id }}_{{ question.question_id }}"
-                                value="{{ opt.text }}" data-section="{{ section.section_id }}"
-                                data-question="{{ question.question_id }}" data-max="3">
+                                value="{{ opt.value }}" data-section="{{ section.section_id }}"
+                                data-question="{{ question.question_id }}" data-option-id="{{ opt.option_id }}"
+                                data-is-positive="{{ 'true' if opt.is_positive is true else 'false' if opt.is_positive is false else '' }}"
+                                data-max="3">
                             <span class="option-label">{{ opt.text }}</span>
                         </label>
                         {% endfor %}
@@ -121,13 +125,13 @@
                 <div class="ue-group-header">
                     <span class="section-number">{{ section_counter.val }}</span>
                     <div>
-                        <h2>{{ ue.name }}{% if ue.optionnelle %}<span class="ue-badge-optional">Optionnelle</span>{%
+                        <h2>{{ ue.name }}{% if ue.is_optional %}<span class="ue-badge-optional">Optionnelle</span>{%
                             endif %}</h2>
                     </div>
                 </div>
 
                 {# Question filtre pour UE optionnelle #}
-                {% if ue.optionnelle %}
+                {% if ue.is_optional %}
                 <div class="ue-filter-block" data-ue-name="{{ ue.name }}">
                     <div class="question-label">
                         Avez-vous suivi cette UE ? / Did you take this course unit?
@@ -148,7 +152,7 @@
                 {% endif %}
 
                 {# Contenu conditionnel de l'UE #}
-                <div class="ue-conditional-content" {% if ue.optionnelle %}style="display: none;" {% endif %}>
+                <div class="ue-conditional-content" {% if ue.is_optional %}style="display: none;" {% endif %}>
                     {% for module in ue.modules %}
                     <div class="section-card module-inside-ue" data-module-id="{{ module.module_id }}"
                         data-satisfaction-group="module-{{ module.module_id }}">
@@ -161,6 +165,9 @@
 
                         {% if module.one_teacher_in_list %}
                         {# ── Mode exclusif (one_teacher_in_list == true) : 1 seul enseignant ── #}
+                        {% set attendance = module_attendance_question %}
+                        {% set positive_attendance = attendance.options | selectattr('is_positive', 'equalto', true) | first if attendance else none %}
+                        {% set negative_attendance = attendance.options | selectattr('is_positive', 'equalto', false) | first if attendance else none %}
                         <div class="question-block exclusive-prof-select" data-module-id="{{ module.module_id }}">
                             <div class="question-label">
                                 <span class="q-number">1.</span>
@@ -170,8 +177,13 @@
                             <div class="options-grid">
                                 <label class="option-radio">
                                     <input type="radio" class="selectExclu"
-                                        name="q_mod_{{ module.module_id }}_exclusive_prof" value="__none__"
-                                        data-section="3" data-question="1" data-module="{{ module.module_id }}"
+                                        name="q_mod_{{ module.module_id }}_exclusive_prof"
+                                        value="{{ negative_attendance.value if negative_attendance else 'Non' }}"
+                                        data-section="{{ module_section.section_id }}"
+                                        data-question="{{ attendance.question_id }}"
+                                        data-option-id="{{ negative_attendance.option_id if negative_attendance else '' }}"
+                                        data-is-positive="false" data-selected-prof=""
+                                        data-module="{{ module.module_id }}"
                                         onchange="SurveyModule.selectExclusiveProf(this)">
                                     <span class="option-label">Je n'ai pas suivi ce module / I did not take this
                                         module</span>
@@ -179,8 +191,13 @@
                                 {% for teacher in module.teachers %}
                                 <label class="option-radio">
                                     <input type="radio" class="selectExclu"
-                                        name="q_mod_{{ module.module_id }}_exclusive_prof" value="{{ teacher }}"
-                                        data-section="3" data-question="1" data-module="{{ module.module_id }}"
+                                        name="q_mod_{{ module.module_id }}_exclusive_prof"
+                                        value="{{ positive_attendance.value if positive_attendance else 'Oui' }}"
+                                        data-section="{{ module_section.section_id }}"
+                                        data-question="{{ attendance.question_id }}"
+                                        data-option-id="{{ positive_attendance.option_id if positive_attendance else '' }}"
+                                        data-is-positive="true" data-selected-prof="{{ teacher }}"
+                                        data-module="{{ module.module_id }}" data-prof="{{ teacher }}"
                                         onchange="SurveyModule.selectExclusiveProf(this)">
                                     <span class="option-label">{{ teacher }}</span>
                                 </label>
@@ -198,15 +215,15 @@
                             {% for section in sections %}
                             {% if section.name == "Module / Enseignant" %}
                             {% for question in section.questions %}
-                            {% if question.question_id != 1 %}
+                            {% if not loop.first %}
                             <div class="question-block {% if loop.index0 > 1 and not loop.last %}q-hidden{% endif %} {% if loop.last %}q-hidden{% endif %}"
                                 data-question-id="{{ question.question_id }}" data-section-id="{{ section.section_id }}"
                                 data-module-id="{{ module.module_id }}" data-prof="{{ teacher }}"
                                 data-q-index="{{ loop.index0 }}" data-q-total="{{ section.questions|length }}"
-                                data-q-role="{% if question.question_id == 2 %}first{% elif loop.last %}last{% else %}middle{% endif %}"
+                                data-q-role="{% if question.question_type == 'QCU_Satisfaction' %}first{% elif loop.last %}last{% else %}middle{% endif %}"
                                 {% if loop.last %}data-optional="true" {% endif %}>
                                 <div class="question-label">
-                                    <span class="q-number">{{ question.question_id }}.</span>
+                                    <span class="q-number">{{ loop.index }}.</span>
                                     {{ question.text | replace("[MODULE]", module.name) | replace("[ENSEIGNANT]",
                                     teacher) }}
                                 </div>
@@ -216,11 +233,12 @@
                                     <label class="option-radio">
                                         <input type="radio" class="radio_satisf"
                                             name="q_mod_{{ module.module_id }}_{{ teacher | replace(' ', '_') }}_{{ question.question_id }}"
-                                            value="{{ opt.text }}" data-section="{{ section.section_id }}"
+                                            value="{{ opt.value }}" data-section="{{ section.section_id }}"
                                             data-question="{{ question.question_id }}"
-                                            data-module="{{ module.module_id }}" data-prof="{{ teacher }}" {% if
-                                            question.question_id==2 %}onchange="SurveyModule.handleSatisfaction(this)"
-                                            {% endif %}>
+                                            data-option-id="{{ opt.option_id }}"
+                                            data-is-positive="{{ 'true' if opt.is_positive is true else 'false' if opt.is_positive is false else '' }}"
+                                            data-module="{{ module.module_id }}" data-prof="{{ teacher }}"
+                                            onchange="SurveyModule.handleSatisfaction(this)">
                                         <span class="option-label">{{ opt.text }}</span>
                                     </label>
                                     {% endfor %}
@@ -232,8 +250,10 @@
                                     <label class="option-checkbox">
                                         <input type="checkbox"
                                             name="q_mod_{{ module.module_id }}_{{ teacher | replace(' ', '_') }}_{{ question.question_id }}"
-                                            value="{{ opt.text }}" data-section="{{ section.section_id }}"
+                                            value="{{ opt.value }}" data-section="{{ section.section_id }}"
                                             data-question="{{ question.question_id }}"
+                                            data-option-id="{{ opt.option_id }}"
+                                            data-is-positive="{{ 'true' if opt.is_positive is true else 'false' if opt.is_positive is false else '' }}"
                                             data-module="{{ module.module_id }}" data-prof="{{ teacher }}" data-max="3">
                                         <span class="option-label">{{ opt.text }}</span>
                                     </label>
@@ -265,7 +285,7 @@
                             {% for section in sections %}
                             {% if section.name == "Module / Enseignant" %}
                             {% for question in section.questions %}
-                            {% if question.question_id == 1 %}
+                            {% if loop.first %}
                             <div class="question-block" data-question-id="{{ question.question_id }}"
                                 data-section-id="{{ section.section_id }}" data-module-id="{{ module.module_id }}"
                                 data-prof="{{ teacher }}">
@@ -280,8 +300,10 @@
                                     <label class="option-radio">
                                         <input type="radio" class="toggleProf"
                                             name="q_mod_{{ module.module_id }}_{{ teacher | replace(' ', '_') }}_{{ question.question_id }}"
-                                            value="{{ opt.text }}" data-section="{{ section.section_id }}"
+                                            value="{{ opt.value }}" data-section="{{ section.section_id }}"
                                             data-question="{{ question.question_id }}"
+                                            data-option-id="{{ opt.option_id }}"
+                                            data-is-positive="{{ 'true' if opt.is_positive is true else 'false' if opt.is_positive is false else '' }}"
                                             data-module="{{ module.module_id }}" data-prof="{{ teacher }}"
                                             onchange="SurveyModule.toggleProfBlock(this)">
                                         <span class="option-label">{{ opt.text }}</span>
@@ -299,18 +321,18 @@
                                 {% for section in sections %}
                                 {% if section.name == "Module / Enseignant" %}
                                 {% for question in section.questions %}
-                                {% if question.question_id != 1 %}
+                                {% if not loop.first %}
                                 <div class="question-block {% if loop.index0 > 1 and not loop.last %}q-hidden{% endif %} {% if loop.last %}q-hidden{% endif %}"
                                     data-question-id="{{ question.question_id }}"
                                     data-section-id="{{ section.section_id }}" data-module-id="{{ module.module_id }}"
                                     data-prof="{{ teacher }}" data-q-index="{{ loop.index0 }}"
                                     data-q-total="{{ section.questions|length }}"
-                                    data-q-role="{% if question.question_id == 2 %}first{% elif loop.last %}last{% else %}middle{% endif %}"
+                                    data-q-role="{% if question.question_type == 'QCU_Satisfaction' %}first{% elif loop.last %}last{% else %}middle{% endif %}"
                                     {% if loop.last %}data-optional="true" {% endif %}>
                                     <div class="question-label">
-                                        <span class="q-number">{{ question.question_id }}.</span>
+                                        <span class="q-number">{{ loop.index }}.</span>
                                         {{ question.text | replace("[MODULE]", module.name) | replace("[ENSEIGNANT]",
-                                        prof) }}
+                                        teacher) }}
                                     </div>
 
                                     {% if question.question_type == "QCU_Satisfaction" %}
@@ -319,11 +341,12 @@
                                         <label class="option-radio">
                                             <input type="radio" class="radio_satisf"
                                                 name="q_mod_{{ module.module_id }}_{{ teacher | replace(' ', '_') }}_{{ question.question_id }}"
-                                                value="{{ opt.text }}" data-section="{{ section.section_id }}"
+                                                value="{{ opt.value }}" data-section="{{ section.section_id }}"
                                                 data-question="{{ question.question_id }}"
-                                                data-module="{{ module.module_id }}" data-prof="{{ teacher }}" {% if
-                                                question.question_id==2
-                                                %}onchange="SurveyModule.handleSatisfaction(this)" {% endif %}>
+                                                data-option-id="{{ opt.option_id }}"
+                                                data-is-positive="{{ 'true' if opt.is_positive is true else 'false' if opt.is_positive is false else '' }}"
+                                                data-module="{{ module.module_id }}" data-prof="{{ teacher }}"
+                                                onchange="SurveyModule.handleSatisfaction(this)">
                                             <span class="option-label">{{ opt.text }}</span>
                                         </label>
                                         {% endfor %}
@@ -335,8 +358,10 @@
                                         <label class="option-checkbox">
                                             <input type="checkbox"
                                                 name="q_mod_{{ module.module_id }}_{{ teacher | replace(' ', '_') }}_{{ question.question_id }}"
-                                                value="{{ opt.text }}" data-section="{{ section.section_id }}"
+                                                value="{{ opt.value }}" data-section="{{ section.section_id }}"
                                                 data-question="{{ question.question_id }}"
+                                                data-option-id="{{ opt.option_id }}"
+                                                data-is-positive="{{ 'true' if opt.is_positive is true else 'false' if opt.is_positive is false else '' }}"
                                                 data-module="{{ module.module_id }}" data-prof="{{ teacher }}"
                                                 data-max="3">
                                             <span class="option-label">{{ opt.text }}</span>
@@ -388,10 +413,12 @@
                     <div class="nps-scale">
                         {% for opt in question.options %}
                         <div class="nps-option">
-                            <input type="radio" id="nps_{{ opt.option_id }}"
-                                name="q_{{ section.section_id }}_{{ question.question_id }}" value="{{ opt.text }}"
-                                data-section="{{ section.section_id }}" data-question="{{ question.question_id }}">
-                            <label class="nps-label" for="nps_{{ opt.option_id }}">{{ opt.text }}</label>
+                            <input type="radio" id="nps_{{ question.question_id }}_{{ loop.index }}"
+                                name="q_{{ section.section_id }}_{{ question.question_id }}" value="{{ opt.value }}"
+                                data-section="{{ section.section_id }}" data-question="{{ question.question_id }}"
+                                data-option-id="{{ opt.option_id if opt.option_id is not none else '' }}"
+                                data-is-positive="{{ 'true' if opt.is_positive is true else 'false' if opt.is_positive is false else '' }}">
+                            <label class="nps-label" for="nps_{{ question.question_id }}_{{ loop.index }}">{{ opt.text }}</label>
                         </div>
                         {% endfor %}
                     </div>
