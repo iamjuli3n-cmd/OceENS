@@ -140,7 +140,7 @@ def seed_questions(session: Session):
             2,
             "QCU_Satisfaction",
             "FR_EN",
-            "Dans l'ensemble, par rapport à votre expérience globale de la program [FORMATION] sur le campus de [CAMPUS], vous êtes :", "Overall, compared to your overall experience of the [FORMATION] program on the [CAMPUS] campus, you are:",
+            "Dans l'ensemble, par rapport à votre expérience globale de la formation [FORMATION] sur le campus de [CAMPUS], vous êtes :", "Overall, compared to your overall experience of the [FORMATION] program on the [CAMPUS] campus, you are:",
         ),
         (
             2,
@@ -188,7 +188,7 @@ def seed_questions(session: Session):
             3,
             "Question_ouverte",
             "FR_EN",
-            "Expliquez précisément en quoi vous n'êtes pas satisfait du ou des points choisis ci-dessus. N'hésitez pas à illustillustrer votre avis par des exemples.", "Explain specifically why you are not satisfied with the point(s) chosen above. Please feel free to illustrate your opinion with examples.",
+            "Expliquez précisément en quoi vous n'êtes pas satisfait du ou des points choisis ci-dessus. N'hésitez pas à illustrer votre avis par des exemples.", "Explain specifically why you are not satisfied with the point(s) chosen above. Please feel free to illustrate your opinion with examples.",
         ),
         (
             3,
@@ -206,12 +206,13 @@ def seed_questions(session: Session):
             4,
             "NPS",
             "FR_EN",
-            "Seriez-vous prêts à recommander la program à un ami ?", "Would you recommend this course to a friend?",
+            "Seriez-vous prêts à recommander la formation à un ami ?", "Would you recommend the program to a friend?",
         ),
     ]
 
-    for q_data in questions_data:
+    for question_id, q_data in enumerate(questions_data, start=1):
         question = Question(
+            question_id=question_id,
             section_id=q_data[0],
             question_type=q_data[1],
             language=q_data[2],
