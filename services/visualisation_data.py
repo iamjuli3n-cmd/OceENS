@@ -33,7 +33,7 @@ def _count_labels(question_type: str) -> dict[str, str]:
             "count_label": "choix sélectionné(s)",
             "series_name": "Choix sélectionnés",
             "axis_title": "Nombre de choix sélectionnés",
-            "allow_pie": True,
+            "allow_pie": False,
         }
     return {
         "count_label": "réponse(s)",
@@ -533,7 +533,7 @@ def _get_recommendation_score(records: list[dict]) -> dict:
     }
 
 
-def _finalize_detail(detail: dict, chart_index: int) -> None:
+def _finalize_detail(detail: dict, chart_index: int,submissions_count:int) -> None:
     """Convert one accumulated detail into the payload expected by the template."""
 
     detail["chart"] = list(detail["chart"].values())
@@ -546,18 +546,20 @@ def _finalize_detail(detail: dict, chart_index: int) -> None:
         "count_label": detail["count_label"],
         "series_name": detail["series_name"],
         "axis_title": detail["axis_title"],
-        "percentage_denominator": detail["respondent_count"],
+        "percentage_denominator": submissions_count, # The percentage denominator should be the total submissions count (% of the whole promo that has answered)
         "allow_pie": detail["allow_pie"],
     }
 
 
 def build_answer_details(
     records: list[dict],
+    submissions_count: int,
     questions: Optional[list[dict]] = None,
     modules: Optional[list[dict]] = None,
     survey: Optional[dict] = None,
     program: Optional[dict] = None,
 ) -> dict:
+
     """Group every question under the summary row that owns it."""
     sections: OrderedDict[int, dict] = OrderedDict()
     groups: OrderedDict[tuple, dict] = OrderedDict()
@@ -717,7 +719,7 @@ def build_answer_details(
         )
         for detail in section["questions"]:
             chart_index += 1
-            _finalize_detail(detail, chart_index)
+            _finalize_detail(detail, chart_index,submissions_count)
 
     return {"sections": list(sections.values())}
 
@@ -753,6 +755,7 @@ def get_visualisation_context(survey_id: int) -> Dict[str, Any]:
     modules = details["modules"]
     answer_details = build_answer_details(
         records,
+        details["submissions_count"],
         questions=details["questions"],
         modules=modules,
         survey=survey,

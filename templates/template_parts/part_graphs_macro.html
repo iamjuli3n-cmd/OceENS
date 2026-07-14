@@ -25,7 +25,7 @@
 {% macro question_detail(detail) %}
 <article class="answer-question-card">
     <h3>{{ detail.question_position }}. {{ detail.question | safe }}</h3>
-    <p class="answer-count">{{ detail.total_count }} {{ detail.count_label }}</p>
+    <p class="answer-count">{{ detail.respondent_count }} réponse(s)</p>
     {% if detail.is_open %}
     {% if detail.answers %}
     <ul class="verbatim-list">
