@@ -33,7 +33,6 @@
 
             try {
                 workbook = XLSX.read(content, { type: 'binary', cellStyles: true });
-                console.log(workbook);
                 list = document.getElementById('student-list-area');
                 list_txt = ""
                 workbook.Strings.forEach((mail) => {
