@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/survey.css">
+
 </head>
 
 <body>
@@ -18,15 +19,18 @@
         <div class="header-left">
             <img src="/static/img/epf_logo_blanc.png" alt="EPF">
             <span class="header-title">Évaluation des enseignements</span>
+            <a href="/" class="btn-retour">Retour</a>
         </div>
         <div class="header-right">
-            <a href="/" class="btn-retour">Retour</a>
+            <!-- <a href="/" class="btn-retour">Retour</a> -->
             {% include 'template_parts/part_language_selection.html' %}
             <span class="header-logo-oceens">
                 <span style="color: #df231d;">Océ</span><span style="color: #470a68;">Ens</span>
             </span>
         </div>
     </header>
+
+
 
     <main>
         {% if user_has_answered %}
