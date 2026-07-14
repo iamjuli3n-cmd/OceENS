@@ -1,0 +1,41 @@
+{% macro chart_block(chart_id, chart_data) %}
+<script type="application/json" id="data-{{ chart_id }}">{{ chart_data | tojson }}</script>
+<div class="chart-container-wrapper">
+    <div id="chart-{{ chart_id }}"></div>
+    <div class="chart-controls-overlay">
+        {% if chart_data.get('allow_pie', true) %}
+        <button type="button" class="btn-control" title="Camembert"
+            onclick="renderAnswerChart('data-{{ chart_id }}', 'chart-{{ chart_id }}', 'pie')">
+            <img src="/static/img/pie-chart.svg" height="22" alt="Camembert">
+        </button>
+        {% endif %}
+        <button type="button" class="btn-control" title="Histogramme"
+            onclick="renderAnswerChart('data-{{ chart_id }}', 'chart-{{ chart_id }}', 'bar')">
+            <img src="/static/img/horizontal-bar-chart.svg" height="22" alt="Histogramme">
+        </button>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        renderAnswerChart('data-{{ chart_id }}', 'chart-{{ chart_id }}');
+    });
+</script>
+{% endmacro %}
+
+{% macro question_detail(detail) %}
+<article class="answer-question-card">
+    <h3>{{ detail.question_position }}. {{ detail.question | safe }}</h3>
+    <p class="answer-count">{{ detail.total_count }} {{ detail.count_label }}</p>
+    {% if detail.is_open %}
+    {% if detail.answers %}
+    <ul class="verbatim-list">
+        {% for answer in detail.answers %}<li>{{ answer }}</li>{% endfor %}
+    </ul>
+    {% else %}
+    <p class="score-placeholder">Aucune réponse à cette question.</p>
+    {% endif %}
+    {% else %}
+    {{ chart_block(detail.chart_id, detail.chart_data) }}
+    {% endif %}
+</article>
+{% endmacro %}

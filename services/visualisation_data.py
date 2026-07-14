@@ -33,7 +33,7 @@ def _count_labels(question_type: str) -> dict[str, str]:
             "count_label": "choix sélectionné(s)",
             "series_name": "Choix sélectionnés",
             "axis_title": "Nombre de choix sélectionnés",
-            "allow_pie": False,
+            "allow_pie": True,
         }
     return {
         "count_label": "réponse(s)",
@@ -253,7 +253,7 @@ def get_answers_details(survey_id: int) -> Optional[Dict[str, Any]]:
                     "option_id": row.option_id,
                     "text_fr": row.option_text_fr or "",
                     "text_en": row.option_text_en or "",
-                    "label": bilingual_text(row.option_text_fr, row.option_text_en),
+                    "label": row.option_text_fr, #bilingual_text(row.option_text_fr, row.option_text_en),
                     "is_positive": (
                         None if row.is_positive is None else bool(row.is_positive)
                     ),
@@ -391,7 +391,7 @@ def _score_from_records(records: list[dict]) -> dict:
     histo: OrderedDict[str, int] = OrderedDict()
     for record in satisfaction_records:
         key: Any = record.get("option_id")
-        label = bilingual_text(record.get("option_text_fr"), record.get("option_text_en"))
+        label = record.get("option_text_fr") #bilingual_text(record.get("option_text_fr"), record.get("option_text_en"))
         label = label or str(record.get("value") or "Sans réponse")
         if key is None:
             key = f"value:{label}"
@@ -540,7 +540,7 @@ def _finalize_detail(detail: dict, chart_index: int) -> None:
     detail["respondent_count"] = len(detail.pop("_respondent_ids"))
     detail["chart_id"] = f"answer-detail-{chart_index}"
     detail["chart_data"] = {
-        "title": detail["question"],
+        "title": "",
         "items": detail["chart"],
         "mode": "percent",
         "count_label": detail["count_label"],
@@ -691,7 +691,7 @@ def build_answer_details(
             continue
 
         option_key: Any = record.get("option_id")
-        label = bilingual_text(record.get("option_text_fr"), record.get("option_text_en"))
+        label = record.get("option_text_fr") #bilingual_text(record.get("option_text_fr"), record.get("option_text_en"))
         label = label or str(record.get("value") or "Sans réponse")
         if option_key is None:
             option_key = f"value:{label}"
