@@ -55,6 +55,9 @@ CLIENT_ID = os.environ.get("ENTRA_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("ENTRA_CLIENT_SECRET")
 # Clé secrète pour l'authentification (confidentielle)
 TENANT_ID = os.environ.get("ENTRA_TENANT_ID")
+if CLIENT_ID == None or CLIENT_SECRET == None or TENANT_ID == None:
+    print("MISSING ENTRA INFO. Please check .env")
+    exit()
 # ID du "tenant" (organisation) dans Azure Entra
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
 # URL de base pour toutes les demandes d'authentification Microsoft
