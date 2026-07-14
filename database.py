@@ -3,8 +3,14 @@ from fastapi import Depends
 from sqlmodel import SQLModel, create_engine, Session, select
 # Assuming User is defined in models.py inheriting from SQLModel
 from models import User 
+import os
 
-DATABASE_URL = "sqlite:///./database/db_oceens.db"
+DATABASE_PATH="./database/"
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}/db_oceens.db"
+
+
+if not os.path.exists(DATABASE_PATH):
+    os.mkdir(DATABASE_PATH)
 
 # check_same_thread is only needed for SQLite
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
