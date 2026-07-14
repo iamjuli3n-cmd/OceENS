@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard Étudiant - {{ user.name }} - OcéEns</title>
+  <title>Tableau de bord étudiant / Student Dashboard - {{ user.name }} - OcéEns</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,15 +23,25 @@
     </div>
 
     <nav>
+      {% include 'template_parts/part_language_selection.html' %}
       <span class="user-email">{{ user.email }}</span>
-      <a href="/logout" class="logout-btn">Déconnexion</a>
+      <a href="/logout" class="logout-btn">
+        <text class="text_fr">Déconnexion</text>
+        <text class="text_en">Log out</text>
+      </a>
     </nav>
   </header>
 
   <div class="banner">
     <div>
-      <div class="banner-badge">Étudiant</div>
-      <div class="banner-greeting">Bonjour, {{ user.name }} !</div>
+      <div class="banner-badge">
+        <text class="text_fr">Étudiant</text>
+        <text class="text_en">Student</text>
+      </div>
+      <div class="banner-greeting">
+        <text class="text_fr">Bonjour, {{ user.name }} !</text>
+        <text class="text_en">Hello, {{ user.name }}!</text>
+      </div>
     </div>
   </div>
 
@@ -44,20 +54,27 @@
       <h1 class="logo-title">
         <span class="text-red">Océ</span><span class="text-purple">Ens</span>
       </h1>
-      <p class="logo-subtitle" style="text-transform:none;">Plateforme d'évaluation des enseignements</p>
+      <p class="logo-subtitle" style="text-transform:none;">
+        <text class="text_fr">Plateforme d'évaluation des enseignements</text>
+        <text class="text_en">Teaching evaluation platform</text>
+      </p>
 
       <section class="questionnaire-section-with-incentive">
 
         <div class="incentive-text">
           <p class="welcome" id="incentive-message">
             {% if surveys | length > 0 %}
-              {% if all_answered_or_closed %}
-                Merci, vous avez complété tous les questionnaires disponibles.
-              {% else %}
-                Merci de compléter les questionnaires de fin de semestre pour les cours suivants :
-              {% endif %}
+            {% if all_answered_or_closed %}
+            <text class="text_fr">Merci, vous avez complété tous les questionnaires disponibles.</text>
+            <text class="text_en">Thank you, you have completed all available surveys.</text>
             {% else %}
-              Vous n'avez aucun questionnaire à compléter pour le moment.
+            <text class="text_fr">Merci de compléter les questionnaires de fin de semestre pour les cours suivants
+              :</text>
+            <text class="text_en">Please complete the end-of-semester surveys for the following courses:</text>
+            {% endif %}
+            {% else %}
+            <text class="text_fr">Vous n'avez aucun questionnaire à compléter pour le moment.</text>
+            <text class="text_en">You currently have no surveys to complete.</text>
             {% endif %}
 
 
@@ -66,7 +83,10 @@
 
         <div class="student-questionnaires-card">
           <div class="student-questionnaires-header">
-            <h2>Mes questionnaires</h2>
+            <h2>
+              <text class="text_fr">Mes questionnaires</text>
+              <text class="text_en">My surveys</text>
+            </h2>
           </div>
 
           <div id="questionnaires-list">
@@ -78,11 +98,20 @@
               </div>
               <div class="student-survey-action">
                 {% if survey.is_answered %}
-                  <button class="student-survey-btn done" disabled="">Questionnaire déjà complété</button>
+                <button class="student-survey-btn done" disabled="">
+                  <text class="text_fr">Questionnaire déjà complété</text>
+                  <text class="text_en">Survey already completed</text>
+                </button>
                 {% elif survey.is_closed %}
-                  <button class="student-survey-btn closed" disabled="">Sondage fermé</button>
+                <button class="student-survey-btn closed" disabled="">
+                  <text class="text_fr">Sondage fermé</text>
+                  <text class="text_en">Survey closed</text>
+                </button>
                 {% else %}
-                  <a class="student-survey-btn answer" href="/api/surveys/{{survey.survey_id}}">Répondre au questionnaire</a>
+                <a class="student-survey-btn answer" href="/api/surveys/{{survey.survey_id}}">
+                  <text class="text_fr">Répondre au questionnaire</text>
+                  <text class="text_en">Answer the survey</text>
+                </a>
                 {% endif %}
               </div>
             </div>
@@ -94,7 +123,6 @@
 
     </div>
   </main>
-  <script src="{{ url_for('static', path='js/student.js') }}"></script>
 </body>
 
 </html>
