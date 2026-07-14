@@ -28,6 +28,7 @@ from sqlmodel import Session, SQLModel, create_engine, select, func, delete
 import uvicorn
 from seed import seed_all_if_necessary
 from database import engine, SessionDep, create_db_and_tables
+from services.visualisation_data import bilingual_text
 
 # ┌─ Importation des modèles et du module d'authentification ─────────────┐
 from models import (
@@ -57,10 +58,6 @@ load_dotenv()
 VALID_ROLES = {"admin", "student", "program_manager"}
 
 
-def bilingual_text(text_fr: Optional[str], text_en: Optional[str]) -> str:
-    """Build the bilingual label displayed by the survey UI."""
-    parts = [text.strip() for text in (text_fr, text_en) if text and text.strip()]
-    return " / ".join(dict.fromkeys(parts))
 
 
 def role_to_dashboard_slug(roles: List[str]) -> str:

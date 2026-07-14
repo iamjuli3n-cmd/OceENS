@@ -748,3 +748,18 @@ main {
 .survey-status-banner.answered {
     background: #2e7d32;
 }
+
+.btn-retour {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.btn-retour:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+

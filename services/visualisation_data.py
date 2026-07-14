@@ -43,9 +43,12 @@ def _count_labels(question_type: str) -> dict[str, str]:
     }
 
 
-def _bilingual(text_fr: Optional[str], text_en: Optional[str]) -> str:
-    parts = [text.strip() for text in (text_fr, text_en) if text and text.strip()]
-    return " / ".join(dict.fromkeys(parts))
+def bilingual_text(text_fr: Optional[str], text_en: Optional[str]) -> str:
+    """Build the bilingual label displayed by the survey UI."""
+    # parts = [text.strip() for text in (text_fr, text_en) if text and text.strip()]
+    # return " / ".join(dict.fromkeys(parts))
+    return f'<text class="text_fr">{text_fr}</text> <text class="text_en">{text_en}</text>'
+
 
 
 def _split_teachers(value: Optional[str]) -> list[str]:
@@ -241,7 +244,7 @@ def get_answers_details(survey_id: int) -> Optional[Dict[str, Any]]:
                 "question_type": row.question_type or "",
                 "question_text_fr": row.question_text_fr or "",
                 "question_text_en": row.question_text_en or "",
-                "question": _bilingual(row.question_text_fr, row.question_text_en),
+                "question": bilingual_text(row.question_text_fr, row.question_text_en),
                 "options": [],
             }
         if row.option_id:
@@ -250,7 +253,7 @@ def get_answers_details(survey_id: int) -> Optional[Dict[str, Any]]:
                     "option_id": row.option_id,
                     "text_fr": row.option_text_fr or "",
                     "text_en": row.option_text_en or "",
-                    "label": _bilingual(row.option_text_fr, row.option_text_en),
+                    "label": bilingual_text(row.option_text_fr, row.option_text_en),
                     "is_positive": (
                         None if row.is_positive is None else bool(row.is_positive)
                     ),
@@ -281,7 +284,7 @@ def get_answers_details(survey_id: int) -> Optional[Dict[str, Any]]:
             "language": row.language or "",
             "question_text_fr": row.question_text_fr or "",
             "question_text_en": row.question_text_en or "",
-            "question": _bilingual(row.question_text_fr, row.question_text_en),
+            "question": bilingual_text(row.question_text_fr, row.question_text_en),
             "module_id": row.module_id or None,
             "ue": row.ue or "",
             "module": row.module_name or "",
@@ -388,7 +391,7 @@ def _score_from_records(records: list[dict]) -> dict:
     histo: OrderedDict[str, int] = OrderedDict()
     for record in satisfaction_records:
         key: Any = record.get("option_id")
-        label = _bilingual(record.get("option_text_fr"), record.get("option_text_en"))
+        label = bilingual_text(record.get("option_text_fr"), record.get("option_text_en"))
         label = label or str(record.get("value") or "Sans réponse")
         if key is None:
             key = f"value:{label}"
@@ -688,7 +691,7 @@ def build_answer_details(
             continue
 
         option_key: Any = record.get("option_id")
-        label = _bilingual(record.get("option_text_fr"), record.get("option_text_en"))
+        label = bilingual_text(record.get("option_text_fr"), record.get("option_text_en"))
         label = label or str(record.get("value") or "Sans réponse")
         if option_key is None:
             option_key = f"value:{label}"

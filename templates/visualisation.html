@@ -130,7 +130,7 @@
 
     {% macro question_detail(detail) %}
     <article class="answer-question-card">
-        <h3>{{ detail.question_position }}. {{ detail.question }}</h3>
+        <h3>{{ detail.question_position }}. {{ detail.question | safe }}</h3>
         <p class="answer-count">{{ detail.total_count }} {{ detail.count_label }}</p>
         {% if detail.is_open %}
             {% if detail.answers %}
@@ -151,6 +151,7 @@
             <span style="color: var(--epf-red);">Océ</span><span style="color: var(--epf-purple);">Ens</span>
         </div>
         <nav style="display:flex; align-items:center; gap:14px;">
+            {% include 'template_parts/part_language_selection.html' %}
             <span style="color:#555; font-size:13px;">{{ user.email }}</span>
             <a href="/logout" class="btn-logout">Déconnexion</a>
             <a href="javascript:history.back()" class="btn-logout"
