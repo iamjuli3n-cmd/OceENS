@@ -142,14 +142,16 @@
                                     <p class="answer-count">{{ question.question_submissions_count }} réponse(s)</p>
 
                                     {% if question.question_type == 'QCU_Satisfaction' %}
+
+
                                     {{ chart_block( gs.graph_counter , {"items":question.histo,
-                                    "positive_list":question.is_positive,"allow_pie":True} ) }}
+                                    "positive_list":question.is_positive,"allow_pie":True, "attendance_count":teacher['attendance_count'], "suffix_text":'des personnes ayant eu cet.te enseignant.e.'} ) }}
                                     {% set gs.graph_counter = gs.graph_counter + 1 %}
 
 
                                     {% elif question.question_type == 'QCM_Insatisfaction' %}
                                     {{ chart_block( gs.graph_counter , {"items":question.histo,
-                                    "positive_list":question.is_positive,"allow_pie":False} ) }}
+                                    "positive_list":question.is_positive,"allow_pie":False, "attendance_count":teacher['attendance_count'], "suffix_text":'des personnes ayant eu cet.te enseignant.e.'} ) }}
                                     {% set gs.graph_counter = gs.graph_counter + 1 %}
 
                                     {% elif question.question_type == 'Question_ouverte' %}
@@ -230,14 +232,18 @@
                                 <p class="answer-count">{{ question.question_submissions_count }} réponse(s)</p>
 
                                 {% if question.question_type == 'QCU_Satisfaction' %}
+                                
+                                
+
                                 {{ chart_block( gs.graph_counter , {"items":question.histo,
-                                "positive_list":question.is_positive,"allow_pie":True} ) }}
+                                "positive_list":question.is_positive,"allow_pie":True, "attendance_count":submissions_count} ) }}
                                 {% set gs.graph_counter = gs.graph_counter + 1 %}
 
 
                                 {% elif question.question_type == 'QCM_Insatisfaction' %}
+
                                 {{ chart_block( gs.graph_counter , {"items":question.histo,
-                                "positive_list":question.is_positive,"allow_pie":False} ) }}
+                                "positive_list":question.is_positive,"allow_pie":False, "attendance_count":submissions_count} ) }}
                                 {% set gs.graph_counter = gs.graph_counter + 1 %}
 
                                 {% elif question.question_type == 'Question_ouverte' %}

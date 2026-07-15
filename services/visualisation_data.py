@@ -105,15 +105,9 @@ def _make_chart_item(
     }
 
 def _build_question(dic, data_row, options, options_value, submissions_sets):
-    if (
-        data_row["question_id"]
-        not in dic.keys()
-    ):
-        dic[data_row["question_id"]] = {
-            "text": bilingual_text(
-                data_row["question_text_fr"],
-                data_row["question_text_en"],
-            ),
+    if (data_row["question_id"] not in dic["questions"].keys()):
+        dic["questions"][data_row["question_id"]] = {
+            "text": bilingual_text(data_row["question_text_fr"],data_row["question_text_en"],),
             "question_type": data_row["question_type"],
             "question_submissions_count":0,
             "is_positive": [],
@@ -124,41 +118,28 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
             else defaultdict(int),
         }
 
+    
+   
+
     if data_row["module_name"] not in submissions_sets:
         submissions_sets[data_row["module_name"]]={}
     if data_row["teacher"] not in submissions_sets[data_row["module_name"]]:
         submissions_sets[data_row["module_name"]][data_row["teacher"]] = defaultdict(set)
     if data_row["submission_id"] not in submissions_sets[data_row["module_name"]][data_row["teacher"]][data_row["question_id"]]: # Memorizing submissions_set
         submissions_sets[data_row["module_name"]][data_row["teacher"]][data_row["question_id"]].add(data_row["submission_id"])
-        dic[data_row["question_id"]]["question_submissions_count"]+=1 # Counting submissions
+        dic["questions"][data_row["question_id"]]["question_submissions_count"]+=1 # Counting submissions
+    if (data_row['question_type']=='QCU_Oui_Non'): # ATTENDANCE COUNT
+        if "attendance_count" not in dic.keys():
+            dic["attendance_count"]=0
+        if options_value[data_row["option_id"]]["text"] == 'Oui': # Count the Yes
+            dic["attendance_count"]+=1
     if data_row["option_id"]:
-        dic[data_row["question_id"]][
-            "histo"
-        ][
-            options_value[
-                data_row["option_id"]
-            ]["text"]  # Conversion from option_id to text_fr
-        ] += 1  # Counting the number of appearance of each value
-        if options_value[
-                data_row["option_id"]
-            ]["is_positive"] and options_value[
-                data_row["option_id"]
-            ]["text"] not in dic[data_row["question_id"]][
-                "is_positive"
-            ]:
-            dic[data_row["question_id"]][
-                "is_positive"
-            ].append(
-                options_value[
-                    data_row["option_id"]
-                ]["text"]  # Conversion from option_id to text_fr
-            )
+        dic["questions"][data_row["question_id"]]["histo"][options_value[data_row["option_id"]]["text"]] += 1  # Counting the number of appearance of each value
+        if (options_value[data_row["option_id"]]["is_positive"] 
+        and options_value[data_row["option_id"]]["text"] not in dic["questions"][data_row["question_id"]]["is_positive"]):
+            dic["questions"][data_row["question_id"]]["is_positive"].append(options_value[data_row["option_id"]]["text"])  # Conversion from option_id to text_fr
     else:
-        dic[data_row["question_id"]][
-            "histo"
-        ][
-            data_row["answer_value"]
-        ] += 1  # Counting the number of appearance of each value
+        dic["questions"][data_row["question_id"]]["histo"][data_row["answer_value"]] += 1  # Counting the number of appearance of each value
 
 
 def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
@@ -312,11 +293,11 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                         ]["teachers"][data_row["teacher"]] = {"questions": {}}
                     _build_question(data[data_row["section_name"]]["modules"][
                             data_row["module_name"]
-                        ]["teachers"][data_row["teacher"]]["questions"], data_row, options, options_value, submissions_sets)
+                        ]["teachers"][data_row["teacher"]], data_row, options, options_value, submissions_sets)
             else: # section_type = S --> Simple
                 if "questions" not in data[data_row["section_name"]]:
                     data[data_row["section_name"]] = {"questions": {}}
-                _build_question(data[data_row["section_name"]]["questions"], data_row, options, options_value, submissions_sets)
+                _build_question(data[data_row["section_name"]], data_row, options, options_value, submissions_sets)
 
 
     context["sections"] = data

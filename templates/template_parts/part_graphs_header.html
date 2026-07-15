@@ -12,6 +12,7 @@
         const displayMode = payload.mode || 'percent';
         const countLabel = payload.count_label || 'réponse(s)';
         const seriesName = payload.series_name || 'Réponses';
+        const suffixText = payload.suffix_text || 'des personnes ayant suivi la formation.'
         const axisTitle = payload.axis_title || 'Nombre de réponses';
         var total = 0;
         var items = [];
@@ -19,7 +20,7 @@
             items.push({ "label": key, "count": value, "is_positive": 1 ? (positive_list.includes(key)) : 0 });
             total += value;
         }
-        const percentageDenominator = payload.percentage_denominator ?? total;
+        const percentageDenominator = payload.attendance_count ?? total;
         const positiveColors = ['#5dbb47', '#91c83e', '#c7d93a'];
         const negativeColors = ['#f1ac16', '#ea761f', '#f02024'];
         const neutralColors = ['#470a68', '#7350a3', '#4b83c3', '#5fa8a5', '#8a8f98'];
@@ -28,7 +29,6 @@
         let neutralIndex = 0;
 
         const enriched = items.map(item => {
-            console.log(item);
             let color;
             if (positive_list.length == 0) {
                 color = neutralColors[neutralIndex++ % neutralColors.length];
@@ -72,11 +72,11 @@
                 min: 0,
                 max: displayMode === 'count' ? null : 100,
                 title: { text: displayMode === 'count' ? axisTitle : null },
-                labels: { format: displayMode === 'count' ? '{value:.0f}' : '{value:.0f}%' }
+                labels: { format: displayMode === 'count' ? '{value:.0f}' : '{value:.1f}%' }
             },
             tooltip: {
                 formatter: function () {
-                    const suffix = displayMode === 'count' ? '' : ` — ${this.y.toFixed(0)}%`;
+                    const suffix = displayMode === 'count' ? '' : ` — ${this.y.toFixed(1)}% ${suffixText}`;
                     return `<b>${this.point.name}</b><br>${this.point.rawCount} ${countLabel}${suffix}`;
                 }
             },
@@ -84,7 +84,7 @@
                 bar: {
                     dataLabels: {
                         enabled: true,
-                        format: displayMode === 'count' ? '{y:.0f}' : '{y:.0f}%'
+                        format: displayMode === 'count' ? '{y:.0f}' : '{y:.1f}%'
                     }
                 }
             }
