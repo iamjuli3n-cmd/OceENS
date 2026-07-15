@@ -1,19 +1,26 @@
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script>
     function renderAnswerChart(dataSourceId, containerId, chartType = 'bar') {
-        
+
         const source = document.getElementById(dataSourceId);
         console.log(source.text);
         if (!source || typeof Highcharts === 'undefined') return;
 
         const payload = JSON.parse(source.textContent);
         if (chartType === 'pie' && payload.allow_pie === false) chartType = 'bar';
-        const items = payload.items || [];
+
+        const positive_list = payload.positive_list || [];
+
         const displayMode = payload.mode || 'percent';
         const countLabel = payload.count_label || 'réponse(s)';
         const seriesName = payload.series_name || 'Réponses';
         const axisTitle = payload.axis_title || 'Nombre de réponses';
-        const total = items.reduce((sum, item) => sum + (item.count || 0), 0);
+        var total = 0;
+        var items = [];
+        for (const [key, value] of Object.entries(payload.items)) {
+            items.push({ "label": key, "count": value, "is_positive": 1 ? (positive_list.includes(key)) : 0 });
+            total += value;
+        }
         const percentageDenominator = payload.percentage_denominator ?? total;
         const positiveColors = ['#5dbb47', '#91c83e', '#c7d93a'];
         const negativeColors = ['#f1ac16', '#ea761f', '#f02024'];
@@ -23,14 +30,16 @@
         let neutralIndex = 0;
 
         const enriched = items.map(item => {
+            console.log(item);
             let color;
-            if (item.is_positive === true) {
-                color = positiveColors[positiveIndex++ % positiveColors.length];
-            } else if (item.is_positive === false) {
-                color = negativeColors[negativeIndex++ % negativeColors.length];
-            } else {
+            if (positive_list.length == 0) {
                 color = neutralColors[neutralIndex++ % neutralColors.length];
-            }
+            } else
+                if (item.is_positive === true) {
+                    color = positiveColors[positiveIndex++ % positiveColors.length];
+                } else {
+                    color = negativeColors[negativeIndex++ % negativeColors.length];
+                }
             return { ...item, color };
         });
 

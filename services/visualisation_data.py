@@ -1,6 +1,7 @@
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from typing import Any, Dict, Optional
 import unicodedata
+import json
 
 from sqlalchemy.orm import aliased
 from sqlmodel import Session, func, select
@@ -47,19 +48,24 @@ def bilingual_text(text_fr: Optional[str], text_en: Optional[str]) -> str:
     """Build the bilingual label displayed by the survey UI."""
     # parts = [text.strip() for text in (text_fr, text_en) if text and text.strip()]
     # return " / ".join(dict.fromkeys(parts))
-    return f'<text class="text_fr">{text_fr}</text> <text class="text_en">{text_en}</text>'
-
+    return (
+        f'<text class="text_fr">{text_fr}</text> <text class="text_en">{text_en}</text>'
+    )
 
 
 def _split_teachers(value: Optional[str]) -> list[str]:
-    return [teacher.strip() for teacher in str(value or "").split(",") if teacher.strip()]
+    return [
+        teacher.strip() for teacher in str(value or "").split(",") if teacher.strip()
+    ]
 
 
 def _replace_placeholders(text: str, record: dict) -> str:
     return (
         (text or "")
         .replace("[CAMPUS]", record.get("campus") or "")
-        .replace("[FORMATION]", record.get("program_name") or record.get("program") or "")
+        .replace(
+            "[FORMATION]", record.get("program_name") or record.get("program") or ""
+        )
         .replace("[MODULE]", record.get("module") or "")
         .replace("[ENSEIGNANT]", record.get("teacher") or "")
     )
@@ -97,6 +103,227 @@ def _make_chart_item(
         "is_positive": is_positive,
         "count": count,
     }
+
+def _build_question(dic, data_row, options, options_value, submissions_sets):
+    if (
+        data_row["question_id"]
+        not in dic.keys()
+    ):
+        dic[data_row["question_id"]] = {
+            "text": bilingual_text(
+                data_row["question_text_fr"],
+                data_row["question_text_en"],
+            ),
+            "question_type": data_row["question_type"],
+            "question_submissions_count":0,
+            "is_positive": [],
+            "histo": {
+                o: 0 for o in options[data_row["question_id"]]
+            }  # If the question as dedicated options, init the histo with them
+            if data_row["question_id"] in options.keys()
+            else defaultdict(int),
+        }
+
+    if data_row["module_name"] not in submissions_sets:
+        submissions_sets[data_row["module_name"]]={}
+    if data_row["teacher"] not in submissions_sets[data_row["module_name"]]:
+        submissions_sets[data_row["module_name"]][data_row["teacher"]] = defaultdict(set)
+    if data_row["submission_id"] not in submissions_sets[data_row["module_name"]][data_row["teacher"]][data_row["question_id"]]: # Memorizing submissions_set
+        submissions_sets[data_row["module_name"]][data_row["teacher"]][data_row["question_id"]].add(data_row["submission_id"])
+        dic[data_row["question_id"]]["question_submissions_count"]+=1 # Counting submissions
+    if data_row["option_id"]:
+        dic[data_row["question_id"]][
+            "histo"
+        ][
+            options_value[
+                data_row["option_id"]
+            ]["text"]  # Conversion from option_id to text_fr
+        ] += 1  # Counting the number of appearance of each value
+        if options_value[
+                data_row["option_id"]
+            ]["is_positive"] and options_value[
+                data_row["option_id"]
+            ]["text"] not in dic[data_row["question_id"]][
+                "is_positive"
+            ]:
+            dic[data_row["question_id"]][
+                "is_positive"
+            ].append(
+                options_value[
+                    data_row["option_id"]
+                ]["text"]  # Conversion from option_id to text_fr
+            )
+    else:
+        dic[data_row["question_id"]][
+            "histo"
+        ][
+            data_row["answer_value"]
+        ] += 1  # Counting the number of appearance of each value
+
+
+def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
+    context = {}
+    with Session(engine) as session:
+
+        # FETCH SURVEY AND PROGRAM
+        survey_row = session.exec(
+            select(Survey, Program)
+            .join(Program, Program.code == Survey.program, isouter=True)
+            .where(Survey.survey_id == survey_id)
+        ).first()
+        if not survey_row:
+            return None
+
+        survey, program = survey_row
+        context["survey"] = {
+            "survey_id": survey.survey_id,
+            "template_id": survey.template_id,
+            "program": survey.program,
+            "campus": program.campus if program else "",
+            "semester": survey.semester,
+            "school_year": survey.school_year,
+            "status": survey.status,
+        }
+        context["program"] = {
+            "code": survey.program,
+            "name": program.name if program else survey.program,
+            "campus": program.campus if program else "",
+        }
+
+        respondent_row = session.exec(
+            select(
+                func.count(Respondent.user_id),
+                func.count(Respondent.submission_date),
+            ).where(Respondent.survey_id == survey_id)
+        ).first()
+        context["respondents_count"] = int(respondent_row[0] or 0) if respondent_row else 0
+        context["answers_count"] = int(respondent_row[1] or 0) if respondent_row else 0
+        context["submissions_count"] = int(
+            session.exec(
+                select(func.count(Submission.submission_id)).where(
+                    Submission.survey_id == survey_id
+                )
+            ).one()
+            or 0
+        )
+
+        # END SURVEY AND PROGRAM
+
+        # FETCH ANSWERS
+
+        data={}
+
+        # Fetch default options for each question_id
+        options = {
+            o[0]: json.loads(o[1])
+            for o in session.exec(
+                select(Option.question_id, func.json_group_array(Option.text_fr))
+                .order_by(Option.option_id)
+                .group_by(Option.question_id)
+            ).all()
+        }
+
+        print(options)
+
+        options_value = {
+            o.option_id: {"text":o.text_fr,"is_positive":o.is_positive} for o in session.exec(select(Option)).all()
+        }
+
+        # Memorize submissions_set
+        submissions_sets=defaultdict()
+
+        rows = session.exec(
+            select(
+                Answer.answer_id,
+                Answer.submission_id,
+                Answer.question_id,
+                Answer.module_id,
+                Answer.teacher,
+                Answer.option_id,
+                Answer.value.label("answer_value"),
+                Section.section_id,
+                Section.name.label("section_name"),
+                Section.order.label("section_order"),
+                Section.section_type,
+                Question.question_type,
+                Question.text_fr.label("question_text_fr"),
+                Question.text_en.label("question_text_en"),
+                Module.ue,
+                Module.name.label("module_name"),
+            )
+            .join(Submission, Submission.submission_id == Answer.submission_id)
+            .join(Survey, Survey.survey_id == Submission.survey_id)
+            .join(Program, Program.code == Survey.program, isouter=True)
+            .join(Question, Question.question_id == Answer.question_id)
+            .join(Section, Section.section_id == Question.section_id)
+            .join(Module, Module.module_id == Answer.module_id, isouter=True)
+            .where(Survey.survey_id == survey_id)
+            .order_by(
+                Section.order,
+                Module.ue,
+                Module.name,
+                Answer.teacher,
+                Question.question_id,
+                Answer.option_id,
+            )
+        ).all()
+
+        for r in rows:
+            data_row = {
+                "answer_id": r[0],
+                "submission_id": r[1],
+                "question_id": r[2],
+                "module_id": r[3],
+                "teacher": r[4],
+                "option_id": r[5],
+                "answer_value": r[6],
+                "section_id": r[7],
+                "section_name": r[8],
+                "section_order": r[9],
+                "section_type": r[10],
+                "question_type": r[11],
+                "question_text_fr": r[12],
+                "question_text_en": r[13],
+                "ue": r[14],
+                "module_name": r[15],
+            }
+            if data_row["section_name"] not in data.keys():
+                data[data_row["section_name"]] = {}
+            data[data_row["section_name"]]["section_type"] = data_row["section_type"]
+            if data_row["section_type"] == "ME":
+                if "modules" not in data[data_row["section_name"]].keys():
+                    data[data_row["section_name"]]["modules"] = {}
+                if (
+                    data_row["module_name"]
+                    not in data[data_row["section_name"]]["modules"].keys()
+                ):
+                    data[data_row["section_name"]]["modules"][
+                        data_row["module_name"]
+                    ] = {"ue": data_row["ue"], "teachers":{}}
+                if data_row["teacher"]:
+                    if (
+                        data_row["teacher"]
+                        not in data[data_row["section_name"]]["modules"][
+                            data_row["module_name"]
+                        ]["teachers"].keys()
+                    ):
+                        data[data_row["section_name"]]["modules"][
+                            data_row["module_name"]
+                        ]["teachers"][data_row["teacher"]] = {"questions": {}}
+                    _build_question(data[data_row["section_name"]]["modules"][
+                            data_row["module_name"]
+                        ]["teachers"][data_row["teacher"]]["questions"], data_row, options, options_value, submissions_sets)
+            else: # section_type = S --> Simple
+                if "questions" not in data[data_row["section_name"]]:
+                    data[data_row["section_name"]] = {"questions": {}}
+                _build_question(data[data_row["section_name"]]["questions"], data_row, options, options_value, submissions_sets)
+
+
+    context["sections"] = data
+    # END ANSWERS   
+       
+    print(data)
+    return context
 
 
 def get_answers_details(survey_id: int) -> Optional[Dict[str, Any]]:
@@ -253,7 +480,7 @@ def get_answers_details(survey_id: int) -> Optional[Dict[str, Any]]:
                     "option_id": row.option_id,
                     "text_fr": row.option_text_fr or "",
                     "text_en": row.option_text_en or "",
-                    "label": row.option_text_fr, #bilingual_text(row.option_text_fr, row.option_text_en),
+                    "label": row.option_text_fr,  # bilingual_text(row.option_text_fr, row.option_text_en),
                     "is_positive": (
                         None if row.is_positive is None else bool(row.is_positive)
                     ),
@@ -363,7 +590,9 @@ def _legacy_positive(value: Any) -> bool:
 
 
 def _score_from_records(records: list[dict]) -> dict:
-    satisfaction_records = [record for record in records if _is_satisfaction_record(record)]
+    satisfaction_records = [
+        record for record in records if _is_satisfaction_record(record)
+    ]
     if not satisfaction_records:
         return {
             "question": "",
@@ -391,7 +620,9 @@ def _score_from_records(records: list[dict]) -> dict:
     histo: OrderedDict[str, int] = OrderedDict()
     for record in satisfaction_records:
         key: Any = record.get("option_id")
-        label = record.get("option_text_fr") #bilingual_text(record.get("option_text_fr"), record.get("option_text_en"))
+        label = record.get(
+            "option_text_fr"
+        )  # bilingual_text(record.get("option_text_fr"), record.get("option_text_en"))
         label = label or str(record.get("value") or "Sans réponse")
         if key is None:
             key = f"value:{label}"
@@ -493,11 +724,17 @@ def _build_attendance_data(
 
 def _score_for_section(records: list[dict], section_name: str) -> dict:
     return _score_from_records(
-        [record for record in records if _normalize(record.get("category")) == _normalize(section_name)]
+        [
+            record
+            for record in records
+            if _normalize(record.get("category")) == _normalize(section_name)
+        ]
     )
 
 
-def _score_for_module(records: list[dict], module: dict, teacher: Optional[str] = None) -> dict:
+def _score_for_module(
+    records: list[dict], module: dict, teacher: Optional[str] = None
+) -> dict:
     filtered = [record for record in records if _same_module(record, module)]
     if teacher is not None:
         filtered = [
@@ -529,11 +766,13 @@ def _get_recommendation_score(records: list[dict]) -> dict:
     return {
         "score": round(sum(score for _, score in candidates) / len(candidates), 1),
         "count": len(candidates),
-        "question": _replace_placeholders(candidates[0][0]["question"], candidates[0][0]),
+        "question": _replace_placeholders(
+            candidates[0][0]["question"], candidates[0][0]
+        ),
     }
 
 
-def _finalize_detail(detail: dict, chart_index: int,submissions_count:int) -> None:
+def _finalize_detail(detail: dict, chart_index: int, submissions_count: int) -> None:
     """Convert one accumulated detail into the payload expected by the template."""
 
     detail["chart"] = list(detail["chart"].values())
@@ -546,7 +785,7 @@ def _finalize_detail(detail: dict, chart_index: int,submissions_count:int) -> No
         "count_label": detail["count_label"],
         "series_name": detail["series_name"],
         "axis_title": detail["axis_title"],
-        "percentage_denominator": submissions_count, # The percentage denominator should be the total submissions count (% of the whole promo that has answered)
+        "percentage_denominator": submissions_count,  # The percentage denominator should be the total submissions count (% of the whole promo that has answered)
         "allow_pie": detail["allow_pie"],
     }
 
@@ -559,7 +798,6 @@ def build_answer_details(
     survey: Optional[dict] = None,
     program: Optional[dict] = None,
 ) -> dict:
-
     """Group every question under the summary row that owns it."""
     sections: OrderedDict[int, dict] = OrderedDict()
     groups: OrderedDict[tuple, dict] = OrderedDict()
@@ -631,8 +869,7 @@ def build_answer_details(
         return detail
 
     teachers_by_module = {
-        module.get("id"): _teachers_for_module(records, module)
-        for module in modules
+        module.get("id"): _teachers_for_module(records, module) for module in modules
     }
 
     for question in questions:
@@ -693,7 +930,9 @@ def build_answer_details(
             continue
 
         option_key: Any = record.get("option_id")
-        label = record.get("option_text_fr") #bilingual_text(record.get("option_text_fr"), record.get("option_text_en"))
+        label = record.get(
+            "option_text_fr"
+        )  # bilingual_text(record.get("option_text_fr"), record.get("option_text_en"))
         label = label or str(record.get("value") or "Sans réponse")
         if option_key is None:
             option_key = f"value:{label}"
@@ -719,7 +958,7 @@ def build_answer_details(
         )
         for detail in section["questions"]:
             chart_index += 1
-            _finalize_detail(detail, chart_index,submissions_count)
+            _finalize_detail(detail, chart_index, submissions_count)
 
     return {"sections": list(sections.values())}
 

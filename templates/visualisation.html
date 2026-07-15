@@ -14,7 +14,7 @@
 </head>
 
 <body class="page-visualisation">
-    
+
     {% from "template_parts/part_graphs_macro.html" import question_detail,chart_block with context %}
 
     <header class="header">
@@ -42,13 +42,21 @@
         {% endif %}
 
         <div class="filters-bar">
-            <div class="filter-item"><span class="filter-label">Campus</span><select class="filter-select" disabled><option>{{ survey.campus }}</option></select></div>
+            <div class="filter-item"><span class="filter-label">Campus</span><select class="filter-select" disabled>
+                    <option>{{ survey.campus }}</option>
+                </select></div>
             <span class="filter-separator">›</span>
-            <div class="filter-item"><span class="filter-label">Année</span><select class="filter-select" disabled><option>{{ survey.school_year }}</option></select></div>
+            <div class="filter-item"><span class="filter-label">Année</span><select class="filter-select" disabled>
+                    <option>{{ survey.school_year }}</option>
+                </select></div>
             <span class="filter-separator">›</span>
-            <div class="filter-item"><span class="filter-label">Filière</span><select class="filter-select" disabled><option>{{ program_name }}</option></select></div>
+            <div class="filter-item"><span class="filter-label">Filière</span><select class="filter-select" disabled>
+                    <option>{{ program_name }}</option>
+                </select></div>
             <span class="filter-separator">›</span>
-            <div class="filter-item"><span class="filter-label">Semestre</span><select class="filter-select" disabled><option>{{ survey.semester }}</option></select></div>
+            <div class="filter-item"><span class="filter-label">Semestre</span><select class="filter-select" disabled>
+                    <option>{{ survey.semester }}</option>
+                </select></div>
         </div>
 
         <div class="kpi-banner">
@@ -60,16 +68,17 @@
                 <h3>Taux de réponse</h3>
                 <div class="huge-pct">
                     {% if respondents_count > 0 %}
-                    {{ submissions_count }} / {{ respondents_count }} ({{ "%.0f"|format(100 * submissions_count / respondents_count) }}%)
+                    {{ submissions_count }} / {{ respondents_count }} ({{ "%.0f"|format(100 * submissions_count /
+                    respondents_count) }}%)
                     {% else %}Non disponible{% endif %}
                 </div>
             </div>
             <div class="kpi-right">
                 <h3>Score de recommandation</h3>
                 <div class="huge-pct">
-                    {% if viz_data.recommendation.score is not none %}
+                    {# {% if viz_data.recommendation.score is not none %}
                     {{ "%.1f"|format(viz_data.recommendation.score)|replace(".", ",") }} / 10
-                    {% else %}Non disponible{% endif %}
+                    {% else %}Non disponible{% endif %} #} [SCORE]
                 </div>
             </div>
         </div>
@@ -83,9 +92,194 @@
             </div>
 
             <div class="summary-list">
+
+                [SUMMARY ITEMS]
+                {% set ns = namespace(section_counter=1) %}
+                {% set ns.section_counter = 0 %}
+
+                {% set gs = namespace(graph_counter=1) %}
+                {% set gs.graph_counter = 0 %}
+
+                {% for section_name in sections %}
+                {% if sections[section_name].section_type == "ME" %}
+
+                {% for module in sections[section_name]["modules"] %}
+
+                <div class="summary-row">
+                    <div class="summary-left-tag"></div>
+                    <div class="summary-main">
+                        <div class="summary-title-line" onclick="toggleDetail({{ ns.section_counter }})">
+                            <span class="summary-title">{{ module }}</span>
+                        </div>
+                        {% for teacher_name in sections[section_name]["modules"][module]["teachers"] %}
+                        {% set teacher = sections[section_name]["modules"][module]["teachers"][teacher_name] %}
+                        <div class="summary-score-inline">
+                            <span class="summary-subtitle">
+
+                                {{ teacher_name }}
+
+                                {% if "score" in sections[section_name].keys() %}
+                                <div class="score-line">
+                                    <div class="score-bar">
+                                        <div class="score-fill {{ 'good' if teacher.score > 50 else 'warning' }}"
+                                            style="width: {{ teacher.score }}%;"></div>
+                                    </div>
+                                    <span class="score-value {{ 'good' if teacher.score > 50 else 'warning' }}">{{
+                                        teacher.score
+                                        }}% (/{{ teacher.total_count }})</span>
+                                </div>
+                                {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
+
+
+                            </span>
+
+                            <div class="detailled-section" id="detailled-section-{{ ns.section_counter }}">
+                                {% for question_idx in teacher.questions %}
+                                {% set question = teacher.questions[question_idx] %}
+
+                                <article class="answer-question-card">
+                                    <h3>{{ question.text | safe }}</h3>
+                                    <p class="answer-count">{{ question.question_submissions_count }} réponse(s)</p>
+
+                                    {% if question.question_type == 'QCU_Satisfaction' %}
+                                    {{ chart_block( gs.graph_counter , {"items":question.histo,
+                                    "positive_list":question.is_positive,"allow_pie":True} ) }}
+                                    {% set gs.graph_counter = gs.graph_counter + 1 %}
+
+
+                                    {% elif question.question_type == 'QCM_Insatisfaction' %}
+                                    {{ chart_block( gs.graph_counter , {"items":question.histo,
+                                    "positive_list":question.is_positive,"allow_pie":False} ) }}
+                                    {% set gs.graph_counter = gs.graph_counter + 1 %}
+
+                                    {% elif question.question_type == 'Question_ouverte' %}
+
+                                    <ul class="verbatim-list">
+                                        {% for answer in question.histo %}<li>{{ answer }} {% if
+                                            question.histo[answer] > 1
+                                            %} (x{{ question.histo[answer] }}) {% endif %}</li>
+                                        {% endfor %}
+                                    </ul>
+
+                                    {% endif %}
+                                    {#{% if detail.is_open %}
+                                    {% if detail.answers %}
+
+                                    {% else %}
+                                    <p class="score-placeholder">Aucune réponse à cette question.</p>
+                                    {% endif %}
+                                    {% else %}
+                                    {{ chart_block(detail.chart_id, detail.chart_data) }}
+                                    {% endif %} #}
+                                </article>
+
+                                {% endfor %}
+                            </div>
+
+
+
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% set ns.section_counter = ns.section_counter + 1 %}
+
+                {% endfor %}
+
+
+
+                {% elif sections[section_name].section_type == "R" %}
+                {% else %}
+
+                <div class="summary-row">
+                    <div class="summary-left-tag"></div>
+                    <div class="summary-main">
+                        <div class="summary-title-line" onclick="toggleDetail({{ ns.section_counter }})">
+                            <span class="summary-title">{{ section_name }}</span>
+                        </div>
+                        <div class="summary-score-inline">
+                            <span class="summary-subtitle">
+                                {% if sections[section_name].section_type == "C" %}
+                                {{ program.campus }}
+                                {% elif sections[section_name].section_type == "P" %}
+                                {{ program.name }}
+                                {% endif %}
+
+                            </span>
+                            {% if "score" in sections[section_name].keys() %}
+                            <div class="score-line">
+                                <div class="score-bar">
+                                    <div class="score-fill {{ 'good' if sections[section_name].score > 50 else 'warning' }}"
+                                        style="width: {{ sections[section_name].score }}%;"></div>
+                                </div>
+                                <span
+                                    class="score-value {{ 'good' if sections[section_name].score > 50 else 'warning' }}">{{
+                                    sections[section_name].score
+                                    }}% (/{{ sections[section_name].total_count }})</span>
+                            </div>
+                            {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
+                        </div>
+
+                        <div class="detailled-section" id="detailled-section-{{ ns.section_counter }}">
+                            {% for question_idx in sections[section_name].questions %}
+                            {% set question = sections[section_name].questions[question_idx] %}
+
+                            <article class="answer-question-card">
+                                <h3>{{ question.text | safe }}</h3>
+                                <p class="answer-count">{{ question.question_submissions_count }} réponse(s)</p>
+
+                                {% if question.question_type == 'QCU_Satisfaction' %}
+                                {{ chart_block( gs.graph_counter , {"items":question.histo,
+                                "positive_list":question.is_positive,"allow_pie":True} ) }}
+                                {% set gs.graph_counter = gs.graph_counter + 1 %}
+
+
+                                {% elif question.question_type == 'QCM_Insatisfaction' %}
+                                {{ chart_block( gs.graph_counter , {"items":question.histo,
+                                "positive_list":question.is_positive,"allow_pie":False} ) }}
+                                {% set gs.graph_counter = gs.graph_counter + 1 %}
+
+                                {% elif question.question_type == 'Question_ouverte' %}
+
+                                <ul class="verbatim-list">
+                                    {% for answer in question.histo %}<li>{{ answer }} {% if
+                                        question.histo[answer] > 1
+                                        %} (x{{ question.histo[answer] }}) {% endif %}</li>
+                                    {% endfor %}
+                                </ul>
+
+                                {% endif %}
+                                {#{% if detail.is_open %}
+                                {% if detail.answers %}
+
+                                {% else %}
+                                <p class="score-placeholder">Aucune réponse à cette question.</p>
+                                {% endif %}
+                                {% else %}
+                                {{ chart_block(detail.chart_id, detail.chart_data) }}
+                                {% endif %} #}
+                            </article>
+
+                            {% endfor %}
+                        </div>
+
+                    </div>
+                </div>
+
+                {% endif %}
+
+                {% set ns.section_counter = ns.section_counter + 1 %}
+
+                {% endfor %}
+
+                {#
                 {% for item in viz_data.summary_items %}
                 <div class="summary-row">
-                    <div class="summary-left-tag">{% if item.ue %}<span class="ue-tag">{{ item.ue }}</span>{% endif %}</div>
+                    <div class="summary-left-tag">{% if item.ue %}<span class="ue-tag">{{ item.ue }}</span>{%
+                        endif
+                        %}
+                    </div>
                     <div class="summary-main">
                         <div class="summary-title-line" onclick="toggleDetail({{ item.rank }})">
                             <span class="summary-title">{{ item.title }}</span>
@@ -96,11 +290,17 @@
                             <span class="summary-subtitle">{{ item.subtitle }}</span>
                             {% if item.score is not none %}
                             <div class="score-line">
-                                <div class="score-bar"><div class="score-fill {{ 'good' if item.score >= 50 else 'warning' }}" style="width: {{ item.score }}%;"></div></div>
-                                <span class="score-value {{ 'good' if item.score >= 50 else 'warning' }}">{{ item.score }}% (/{{ item.total_count }})</span>
+                                <div class="score-bar">
+                                    <div class="score-fill {{ 'good' if item.score >= 50 else 'warning' }}"
+                                        style="width: {{ item.score }}%;"></div>
+                                </div>
+                                <span class="score-value {{ 'good' if item.score >= 50 else 'warning' }}">{{
+                                    item.score
+                                    }}% (/{{ item.total_count }})</span>
                             </div>
                             {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
                         </div>
+
                         <div class="detailled-section" id="detailled-section-{{ item.rank }}">
                             {% for detail in item.details %}
                             {{ question_detail(detail) }}
@@ -110,11 +310,17 @@
                         <div class="summary-teachers">
                             {% for teacher_score in item.teacher_scores %}
                             <div class="summary-score-inline">
-                                <span class="summary-subtitle">{{ teacher_score.name or "Sans enseignant" }}</span>
+                                <span class="summary-subtitle">{{ teacher_score.name or "Sans enseignant"
+                                    }}</span>
                                 {% if teacher_score.score is not none %}
                                 <div class="score-line">
-                                    <div class="score-bar"><div class="score-fill {{ 'good' if teacher_score.score >= 50 else 'warning' }}" style="width: {{ teacher_score.score }}%;"></div></div>
-                                    <span class="score-value {{ 'good' if teacher_score.score >= 50 else 'warning' }}">{{ teacher_score.score }}% (/{{ teacher_score.total_count }})</span>
+                                    <div class="score-bar">
+                                        <div class="score-fill {{ 'good' if teacher_score.score >= 50 else 'warning' }}"
+                                            style="width: {{ teacher_score.score }}%;"></div>
+                                    </div>
+                                    <span
+                                        class="score-value {{ 'good' if teacher_score.score >= 50 else 'warning' }}">{{
+                                        teacher_score.score }}% (/{{ teacher_score.total_count }})</span>
                                 </div>
                                 {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
                             </div>
@@ -139,7 +345,7 @@
                         {% endif %}
                     </div>
                 </div>
-                {% endfor %}
+                {% endfor %} #}
             </div>
         </div>
 

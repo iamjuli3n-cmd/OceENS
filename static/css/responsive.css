@@ -150,6 +150,7 @@ button {
 
 /* Admin and program manager dashboards */
 @media (max-width: 768px) {
+
     .page-admin .header,
     .page-program-manager .header {
         height: auto;
@@ -229,6 +230,7 @@ button {
 }
 
 @media (max-width: 560px) {
+
     .page-admin .account-email,
     .page-program-manager .account-email {
         display: none;
@@ -343,7 +345,7 @@ button {
         min-height: 42px;
     }
 
-    .page-admin .modal-footer > button {
+    .page-admin .modal-footer>button {
         flex: 1;
     }
 
@@ -686,7 +688,7 @@ button {
 }
 
 /* Visualisation */
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
     .page-visualisation .header {
         height: auto;
         min-height: 58px;

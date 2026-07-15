@@ -50,7 +50,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from auth import router as auth_router, get_current_user
 from sondage_loader import load_sondage_complet
 from services.export_csv import generate_csv_response
-from services.visualisation_data import get_visualisation_context
+from services.visualisation_data import get_visualisation_context2
 
 load_dotenv()
 # ┌─ Configuration ────────────────────────────────────────────────────────┐
@@ -270,6 +270,8 @@ def create_app():
     # Fichiers statiques et templates (montés une seule fois)
     app.mount("/static", StaticFiles(directory="static"), name="static")
     templates = Jinja2Templates(directory="templates")
+    templates.env.policies['json.dumps_kwargs'] = {'sort_keys': False}
+
 
     # ┌─ Route : Page d'accueil (version app.py conservée) ──────────────┐
     @app.get("/", response_class=HTMLResponse)
@@ -1558,7 +1560,7 @@ def create_app():
 
 
 
-        context = get_visualisation_context(survey_id)
+        context = get_visualisation_context2(survey_id)
         context["user"]=user
 
 
