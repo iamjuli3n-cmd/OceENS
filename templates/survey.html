@@ -19,8 +19,8 @@
     <header>
         <div class="header-left">
             <img src="/static/img/epf_logo_blanc.png" alt="EPF">
-            <span class="header-title">Évaluation des enseignements</span>
-            <a href="/" class="btn-retour">Retour</a>
+            <span class="header-title"><text class="text_fr">Évaluation des enseignements</text><text class="text_en">Program assesment</text></span>
+            <a href="/" class="btn-retour"><text class="text_fr">Retour</text><text class="text_en">Back</text></a>
         </div>
         <div class="header-right">
             <!-- <a href="/" class="btn-retour">Retour</a> -->
@@ -36,20 +36,27 @@
     <main>
         {% if user_has_answered %}
         <div class="survey-status-banner answered">
-            Déjà répondu
+            <text class="text_fr">Déjà répondu</text><text class="text_en">Already answered</text> 
         </div>
         {% elif survey_is_closed %}
         <div class="survey-status-banner closed">
-            Sondage fermé
+            <text class="text_fr">Sondage fermé</text><text class="text_en">Closed</text>
         </div>
         {% endif %}
         <!-- En-tête du sondage -->
         <div class="questionnaire-hero">
-            <h1 id="questionnaire-title">Évaluation {{ program.name }}</h1>
+            <h1 id="questionnaire-title"><text class="text_fr">Évaluation</text> {{ program.name }} <text class="text_en">Evaluation</text></h1>
             <p class="hero-subtitle">
                 Campus <strong>{{ survey.campus }}</strong> &middot;
-                Semestre <strong>{{ survey.semester }}</strong> &middot;
-                Année <strong>{{ survey.school_year }}</strong>
+                <text class="text_fr">Semestre</text><text class="text_en">Semester</text> 
+                
+                <strong>{% if survey.semester == "Automne" %}
+                <text class="text_fr">Automne</text><text class="text_en">Autumn</text> 
+                {% else %}
+                <text class="text_fr">Printemps</text><text class="text_en">Spring</text> 
+                {% endif %}
+                </strong> &middot;
+                <text class="text_fr">Année</text><text class="text_en">School Year</text> <strong>{{ survey.school_year }}</strong>
             </p>
             <div class="hero-progress">
                 <div class="progress-bar" id="progress-bar"></div>
@@ -470,7 +477,7 @@
             <div class="submit-section">
                 <button type="button" class="btn-submit" id="btn-submit"
                     onclick="SurveyModule.submit({{ survey.survey_id }})">
-                    <span class="btn-submit-text">Envoyer les réponses</span>
+                    <span class="btn-submit-text"><text class="text_fr">Envoyer les réponses</text><text class="text_en">Submit the answers</text></span>
                     <span class="btn-submit-icon">→</span>
                 </button>
             </div>
