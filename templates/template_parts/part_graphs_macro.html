@@ -3,7 +3,7 @@
 <div class="chart-container-wrapper">
     <div id="chart-{{ chart_id }}"></div>
     <div class="chart-controls-overlay">
-        {% if 'allow_pie' in chart_data.keys() %}
+        {% if chart_data.get('allow_pie', true) %}
         <button type="button" class="btn-control" title="Camembert"
             onclick="renderAnswerChart('data-{{ chart_id }}', 'chart-{{ chart_id }}', 'pie')">
             <img src="/static/img/pie-chart.svg" height="22" alt="Camembert">
