@@ -93,11 +93,9 @@
 
             <div class="summary-list">
 
-                {% set ns = namespace(section_counter=1) %}
+                {% set ns = namespace() %}
                 {% set ns.section_counter = 0 %}
-
-                {% set gs = namespace(graph_counter=1) %}
-                {% set gs.graph_counter = 0 %}
+                {% set ns.graph_counter = 0 %}
 
                 {% for section_name in sections %}
                 {% if sections[section_name].section_type == "ME" %}
@@ -107,12 +105,12 @@
                 <div class="summary-row">
                     <div class="summary-left-tag"></div>
                     <div class="summary-main">
-                        <div class="summary-title-line" onclick="toggleDetail({{ ns.section_counter }})">
+                        <div class="summary-title-line" >
                             <span class="summary-title">{{ module }}</span>
                         </div>
                         {% for teacher_name in sections[section_name]["modules"][module]["teachers"] %}
                         {% set teacher = sections[section_name]["modules"][module]["teachers"][teacher_name] %}
-                        <div class="summary-score-inline">
+                        <div class="summary-score-inline" onclick="toggleDetail({{ ns.section_counter }})">
                             <span class="summary-subtitle">
 
                                 {{ teacher_name }}
@@ -144,15 +142,15 @@
                                     {% if question.question_type == 'QCU_Satisfaction' %}
 
 
-                                    {{ chart_block( gs.graph_counter , {"items":question.histo,
+                                    {{ chart_block( ns.graph_counter , {"items":question.histo,
                                     "positive_list":question.is_positive,"allow_pie":True, "attendance_count":teacher['attendance_count'], "suffix_text":'des personnes ayant eu cet.te enseignant.e.'} ) }}
-                                    {% set gs.graph_counter = gs.graph_counter + 1 %}
+                                    {% set ns.graph_counter = ns.graph_counter + 1 %}
 
 
                                     {% elif question.question_type == 'QCM_Insatisfaction' %}
-                                    {{ chart_block( gs.graph_counter , {"items":question.histo,
+                                    {{ chart_block( ns.graph_counter , {"items":question.histo,
                                     "positive_list":question.is_positive,"allow_pie":False, "attendance_count":teacher['attendance_count'], "suffix_text":'des personnes ayant eu cet.te enseignant.e.'} ) }}
-                                    {% set gs.graph_counter = gs.graph_counter + 1 %}
+                                    {% set ns.graph_counter = ns.graph_counter + 1 %}
 
                                     {% elif question.question_type == 'Question_ouverte' %}
 
@@ -178,6 +176,7 @@
                                 {% endfor %}
                             </div>
 
+                        {% set ns.section_counter = ns.section_counter + 1 %}
 
 
                         </div>
@@ -185,7 +184,6 @@
                     </div>
                 </div>
 
-                {% set ns.section_counter = ns.section_counter + 1 %}
 
                 {% endfor %}
 
@@ -197,10 +195,10 @@
                 <div class="summary-row">
                     <div class="summary-left-tag"></div>
                     <div class="summary-main">
-                        <div class="summary-title-line" onclick="toggleDetail({{ ns.section_counter }})">
+                        <div class="summary-title-line">
                             <span class="summary-title">{{ section_name }}</span>
                         </div>
-                        <div class="summary-score-inline">
+                        <div class="summary-score-inline" onclick="toggleDetail({{ ns.section_counter }})">
                             <span class="summary-subtitle">
                                 {% if sections[section_name].section_type == "C" %}
                                 {{ program.campus }}
@@ -235,16 +233,16 @@
                                 
                                 
 
-                                {{ chart_block( gs.graph_counter , {"items":question.histo,
+                                {{ chart_block( ns.graph_counter , {"items":question.histo,
                                 "positive_list":question.is_positive,"allow_pie":True, "attendance_count":submissions_count} ) }}
-                                {% set gs.graph_counter = gs.graph_counter + 1 %}
+                                {% set ns.graph_counter = ns.graph_counter + 1 %}
 
 
                                 {% elif question.question_type == 'QCM_Insatisfaction' %}
 
-                                {{ chart_block( gs.graph_counter , {"items":question.histo,
+                                {{ chart_block( ns.graph_counter , {"items":question.histo,
                                 "positive_list":question.is_positive,"allow_pie":False, "attendance_count":submissions_count} ) }}
-                                {% set gs.graph_counter = gs.graph_counter + 1 %}
+                                {% set ns.graph_counter = ns.graph_counter + 1 %}
 
                                 {% elif question.question_type == 'Question_ouverte' %}
 
