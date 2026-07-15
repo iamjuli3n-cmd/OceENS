@@ -1,9 +1,7 @@
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script>
     function renderAnswerChart(dataSourceId, containerId, chartType = 'bar') {
-
         const source = document.getElementById(dataSourceId);
-        console.log(source.text);
         if (!source || typeof Highcharts === 'undefined') return;
 
         const payload = JSON.parse(source.textContent);

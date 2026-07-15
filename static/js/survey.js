@@ -33,7 +33,8 @@ const SurveyModule = {
 
         const btnText = btn.querySelector('.btn-submit-text');
         if (btnText) {
-            btnText.textContent = hasAnswered ? 'Déjà répondu' : 'Sondage fermé' ;
+            btnText.innerHTML = hasAnswered ? '<text class="text_fr">Déjà répondu</text><text class="text_en">Already answered</text>' : '<text class="text_fr">Sondage fermé</text><text class="text_en">Closed</text>' ;
+            langageSelection();
         }
 
         const btnIcon = btn.querySelector('.btn-submit-icon');

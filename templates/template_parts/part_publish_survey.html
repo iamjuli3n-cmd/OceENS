@@ -33,7 +33,6 @@
     selectedSchoolYear = document.getElementById("param-annee").value
     if (!selectedSchoolYear) return alert("Veuillez sélectionner une année scolaire.");
     if (ues.length === 0) return alert('Le sondage doit contenir au moins une UE.');
-    console.log(ues);
     ues.forEach(ue => {
         if (ue.modules.length === 0) return alert('L\'UE "' + ue.name + '"" doit avoir au moins un module.');
         ue.modules.forEach(m => {
