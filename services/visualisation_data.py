@@ -118,9 +118,6 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
             else defaultdict(int),
         }
 
-    
-   
-
     if data_row["module_name"] not in submissions_sets:
         submissions_sets[data_row["module_name"]]={}
     if data_row["teacher"] not in submissions_sets[data_row["module_name"]]:
@@ -128,6 +125,11 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
     if data_row["submission_id"] not in submissions_sets[data_row["module_name"]][data_row["teacher"]][data_row["question_id"]]: # Memorizing submissions_set
         submissions_sets[data_row["module_name"]][data_row["teacher"]][data_row["question_id"]].add(data_row["submission_id"])
         dic["questions"][data_row["question_id"]]["question_submissions_count"]+=1 # Counting submissions
+    if (data_row['question_type']=='QCU_Satisfaction'): # SATIFACTION COUNT
+        if "satisfaction_count" not in dic.keys():
+            dic["satisfaction_count"]=0
+        if options_value[data_row["option_id"]]["is_positive"]: # Count the positive
+            dic["satisfaction_count"]+=1
     if (data_row['question_type']=='QCU_Oui_Non'): # ATTENDANCE COUNT
         if "attendance_count" not in dic.keys():
             dic["attendance_count"]=0

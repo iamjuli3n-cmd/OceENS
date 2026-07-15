@@ -93,7 +93,6 @@
 
             <div class="summary-list">
 
-                [SUMMARY ITEMS]
                 {% set ns = namespace(section_counter=1) %}
                 {% set ns.section_counter = 0 %}
 
@@ -118,15 +117,16 @@
 
                                 {{ teacher_name }}
 
-                                {% if "score" in sections[section_name].keys() %}
+                                {% if teacher.attendance_count > 0 and "satisfaction_count" in teacher.keys() %}
+                                {% set satisfaction_score = (100*teacher.satisfaction_count / teacher.attendance_count) |round(1) %}
                                 <div class="score-line">
                                     <div class="score-bar">
-                                        <div class="score-fill {{ 'good' if teacher.score > 50 else 'warning' }}"
-                                            style="width: {{ teacher.score }}%;"></div>
+                                        <div class="score-fill {{ 'good' if satisfaction_score > 50 else 'warning' }}"
+                                            style="width: {{ satisfaction_score }}%;"></div>
                                     </div>
-                                    <span class="score-value {{ 'good' if teacher.score > 50 else 'warning' }}">{{
-                                        teacher.score
-                                        }}% (/{{ teacher.total_count }})</span>
+                                    <span class="score-value {{ 'good' if satisfaction_score > 50 else 'warning' }}">{{
+                                        satisfaction_score
+                                        }}% </span><span>({{ teacher.attendance_count}} 👤)</span>
                                 </div>
                                 {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
 
@@ -209,18 +209,18 @@
                                 {% endif %}
 
                             </span>
-                            {% if "score" in sections[section_name].keys() %}
-                            <div class="score-line">
-                                <div class="score-bar">
-                                    <div class="score-fill {{ 'good' if sections[section_name].score > 50 else 'warning' }}"
-                                        style="width: {{ sections[section_name].score }}%;"></div>
+                            {% if submissions_count > 0 and "satisfaction_count" in sections[section_name].keys() %}
+                                {% set satisfaction_score = (100*sections[section_name].satisfaction_count / submissions_count) |round(1) %}
+                                <div class="score-line">
+                                    <div class="score-bar">
+                                        <div class="score-fill {{ 'good' if satisfaction_score > 50 else 'warning' }}"
+                                            style="width: {{ satisfaction_score }}%;"></div>
+                                    </div>
+                                    <span class="score-value {{ 'good' if satisfaction_score > 50 else 'warning' }}">{{
+                                        satisfaction_score
+                                        }}% </span><span>({{ submissions_count}} 👤)</span>
                                 </div>
-                                <span
-                                    class="score-value {{ 'good' if sections[section_name].score > 50 else 'warning' }}">{{
-                                    sections[section_name].score
-                                    }}% (/{{ sections[section_name].total_count }})</span>
-                            </div>
-                            {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
+                                {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
                         </div>
 
                         <div class="detailled-section" id="detailled-section-{{ ns.section_counter }}">
