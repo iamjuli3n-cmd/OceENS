@@ -29,10 +29,9 @@
 
   <div class="banner">
     <div>
-      <div class="banner-badge">RP-RM</div>
+      <div class="banner-badge">Animateur</div>
       <div class="banner-greeting">Bonjour, {{ user.name }} !</div>
     </div>
-    <a href="/dashboard/survey-create" class="btn-banner">+ Créer un questionnaire</a>
   </div>
 
   <div class="questionnaires-card">
@@ -40,8 +39,7 @@
 
       {% if allowed_programs | length > 0 %}
 
-
-      <p class="program-intro">Vous êtes RPRM des formations suivantes :</p>
+      <p class="program-intro">Vous êtes animateur/animatrice des formations suivantes :</p>
       <ul class="program-list">
         {% for program in programs %}
         {% if program.code in allowed_programs %}
@@ -50,11 +48,8 @@
         {% endfor %}
       </ul>
 
-
-
-
       {% else %}
-        ⚠️ Vous n'êtes RPRM d'aucun programme.
+        ⚠️ Vous n'êtes animateur/animatrice d'aucun programme.
       {% endif %}
     </div>
   </div>
@@ -64,14 +59,11 @@
       <div class="questionnaires-title">Mes questionnaires</div>
     </div>
 
-    {% set msg_no_survey = 'Vous n\'avez pas encore créé de
-    questionnaire.<br>Cliquez sur le bouton pour commencer.
-  </div>
-  <a href="/dashboard/survey-create"
-    style="background:#df231d; color:white; border-radius:24px; padding:10px 22px; text-decoration:none; font-size:13px; font-weight:600;">+
-    Créer un questionnaire</a>' %}
+    
 
-  {% include 'template_parts/part_show_surveys.html' %}
+    {% set msg_no_survey = 'Contactez le/la responsable du programme.' %}
+
+    {% include 'template_parts/part_show_surveys.html' %}
 
   </div>
 
