@@ -37,17 +37,17 @@
   <main>
     <div class="tab-container">
       <div class="tabs">
-        <button class="tab active" data-tab="surveys">Sondages</button>
-        <button class="tab" data-tab="users">Utilisateurs</button>
+        <button class='tab {% if request.query_params["tab"]!="users" %} active {% endif %}' data-tab="surveys">Sondages</button>
+        <button class='tab {% if request.query_params["tab"]=="users" %} active {% endif %}' data-tab="users">Utilisateurs</button>
       </div>
 
-      <div class="tab-content" id="users">
+      <div class='tab-content {% if request.query_params["tab"]=="users" %} active {% endif %}' id="users">
         <div class="card">
           {% include 'template_parts/part_show_users.html' %}
         </div>
       </div>
 
-      <div class="tab-content active" id="surveys">
+      <div class='tab-content {% if request.query_params["tab"]!="users" %} active {% endif %}' id="surveys">
 
 
         <div class="card" style="margin-bottom: 24px;">

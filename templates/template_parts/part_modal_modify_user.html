@@ -571,7 +571,7 @@
             .then(function () {
                 closeUsrModal();
                 showToast('Rôle de ' + editingUser["mail"] + ' mis à jour', 'success');
-                window.location.reload(); // Recharger la page pour refléter les changements
+                window.location.href='?tab=users'; // Recharger la page pour refléter les changements
             })
             .catch(function (err) {
                 showToast('Erreur : ' + err.message, 'error');

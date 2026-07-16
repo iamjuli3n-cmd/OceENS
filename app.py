@@ -1137,7 +1137,7 @@ def create_app():
         session.commit()
 
         return RedirectResponse(
-            url=request.headers.get("referer", "/dashboard/admin"),
+            url=request.headers.get("referer","/").split('?')[0], # Referer without eventual parameters
             status_code=303,
         )
 
