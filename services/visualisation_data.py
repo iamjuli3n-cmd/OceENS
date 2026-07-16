@@ -104,6 +104,17 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
             data_row["answer_value"]
         ] += 1  # Counting the number of appearance of each value
 
+def _replace_brackets_in_question(question, program, row):
+    if '[' in question:
+        if program["campus"]:
+            question = question.replace("[CAMPUS]", program["campus"])
+        if program["name"]:
+            question = question.replace("[FORMATION]",program["name"])
+        if row[4]:
+            question = question.replace("[ENSEIGNANT]", row[4])
+        if row[15]:
+            question = question.replace("[MODULE]", row[15])
+    return question
 
 def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
     context = {}
@@ -227,8 +238,8 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                 "section_order": r[9],
                 "section_type": r[10],
                 "question_type": r[11],
-                "question_text_fr": r[12],
-                "question_text_en": r[13],
+                "question_text_fr": _replace_brackets_in_question(r[12], context["program"], r),
+                "question_text_en": _replace_brackets_in_question(r[13], context["program"], r),
                 "ue": r[14],
                 "module_name": r[15],
             }

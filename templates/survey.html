@@ -89,7 +89,7 @@
                     <div class="question-label">
                         <span class="q-number">{{ loop.index }}.</span>
                         {{ question.text | safe | replace("[CAMPUS]", survey.campus) | replace("[FORMATION]",
-                        survey.program) }}
+                        program.name) }}
                     </div>
 
                     {% if question.question_type == "QCU_Satisfaction" or question.question_type == "QCU_Attendance" %}
