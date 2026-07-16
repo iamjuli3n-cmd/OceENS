@@ -1,88 +1,99 @@
-{% for survey in surveys %}
+  {% include 'template_parts/part_modal_qrcode.html' %}
 
-<div class="sondage-row">
-  <div class="sondage-main">
-    <div class="sondage-row-name">
-      {{ survey['program_name'] }} — {{ survey['semester'] }}
-    </div>
-    <div class="sondage-row-meta">{{ survey['campus'] }} · {{ survey['school_year'] }}</div>
-  </div>
+  {% for survey in surveys %}
 
-  <a href="/api/surveys/{{ survey['survey_id'] }}" class="survey-link">
-    Lien questionnaire
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-      <polyline points="15 3 21 3 21 9" />
-      <line x1="10" y1="14" x2="21" y2="3" />
-    </svg>
-  </a>
-
-  <div class="sondage-stats">
-    <div class="sondage-stats-value">{% if survey['submissions_count'] != survey['answers_count'] %}<a
-        style="font-size:11px; vertical-align: top; cursor: default;"
-        title="Attention le nombre de répondants ({{survey['answers_count']}}) et de soumissions ({{survey['submissions_count']}}) ne collent pas !">⚠️</a>{%
-      endif %}{{
-      survey['submissions_count'] }} / {{
-      survey['respondents_count'] }} </div>
-    <div class="sondage-stats-label">ont répondu / inscrits</div>
-    <div class="sondage-progress">
-      <div class="sondage-progress-value"
-        style="width: {% if survey['respondents_count'] > 0 %}{{ (survey['submissions_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
+  <div class="sondage-row">
+    <div class="sondage-main">
+      <div class="sondage-row-name">
+        {{ survey['program_name'] }} — {{ survey['semester'] }}
       </div>
+      <div class="sondage-row-meta">{{ survey['campus'] }} · {{ survey['school_year'] }}</div>
     </div>
 
-  </div>
+    <a class="survey-link" onclick='openQRCodeModal(window.location.origin+"/api/surveys/{{ survey['survey_id'] }}","{{ survey['program_name'] }}","{{ survey['school_year'] }} - {{ survey['semester'] }}")'>
+      QRCode
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+        <polyline points="15 3 21 3 21 9" />
+        <line x1="10" y1="14" x2="21" y2="3" />
+      </svg>
+    </a>
 
-  <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
-    {% if survey['is_closed'] %}
-    <input type="hidden" name="status" value="1">
-    <button type="submit" class="row-icon" title="Ouvrir le sondage">
-      <img src="{{ url_for('static', path='img/locked_red.svg') }}" alt="Ouvrir le sondage">
-    </button>
-    {% else %}
-    <input type="hidden" name="status" value="0">
-    <button type="submit" class="row-icon" title="Fermer le sondage">
-      <img src="{{ url_for('static', path='img/unlocked_green.svg')}}" alt="Fermer le sondage">
-    </button>
-    {% endif %}
-  </form>
-  <div class="row-actions">
-    <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
-      onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
-      <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+    <a href="/api/surveys/{{ survey['survey_id'] }}" class="survey-link">
+      Lien questionnaire
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+        <polyline points="15 3 21 3 21 9" />
+        <line x1="10" y1="14" x2="21" y2="3" />
       </svg>
     </a>
-    <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon" title="Export CSV"
-      onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
-      <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-        <polyline points="7 10 12 15 17 10"></polyline>
-        <line x1="12" y1="15" x2="12" y2="3"></line>
-      </svg>
-    </a>
-    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/delete" class="delete-survey-form"
-      onsubmit="return confirm('Supprimer définitivement ce sondage et toutes ses réponses ? Cette action est irréversible.');">
-      <button type="submit" class="row-icon row-icon-delete" title="Supprimer le sondage"
-        aria-label="Supprimer le sondage"> 🗑️</button>
+
+    <div class="sondage-stats">
+      <div class="sondage-stats-value">{% if survey['submissions_count'] != survey['answers_count'] %}<a
+          style="font-size:11px; vertical-align: top; cursor: default;"
+          title="Attention le nombre de répondants ({{survey['answers_count']}}) et de soumissions ({{survey['submissions_count']}}) ne collent pas !">⚠️</a>{%
+        endif %}{{
+        survey['submissions_count'] }} / {{
+        survey['respondents_count'] }} </div>
+      <div class="sondage-stats-label">ont répondu / inscrits</div>
+      <div class="sondage-progress">
+        <div class="sondage-progress-value"
+          style="width: {% if survey['respondents_count'] > 0 %}{{ (survey['submissions_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
+        </div>
+      </div>
+
+    </div>
+
+    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
+      {% if survey['is_closed'] %}
+      <input type="hidden" name="status" value="1">
+      <button type="submit" class="row-icon" title="Ouvrir le sondage">
+        <img src="{{ url_for('static', path='img/locked_red.svg') }}" alt="Ouvrir le sondage">
+      </button>
+      {% else %}
+      <input type="hidden" name="status" value="0">
+      <button type="submit" class="row-icon" title="Fermer le sondage">
+        <img src="{{ url_for('static', path='img/unlocked_green.svg')}}" alt="Fermer le sondage">
+      </button>
+      {% endif %}
     </form>
+    <div class="row-actions">
+      <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
+        onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
+        <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+      </a>
+      <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon" title="Export CSV"
+        onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
+        <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+      </a>
+      <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/delete" class="delete-survey-form"
+        onsubmit="return confirm('Supprimer définitivement ce sondage et toutes ses réponses ? Cette action est irréversible.');">
+        <button type="submit" class="row-icon row-icon-delete" title="Supprimer le sondage"
+          aria-label="Supprimer le sondage"> 🗑️</button>
+      </form>
+    </div>
   </div>
-</div>
 
-{% else %}
+  {% else %}
 
-<div style="text-align:center; padding: 48px 0;">
-  <svg viewBox="0 0 120 100" width="100" height="100" style="margin-bottom:16px;">
-    <rect x="25" y="10" width="55" height="70" rx="6" fill="#fdf0f0" stroke="#df231d" stroke-width="1.5" />
-    <rect x="15" y="18" width="55" height="70" rx="6" fill="white" stroke="#ddd" stroke-width="1.5" />
-    <circle cx="42" cy="48" r="14" fill="#fdf0f0" />
-    <text x="42" y="54" text-anchor="middle" font-size="18" fill="#df231d" font-weight="700">?</text>
-    <line x1="28" y1="68" x2="56" y2="68" stroke="#eee" stroke-width="2" />
-    <line x1="28" y1="74" x2="50" y2="74" stroke="#eee" stroke-width="2" />
-  </svg>
-  <div style="font-size:15px; font-weight:600; color:#111; margin-bottom:8px;">Aucun questionnaire pour l'instant
-  </div>
-  <div style="font-size:13px; color:#aaa; margin-bottom:20px;">{{ msg_no_survey | safe }}
-</div>
+  <div style="text-align:center; padding: 48px 0;">
+    <svg viewBox="0 0 120 100" width="100" height="100" style="margin-bottom:16px;">
+      <rect x="25" y="10" width="55" height="70" rx="6" fill="#fdf0f0" stroke="#df231d" stroke-width="1.5" />
+      <rect x="15" y="18" width="55" height="70" rx="6" fill="white" stroke="#ddd" stroke-width="1.5" />
+      <circle cx="42" cy="48" r="14" fill="#fdf0f0" />
+      <text x="42" y="54" text-anchor="middle" font-size="18" fill="#df231d" font-weight="700">?</text>
+      <line x1="28" y1="68" x2="56" y2="68" stroke="#eee" stroke-width="2" />
+      <line x1="28" y1="74" x2="50" y2="74" stroke="#eee" stroke-width="2" />
+    </svg>
+    <div style="font-size:15px; font-weight:600; color:#111; margin-bottom:8px;">Aucun questionnaire pour l'instant
+    </div>
+    <div style="font-size:13px; color:#aaa; margin-bottom:20px;">{{ msg_no_survey | safe }}
+    </div>
 
-{% endfor %}
+    {% endfor %}
