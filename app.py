@@ -58,6 +58,34 @@ load_dotenv()
 VALID_ROLES = {"admin", "student", "program_manager"}
 
 
+def can_manage_survey(roles: list[str], survey_program: str | None) -> bool:
+    """Vérifie qu'un admin ou un RPRM de la formation peut gérer le sondage."""
+    if "admin" in roles:
+        return True
+
+    allowed_programs = {
+        program.strip()
+        for role in roles
+        if role.split(":", 1)[0] == "program_manager" and ":" in role
+        for program in role.split(":", 1)[1].split(";")
+        if program.strip()
+    }
+    return survey_program in allowed_programs
+
+
+def delete_survey_with_relations(session: Session, survey_id: int) -> None:
+    """Supprime les données propres au sondage sans supprimer son modèle partagé."""
+    submission_ids = select(Submission.submission_id).where(
+        Submission.survey_id == survey_id
+    )
+
+    # Les réponses référencent les soumissions et les modules : elles doivent
+    # donc être supprimées avant ces deux tables.
+    session.exec(delete(Answer).where(Answer.submission_id.in_(submission_ids)))
+    session.exec(delete(Respondent).where(Respondent.survey_id == survey_id))
+    session.exec(delete(Module).where(Module.survey_id == survey_id))
+    session.exec(delete(Submission).where(Submission.survey_id == survey_id))
+    session.exec(delete(Survey).where(Survey.survey_id == survey_id))
 
 
 def role_to_dashboard_slug(roles: List[str]) -> str:
@@ -1112,6 +1140,59 @@ def create_app():
             url=request.headers.get("referer", "/dashboard/admin"),
             status_code=303,
         )
+
+    @api_router.delete("/surveys/{survey_id}")
+    @api_router.post("/surveys/{survey_id}/delete")
+    def delete_survey(
+        survey_id: int,
+        request: Request,
+        session: SessionDep,
+    ):
+        user = require_roles(request, session, ["admin", "program_manager"])
+        if user is None:
+            return JSONResponse(
+                content={"error": "Accès refusé."},
+                status_code=403,
+            )
+
+        survey = session.exec(
+            select(Survey).where(Survey.survey_id == survey_id)
+        ).first()
+        if not survey:
+            return JSONResponse(
+                content={"error": "Sondage introuvable."},
+                status_code=404,
+            )
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if not can_manage_survey(roles, survey.program):
+            return JSONResponse(
+                content={"error": "Formation non autorisée pour votre rôle."},
+                status_code=403,
+            )
+
+        try:
+            delete_survey_with_relations(session, survey_id)
+            session.commit()
+        except Exception:
+            session.rollback()
+            return JSONResponse(
+                content={"error": "Impossible de supprimer le sondage."},
+                status_code=500,
+            )
+
+        dashboard_url = (
+            "/dashboard/admin" if "admin" in roles else "/dashboard/program-manager"
+        )
+        if request.method == "DELETE":
+            return {"message": "Sondage supprimé avec succès."}
+        return RedirectResponse(url=dashboard_url, status_code=303)
 
     # └────────────────────────────────────────────────────────────────┘
 

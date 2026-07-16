@@ -175,6 +175,23 @@ body {
     text-decoration: none;
 }
 
+.delete-survey-form {
+    display: flex;
+}
+
+.row-icon-delete {
+    color: #b42318;
+    padding: 0;
+    transition: background-color .2s, color .2s;
+}
+
+.row-icon-delete:hover,
+.row-icon-delete:focus-visible {
+    color: #fff;
+    background: #b42318;
+    outline: none;
+}
+
 .status-toggle-form {
     display: flex;
 }
