@@ -103,7 +103,11 @@
                 {% for module in sections[section_name]["modules"] %}
 
                 <div class="summary-row">
-                    <div class="summary-left-tag"></div>
+                    <div class="summary-left-tag">
+                        {% if sections[section_name]["modules"][module].ue %}
+                        <span class="ue-tag">{{ sections[section_name]["modules"][module].ue }}</span>
+                        {% endif %}
+                    </div>
                     <div class="summary-main">
                         <div class="summary-title-line" >
                             <span class="summary-title">{{ module }}</span>
@@ -333,7 +337,7 @@
                         <div class="detailled-section" id="detailled-section-{{ item.rank }}">
                             <p class="answer-count">
                                 Nombre d'étudiants ayant suivi le module : {{ item.attendance_total }}
-                            </p>
+                            </p>    
                             {% if item.teachers|length > 1 %}
                             {{ chart_block('attendance-' ~ item.rank, item.attendance_chart_data) }}
                             {% endif %}

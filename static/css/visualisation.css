@@ -403,6 +403,7 @@ body {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
+    align-self: start;
     min-height: 32px;
 }
 
