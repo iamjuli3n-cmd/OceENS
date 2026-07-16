@@ -88,7 +88,7 @@
 <!-- The Modal -->
 <div id="qrModal" class="modal-qrcode">
     <div class="modal-qrcode-content">
-        <span class="close-btn-qrcode" onclick="closeModal()">&times;</span>
+        <span class="close-btn-qrcode" onclick="closeQRModal()">&times;</span>
         <h3 style="margin: 0 0 10px 0;" id="qrcode-title"></h3>
         <h4 style="margin: 0 0 10px 0;" id="qrcode-subtitle"></h4>
         <div id="qrcode-container"></div>
@@ -118,7 +118,7 @@
         modal.style.display = "flex";
     }
 
-    function closeModal() {
+    function closeQRModal() {
         document.getElementById("qrModal").style.display = "none";
     }
 
@@ -126,7 +126,7 @@
     window.onclick = function (event) {
         const modal = document.getElementById("qrModal");
         if (event.target == modal) {
-            closeModal();
+            closeQRModal();
         }
     }
 </script>
