@@ -144,7 +144,7 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
         if recommendation_score is not None:
             dic["recommendation_sum"] = dic.get("recommendation_sum", 0) + recommendation_score
             dic["recommendation_count"] = dic.get("recommendation_count", 0) + 1
-    if (data_row['question_type']=='QCU_Oui_Non'): # ATTENDANCE COUNT
+    if (data_row['question_type']=='QCU_Attendance'): # ATTENDANCE COUNT
         if "attendance_count" not in dic.keys():
             dic["attendance_count"]=0
         if options_value[data_row["option_id"]]["text"] == 'Oui': # Count the Yes
@@ -310,6 +310,14 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                     _build_question(data[data_row["section_name"]]["modules"][
                             data_row["module_name"]
                         ]["teachers"][data_row["teacher"]], data_row, options, options_value, submissions_sets)
+            elif data_row["section_type"] == "R":
+                
+                if "recommendation_sum" not in data[data_row["section_name"]]:
+                    data[data_row["section_name"]]["recommendation_sum"] = 0
+                    data[data_row["section_name"]]["submission_count"] = 0
+                data[data_row["section_name"]]["recommendation_sum"]+=float(data_row["answer_value"])
+                data[data_row["section_name"]]["submission_count"]+=1
+
             else: # section_type = S --> Simple
                 if "questions" not in data[data_row["section_name"]]:
                     data[data_row["section_name"]] = {"questions": {}}
@@ -317,30 +325,9 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
 
 
     context["sections"] = data
-    recommendation_section = next(
-        (
-            section
-            for section in data.values()
-            if section.get("section_type") == "R"
-        ),
-        {},
-    )
-    recommendation_count = recommendation_section.get("recommendation_count", 0)
-    context["recommendation"] = {
-        "score": (
-            round(
-                recommendation_section.get("recommendation_sum", 0)
-                / recommendation_count,
-                1,
-            )
-            if recommendation_count
-            else None
-        ),
-        "count": recommendation_count,
-    }
     # END ANSWERS   
        
-    print(data)
+    #print(data)
     return context
 
 
@@ -702,7 +689,7 @@ def _build_attendance_data(
         record
         for record in records
         if _same_module(record, module)
-        and _normalize(record.get("question_type")) == "qcu_oui_non"
+        and _normalize(record.get("question_type")) == "qcu_attendance"
         and (
             record.get("is_positive") is True
             or _normalize(record.get("value")) in {"oui", "yes"}

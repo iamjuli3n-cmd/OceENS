@@ -89,7 +89,7 @@
                         survey.program) }}
                     </div>
 
-                    {% if question.question_type == "QCU_Satisfaction" or question.question_type == "QCU_Oui_Non" %}
+                    {% if question.question_type == "QCU_Satisfaction" or question.question_type == "QCU_Attendance" %}
                     <div class="options-grid">
                         {% for opt in question.options %}
                         <label class="option-radio">

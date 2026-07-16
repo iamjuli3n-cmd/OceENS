@@ -803,7 +803,7 @@ def create_app():
                 (
                     question
                     for question in module_section["questions"]
-                    if question["question_type"] == "QCU_Oui_Non"
+                    if question["question_type"] == "QCU_Attendance"
                 ),
                 None,
             )

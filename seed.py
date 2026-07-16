@@ -222,7 +222,7 @@ def seed_questions(session: Session):
         ),
         (
             3,
-            "QCU_Oui_Non",
+            "QCU_Attendance",
             "FR_EN",
             "Avez-vous suivi ce module ?",
             "Did you take this module?",
