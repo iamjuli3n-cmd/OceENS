@@ -104,6 +104,15 @@ def _make_chart_item(
         "count": count,
     }
 
+
+def _to_score_1_10(value: Any) -> Optional[float]:
+    try:
+        score = float(str(value).replace(",", ".").strip())
+    except (TypeError, ValueError):
+        return None
+    return score if 1 <= score <= 10 else None
+
+
 def _build_question(dic, data_row, options, options_value, submissions_sets):
     if (data_row["question_id"] not in dic["questions"].keys()):
         dic["questions"][data_row["question_id"]] = {
@@ -130,6 +139,11 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
             dic["satisfaction_count"]=0
         if options_value[data_row["option_id"]]["is_positive"]: # Count the positive
             dic["satisfaction_count"]+=1
+    if data_row["question_type"] == "NPS":
+        recommendation_score = _to_score_1_10(data_row["answer_value"])
+        if recommendation_score is not None:
+            dic["recommendation_sum"] = dic.get("recommendation_sum", 0) + recommendation_score
+            dic["recommendation_count"] = dic.get("recommendation_count", 0) + 1
     if (data_row['question_type']=='QCU_Oui_Non'): # ATTENDANCE COUNT
         if "attendance_count" not in dic.keys():
             dic["attendance_count"]=0
@@ -303,6 +317,27 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
 
 
     context["sections"] = data
+    recommendation_section = next(
+        (
+            section
+            for section in data.values()
+            if section.get("section_type") == "R"
+        ),
+        {},
+    )
+    recommendation_count = recommendation_section.get("recommendation_count", 0)
+    context["recommendation"] = {
+        "score": (
+            round(
+                recommendation_section.get("recommendation_sum", 0)
+                / recommendation_count,
+                1,
+            )
+            if recommendation_count
+            else None
+        ),
+        "count": recommendation_count,
+    }
     # END ANSWERS   
        
     print(data)
@@ -726,14 +761,6 @@ def _score_for_module(
             if _normalize(record.get("teacher")) == _normalize(teacher)
         ]
     return _score_from_records(filtered)
-
-
-def _to_score_1_10(value: Any) -> Optional[float]:
-    try:
-        score = float(str(value).replace(",", ".").strip())
-    except (TypeError, ValueError):
-        return None
-    return score if 1 <= score <= 10 else None
 
 
 def _get_recommendation_score(records: list[dict]) -> dict:
