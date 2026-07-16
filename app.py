@@ -1271,20 +1271,20 @@ def create_app():
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
 
-        # Admin sans restriction : voit toutes les filières
-        if (allowed_programs is None or allowed_programs == []) and ("admin" in roles):
-            db_programs = session.exec(select(Program)).all()
-            program_codes = [p.code for p in db_programs]
+        # # Admin sans restriction : voit toutes les filières
+        # if (allowed_programs is None or allowed_programs == []) and ("admin" in roles):
+        #     db_programs = session.exec(select(Program)).all()
+        #     program_codes = [p.code for p in db_programs]
 
-        # RPRM : voit uniquement ses filières
-        else:
-            program_codes = [
-                p.code if hasattr(p, "code") else p for p in allowed_programs
-            ]
+        # # RPRM : voit uniquement ses filières
+        # else:
+        program_codes = [
+            p.code if hasattr(p, "code") else p for p in allowed_programs
+        ]
 
-            db_programs = session.exec(
-                select(Program).where(Program.code.in_(program_codes))
-            ).all()
+        db_programs = session.exec(
+            select(Program).where(Program.code.in_(program_codes))
+        ).all()
 
         rows = session.exec(
             select(
@@ -1346,11 +1346,121 @@ def create_app():
             "user": user,
             "surveys": surveys,
             "programs": programs,
+            "allowed_programs":allowed_programs,
         }
 
         return templates.TemplateResponse(
             request=request,
             name="dashboard/program_manager.html",
+            context=context,
+        )
+
+    @dashboard_router.get("/facilitator", response_class=HTMLResponse)
+    async def facilitator_dashboard(request: Request, session: SessionDep):
+        user = get_current_user(request)
+
+        if not user:
+            return RedirectResponse(url="/")
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        if roles_query:
+            roles = roles_query.split(",")
+        else:
+            roles = ["student"]
+
+        if not check_role(roles, ["facilitator", "admin"]):
+            return RedirectResponse(url="/")
+
+        allowed_programs = []
+        for role in roles:
+            if role.startswith("facilitator"):
+                allowed_programs.extend(parse_rprm_formations(role))
+
+        # Admin sans restriction : voit toutes les filières
+        # if (allowed_programs is None or allowed_programs == []) and ("admin" in roles):
+        #     db_programs = session.exec(select(Program)).all()
+        #     program_codes = [p.code for p in db_programs]
+
+        # Facilitator : voit uniquement ses filières
+        # else:
+        program_codes = [
+            p.code if hasattr(p, "code") else p for p in allowed_programs
+        ]
+
+        db_programs = session.exec(
+            select(Program).where(Program.code.in_(program_codes))
+        ).all()
+
+        rows = session.exec(
+            select(
+                Survey.survey_id,
+                Survey.program,
+                Program.campus,
+                Survey.semester,
+                Survey.school_year,
+                Survey.status,
+                func.count(Respondent.user_id).label("respondents_count"),
+                func.count(Respondent.submission_date).label("answers_count"),
+            )
+            .join(Program, Program.code == Survey.program, isouter=True)
+            .join(Respondent, Survey.survey_id == Respondent.survey_id, isouter=True)
+            .where(Survey.program.in_(program_codes))
+            .group_by(Survey.survey_id)
+            .order_by(Survey.survey_id.desc())
+        ).all()
+        db_programs = session.exec(select(Program)).all()
+        program_name_by_code = {p.code: p.name for p in db_programs}
+
+        submissions_rows = session.exec(
+            select(
+                Submission.survey_id,
+                func.count(Submission.submission_id).label("submissions_count"),
+            )
+            .group_by(Submission.survey_id)
+            .order_by(Submission.survey_id.desc())
+        ).all()
+
+        submissions_count = {r[0]:r[1] for r in submissions_rows}
+
+        surveys = [
+            {
+                "survey_id": r[0],
+                "program": r[1],
+                "program_name": program_name_by_code.get(r[1], r[1]),
+                "campus": r[2],
+                "semester": r[3],
+                "school_year": r[4],
+                "is_closed": (r[5] == 0),
+                "respondents_count": r[6],
+                "answers_count": r[7],
+                "submissions_count": submissions_count[r[0]] if r[0] in submissions_count.keys() else 0,
+            }
+            for r in rows
+        ]
+
+        programs = [
+            {
+                "code": p.code,
+                "name": p.name,
+                "campus": p.campus,
+            }
+            for p in db_programs
+        ]
+
+        context = {
+            "user": user,
+            "surveys": surveys,
+            "programs": programs,
+            "allowed_programs":allowed_programs,
+        }
+
+        return templates.TemplateResponse(
+            request=request,
+            name="dashboard/facilitator.html",
             context=context,
         )
 
