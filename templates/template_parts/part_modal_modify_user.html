@@ -4,7 +4,7 @@
     /* ════════════════════════════════════════
    MODAL
    ════════════════════════════════════════ */
-    .modal-overlay {
+    .modal-usr-overlay {
         position: fixed;
         inset: 0;
         background: rgba(20, 10, 30, .45);
@@ -19,12 +19,12 @@
         transition: opacity .25s;
     }
 
-    .modal-overlay.open {
+    .modal-usr-overlay.open {
         opacity: 1;
         pointer-events: all;
     }
 
-    .modal {
+    .modal-usr {
         background: white;
         border-radius: 14px;
         width: 100%;
@@ -38,35 +38,35 @@
         overflow: hidden;
     }
 
-    .modal-overlay.open .modal {
+    .modal-usr-overlay.open .modal-usr {
         transform: translateY(0) scale(1);
     }
 
-    .modal-header {
+    .modal-usr-header {
         background: linear-gradient(135deg, var(--purple), var(--purple-mid));
         padding: 22px 24px 18px;
         color: white;
         flex-shrink: 0;
     }
 
-    .modal-header h3 {
+    .modal-usr-header h3 {
         font-size: 1.05rem;
         font-weight: 600;
     }
 
-    .modal-header p {
+    .modal-usr-header p {
         font-size: .82rem;
         opacity: .75;
         margin-top: 4px;
     }
 
-    .modal-body {
+    .modal-usr-body {
         padding: 24px;
         overflow-y: auto;
         flex: 1;
     }
 
-    .modal-footer {
+    .modal-usr-footer {
         padding: 16px 24px;
         border-top: 1px solid var(--border);
         display: flex;
@@ -280,14 +280,14 @@
 
     
 </style>
-<div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
-        <div class="modal-header">
-            <h3 id="modal-title">Modifier le rôle</h3>
-            <p id="modal-subtitle">Choisissez un rôle pour cet utilisateur</p>
+<div class="modal-usr-overlay" id="modal-usr-overlay">
+    <div class="modal-usr">
+        <div class="modal-usr-header">
+            <h3 id="modal-usr-title">Modifier le rôle</h3>
+            <p id="modal-usr-subtitle">Choisissez un rôle pour cet utilisateur</p>
         </div>
 
-        <div class="modal-body">
+        <div class="modal-usr-body">
             <span class="role-select-label">Quel est son rôle ?</span>
             <div class="role-options">
 
@@ -348,8 +348,8 @@
             </div>
         </div>
 
-        <div class="modal-footer">
-            <button class="btn-cancel" id="btn-cancel" onclick="closeModal()">Annuler</button>
+        <div class="modal-usr-footer">
+            <button class="btn-cancel" id="btn-cancel" onclick="closeUsrModal()">Annuler</button>
             <button class="btn-save" id="btn-save" onclick="putNewRole()">Enregistrer</button>
         </div>
     </div>
@@ -369,7 +369,7 @@
 
 
     // ── Ouvrir la modale ────────────────────────────
-    function openModal(userId) {
+    function openUsrModal(userId) {
         var users = {{ users | tojson | safe
     }};
     var user = users.find(u => u.user_id === userId);
@@ -402,8 +402,8 @@
     })
 
     // Header
-    document.getElementById('modal-title').textContent = user.name;
-    document.getElementById('modal-subtitle').textContent = user.mail;
+    document.getElementById('modal-usr-title').textContent = user.name;
+    document.getElementById('modal-usr-subtitle').textContent = user.mail;
 
     renderProgramTags();
 
@@ -413,7 +413,7 @@
     btnSave.textContent = 'Enregistrer';
 
     // Ouvrir
-    document.getElementById('modal-overlay').classList.add('open');
+    document.getElementById('modal-usr-overlay').classList.add('open');
     }
 
     // ── Section filières : afficher/masquer ─────────
@@ -482,8 +482,8 @@
 
 
     // ── Fermer la modale ────────────────────────────
-    function closeModal() {
-        document.getElementById('modal-overlay').classList.remove('open');
+    function closeUsrModal() {
+        document.getElementById('modal-usr-overlay').classList.remove('open');
         editingUserId = null;
         selectedPrograms = [];
         selectedFacilitatorPrograms = [];
@@ -569,7 +569,7 @@
                 return resp.json();
             })
             .then(function () {
-                closeModal();
+                closeUsrModal();
                 showToast('Rôle de ' + editingUser["mail"] + ' mis à jour', 'success');
                 window.location.reload(); // Recharger la page pour refléter les changements
             })
