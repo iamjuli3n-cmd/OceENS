@@ -1,15 +1,14 @@
 {% for survey in surveys %}
 
 <div class="sondage-row">
-  <div style="flex:1;">
+  <div class="sondage-main">
     <div class="sondage-row-name">
       {{ survey['program_name'] }} — {{ survey['semester'] }}
     </div>
     <div class="sondage-row-meta">{{ survey['campus'] }} · {{ survey['school_year'] }}</div>
   </div>
 
-  <a href="/api/surveys/{{ survey['survey_id'] }}"
-    style="background: var(--bg-accent); color: var(--text-accent); border: 0.5px solid var(--border-accent); border-radius: 8px; padding: 5px 11px; text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+  <a href="/api/surveys/{{ survey['survey_id'] }}" class="survey-link">
     Lien questionnaire
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -18,15 +17,14 @@
     </svg>
   </a>
 
-  <div style="text-align: right; margin-right: 12px; margin-left: 12px; min-width: 100px;">
-    <div style="font-size: 13px; font-weight: 500; color: #111;">{% if survey['submissions_count'] != survey['answers_count'] %}<a style="font-size:11px; vertical-align: top; cursor: default;" title="Attention le nombre de répondants ({{survey['answers_count']}}) et de soumissions ({{survey['submissions_count']}}) ne collent pas !">⚠️</a>{% endif %}{{
+  <div class="sondage-stats">
+    <div class="sondage-stats-value">{% if survey['submissions_count'] != survey['answers_count'] %}<a style="font-size:11px; vertical-align: top; cursor: default;" title="Attention le nombre de répondants ({{survey['answers_count']}}) et de soumissions ({{survey['submissions_count']}}) ne collent pas !">⚠️</a>{% endif %}{{
       survey['submissions_count'] }} / {{
       survey['respondents_count'] }} </div>
-    <div style="font-size: 10px; color: #aaa;">ont répondu / inscrits</div>
-    <div
-      style="height: 4px; border-radius: 99px; width: 72px; background: var(--border); margin-top: 4px; margin-left: auto;">
-      <div
-        style="height: 100%; border-radius: 99px; background: #470a68; width: {% if survey['respondents_count'] > 0 %}{{ (survey['submissions_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
+    <div class="sondage-stats-label">ont répondu / inscrits</div>
+    <div class="sondage-progress">
+      <div class="sondage-progress-value"
+        style="width: {% if survey['respondents_count'] > 0 %}{{ (survey['submissions_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
       </div>
     </div>
 

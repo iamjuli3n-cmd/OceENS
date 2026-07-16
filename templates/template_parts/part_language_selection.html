@@ -1,0 +1,46 @@
+<style>
+    .langage-select {
+        background-color: rgba(255, 255, 255, 1);
+        text-decoration: none;
+        font-size: 0.9rem;
+        padding: 6px 14px;
+        border-radius: 6px;
+        transition: all 0.2s;
+
+
+    }
+
+    /*Uncomment for easier debug */
+    /*.text_fr {
+        color: #51a7f9
+    }
+
+    .text_en {
+        color: #de6a19;
+    }*/
+</style>
+<select class="langage-select" id="langage-selector" onchange="langageSelection()">
+    <option value="fr" selected>🇫🇷</option>
+    <option value="en">🇬🇧</option>
+</select>
+<script>
+    function langageSelection() {
+        value = document.getElementById("langage-selector").value;
+        if (value == "en") {
+            document.querySelectorAll(".text_fr").forEach(r => {
+                r.style.display = 'none';
+            })
+            document.querySelectorAll(".text_en").forEach(r => {
+                r.style.display = 'inline';
+            })
+        } else {
+            document.querySelectorAll(".text_en").forEach(r => {
+                r.style.display = 'none';
+            })
+            document.querySelectorAll(".text_fr").forEach(r => {
+                r.style.display = 'inline';
+            })
+        }
+    }
+    document.addEventListener('DOMContentLoaded', langageSelection);
+</script>

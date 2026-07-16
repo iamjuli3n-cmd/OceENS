@@ -28,6 +28,7 @@ from sqlmodel import Session, SQLModel, create_engine, select, func, delete
 import uvicorn
 from seed import seed_all_if_necessary
 from database import engine, SessionDep, create_db_and_tables
+from services.visualisation_data import bilingual_text
 
 # ┌─ Importation des modèles et du module d'authentification ─────────────┐
 from models import (
@@ -49,12 +50,14 @@ from starlette.middleware.sessions import SessionMiddleware
 from auth import router as auth_router, get_current_user
 from sondage_loader import load_sondage_complet
 from services.export_csv import generate_csv_response
-from services.visualisation_data import get_visualisation_context
+from services.visualisation_data import get_visualisation_context2
 
 load_dotenv()
 # ┌─ Configuration ────────────────────────────────────────────────────────┐
 # Les trois slugs de dashboard reconnus par l'application
 VALID_ROLES = {"admin", "student", "program_manager"}
+
+
 
 
 def role_to_dashboard_slug(roles: List[str]) -> str:
@@ -136,6 +139,7 @@ class AnswerItem(BaseModel):
     section_id: int
     question_id: int
     value: str
+    option_id: Optional[int] = None
     module_id: Optional[int] = None
     teacher: Optional[str] = None
 
@@ -266,6 +270,8 @@ def create_app():
     # Fichiers statiques et templates (montés une seule fois)
     app.mount("/static", StaticFiles(directory="static"), name="static")
     templates = Jinja2Templates(directory="templates")
+    templates.env.policies['json.dumps_kwargs'] = {'sort_keys': False}
+
 
     # ┌─ Route : Page d'accueil (version app.py conservée) ──────────────┐
     @app.get("/", response_class=HTMLResponse)
@@ -530,7 +536,6 @@ def create_app():
 
                     new_survey = Survey(
                         template_id=survey.template_id,
-                        campus=survey.campus,
                         program=survey.program,
                         semester=survey.semester,
                         school_year=survey.school_year,
@@ -556,7 +561,6 @@ def create_app():
                                 ue=ue.name,
                                 is_optional=ue.is_optional,
                                 one_teacher_in_list=module_data.one_teacher_in_list,
-                                template_id=survey.template_id,
                                 survey_id=survey_id,
                             )
                             session.add(new_module)
@@ -617,7 +621,6 @@ def create_app():
                                 if user_id in existing_respondent_user_ids:
                                     continue  # Déjà affecté à ce sondage, on ne fait rien
                                 new_repondre = Respondent(
-                                    template_id=survey.template_id,
                                     survey_id=survey_id,
                                     user_id=user_id,
                                     submission_date=None,
@@ -668,11 +671,13 @@ def create_app():
             )
         ).first()
 
+        if not survey:
+            return HTMLResponse(content="Survey introuvable.", status_code=404)
+
         program = session.exec(
             select(Program).where(Program.code == survey.program)
         ).first()
-        if not survey:
-            return HTMLResponse(content="Survey introuvable.", status_code=404)
+        
 
         # ── État du sondage ─────────────────────────────────────────────
         survey_is_closed = survey.status == 0
@@ -705,12 +710,19 @@ def create_app():
         ).all()
 
         questions = session.exec(
-            select(Question).where(Question.template_id == survey.template_id)
+            select(Question)
+            .join(Section,Section.section_id==Question.section_id)
+            .where(Section.template_id == survey.template_id)
         ).all()
 
         options = session.exec(
-            select(Option).where(Option.template_id == survey.template_id)
+            select(Option)
+            .join(Question,Question.question_id==Option.question_id)
+            .join(Section,Section.section_id==Question.section_id)
+            .where(Section.template_id == survey.template_id)
         ).all()
+
+        
 
         modules = session.exec(
             select(Module).where(Module.survey_id == survey_id)
@@ -728,23 +740,44 @@ def create_app():
                 q_options = [
                     o
                     for o in options
-                    if o.section_id == sec.section_id and o.question_id == q.question_id
+                    if o.question_id == q.question_id
                 ]
                 q_options.sort(key=lambda o: o.option_id)
+                option_items = [
+                    {
+                        "option_id": o.option_id,
+                        "text": bilingual_text(o.text_fr, o.text_en),
+                        "text_fr": o.text_fr or "",
+                        "text_en": o.text_en or "",
+                        "value": o.text_fr or o.text_en or "",
+                        "is_positive": (
+                            None if o.is_positive is None else bool(o.is_positive)
+                        ),
+                    }
+                    for o in q_options
+                ]
+                if q.question_type == "NPS" and not option_items:
+                    option_items = [
+                        {
+                            "option_id": None,
+                            "text": str(score),
+                            "text_fr": str(score),
+                            "text_en": str(score),
+                            "value": str(score),
+                            "is_positive": None,
+                        }
+                        for score in range(1, 11)
+                    ]
 
                 questions_data.append(
                     {
                         "question_id": q.question_id,
-                        "text": q.text,
+                        "text": bilingual_text(q.text_fr, q.text_en),
+                        "text_fr": q.text_fr or "",
+                        "text_en": q.text_en or "",
                         "question_type": q.question_type,
-                        "category": q.category,
-                        "options": [
-                            {
-                                "option_id": o.option_id,
-                                "text": o.text,
-                            }
-                            for o in q_options
-                        ],
+                        "category": sec.name,
+                        "options": option_items,
                     }
                 )
 
@@ -754,6 +787,25 @@ def create_app():
                     "name": sec.name,
                     "questions": questions_data,
                 }
+            )
+
+        module_section = next(
+            (
+                section
+                for section in sections_data
+                if section["name"] == "Module / Enseignant"
+            ),
+            None,
+        )
+        module_attendance_question = None
+        if module_section:
+            module_attendance_question = next(
+                (
+                    question
+                    for question in module_section["questions"]
+                    if question["question_type"] == "QCU_Attendance"
+                ),
+                None,
             )
 
         modules_data = []
@@ -802,7 +854,7 @@ def create_app():
                 "survey": {
                     "template_id": survey.template_id,
                     "survey_id": survey.survey_id,
-                    "campus": survey.campus,
+                    "campus": program.campus if program else "Campus non trouvé",
                     "program": survey.program,
                     "semester": survey.semester,
                     "school_year": survey.school_year,
@@ -815,6 +867,8 @@ def create_app():
                 "sections": sections_data,
                 "modules": modules_data,
                 "ues": ues_list,
+                "module_section": module_section,
+                "module_attendance_question": module_attendance_question,
                 "survey_is_closed": survey_is_closed,
                 "user_has_answered": user_has_answered,
             },
@@ -895,9 +949,55 @@ def create_app():
                 status_code=409,
             )
 
-        # 6. Enregistrement atomique : insertion des réponses + UPDATE Respondent
-        #    On utilise begin_nested() (SAVEPOINT) car la session a déjà une
-        #    transaction implicite ouverte par le générateur get_session().
+        submitted_question_ids = {rep.question_id for rep in submission.answers}
+        valid_question_ids = set()
+        if submitted_question_ids:
+            valid_question_ids = set(
+                session.exec(
+                    select(Question.question_id)
+                    .join(Section, Section.section_id == Question.section_id)
+                    .where(
+                        Section.template_id == survey.template_id,
+                        Question.question_id.in_(submitted_question_ids),
+                    )
+                ).all()
+            )
+
+        invalid_question_ids = submitted_question_ids - valid_question_ids
+        if invalid_question_ids:
+            return JSONResponse(
+                content={
+                    "error": "Question(s) hors du questionnaire : "
+                    + ", ".join(map(str, sorted(invalid_question_ids)))
+                },
+                status_code=422,
+            )
+
+        submitted_option_ids = {
+            rep.option_id for rep in submission.answers if rep.option_id is not None
+        }
+        options_by_id = {}
+        if submitted_option_ids:
+            option_rows = session.exec(
+                select(Option).where(Option.option_id.in_(submitted_option_ids))
+            ).all()
+            options_by_id = {option.option_id: option for option in option_rows}
+
+        for rep in submission.answers:
+            if rep.option_id is None:
+                continue
+            option = options_by_id.get(rep.option_id)
+            if option is None or option.question_id != rep.question_id:
+                return JSONResponse(
+                    content={
+                        "error": (
+                            f"Option {rep.option_id} invalide pour la question "
+                            f"{rep.question_id}."
+                        )
+                    },
+                    status_code=422,
+                )
+
         try:
             with session.begin_nested():
                 # Création d'une soumission anonyme.
@@ -913,14 +1013,18 @@ def create_app():
 
                 # Insérer chaque réponse individuelle dans la table answers
                 for rep in submission.answers:
+                    selected_option = options_by_id.get(rep.option_id)
                     new_reponse = Answer(
-                        survey_id=survey_id,
-                        section_id=rep.section_id,
                         module_id=rep.module_id,
                         teacher=rep.teacher,
                         question_id=rep.question_id,
+                        option_id=rep.option_id,
                         submission_id=submission_id,
-                        value=rep.value,
+                        value=(
+                            selected_option.text_fr or selected_option.text_en
+                            if selected_option
+                            else rep.value
+                        ),
                     )
                     session.add(new_reponse)
 
@@ -1022,7 +1126,7 @@ def create_app():
             select(
                 Survey.survey_id,
                 Survey.program,
-                Survey.campus,
+                Program.campus,
                 Survey.semester,
                 Survey.school_year,
                 Survey.status,
@@ -1030,6 +1134,7 @@ def create_app():
             )
             .join(User, Respondent.user_id == User.user_id)
             .join(Survey, Respondent.survey_id == Survey.survey_id)
+            .join(Program, Program.code == Survey.program, isouter=True)
             .where(User.mail == user["email"].casefold())
         ).all()
 
@@ -1104,13 +1209,14 @@ def create_app():
             select(
                 Survey.survey_id,
                 Survey.program,
-                Survey.campus,
+                Program.campus,
                 Survey.semester,
                 Survey.school_year,
                 Survey.status,
                 func.count(Respondent.user_id).label("respondents_count"),
                 func.count(Respondent.submission_date).label("answers_count"),
             )
+            .join(Program, Program.code == Survey.program, isouter=True)
             .join(Respondent, Survey.survey_id == Respondent.survey_id, isouter=True)
             .where(Survey.program.in_(program_codes))
             .group_by(Survey.survey_id)
@@ -1206,7 +1312,6 @@ def create_app():
             select(
                 Survey.survey_id,
                 Survey.program,
-                Survey.campus,
                 Survey.semester,
                 Survey.school_year,
                 Survey.status,
@@ -1218,8 +1323,9 @@ def create_app():
             .group_by(Survey.survey_id)
             .order_by(Survey.survey_id.desc())
         ).all()
+
         db_programs = session.exec(select(Program)).all()
-        program_name_by_code = {p.code: p.name for p in db_programs}
+        program_name_by_code = {p.code: {"name":p.name,"campus":p.campus}  for p in db_programs}
 
         submissions_rows = session.exec(
             select(
@@ -1236,13 +1342,13 @@ def create_app():
             {
                 "survey_id": r[0],
                 "program": r[1],
-                "program_name": program_name_by_code.get(r[1], r[1]),
-                "campus": r[2],
-                "semester": r[3],
-                "school_year": r[4],
-                "is_closed": (r[5] == 0),
-                "respondents_count": r[6],
-                "answers_count": r[7],
+                "program_name": program_name_by_code[r[1]]["name"] if r[1] in program_name_by_code.keys() else r[1],
+                "campus" : program_name_by_code[r[1]]["campus"] if r[1] in program_name_by_code.keys() else "Campus not found",
+                "semester": r[2],
+                "school_year": r[3],
+                "is_closed": (r[4] == 0),
+                "respondents_count": r[5],
+                "answers_count": r[6],
                 "submissions_count": submissions_count[r[0]] if r[0] in submissions_count.keys() else 0,
             }
             for r in rows
@@ -1452,31 +1558,12 @@ def create_app():
                 status_code=error_or_warning["status_code"],
             )
 
-        # Utilisation de la BDD locale pour le loader sqlite3 natif
-        #survey_obj = load_sondage_complet(survey_id)
 
-     
-        # program = session.exec(
-        #     select(Program).where(Program.code == survey.program)
-        # ).first()
 
-        # program_name = program.name if program else survey.program
-
-        context = get_visualisation_context(survey_id)
+        context = get_visualisation_context2(survey_id)
         context["user"]=user
 
-        # context = {
-        #     "user": user,
-        #     "survey": survey,
-        #     "program_name": program_name,
-        #     "respondents_count": respondents_count,
-        #     "answers_count": answers_count,
-        #     "warning_msg": error_or_warning
-        #     if isinstance(error_or_warning, str)
-        #     else None,
-        #     "viz_data": viz_context,
-        #     "survey_obj": survey_obj
-        # }
+
 
         return templates.TemplateResponse(
             request=request, name="visualisation.html", context=context

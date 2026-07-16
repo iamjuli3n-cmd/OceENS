@@ -33,7 +33,8 @@ const SurveyModule = {
 
         const btnText = btn.querySelector('.btn-submit-text');
         if (btnText) {
-            btnText.textContent = hasAnswered ? 'Déjà répondu' : 'Sondage fermé' ;
+            btnText.innerHTML = hasAnswered ? '<text class="text_fr">Déjà répondu</text><text class="text_en">Already answered</text>' : '<text class="text_fr">Sondage fermé</text><text class="text_en">Closed</text>' ;
+            langageSelection();
         }
 
         const btnIcon = btn.querySelector('.btn-submit-icon');
@@ -170,7 +171,9 @@ const SurveyModule = {
         if (!radio.checked) // Prevent invalid call
             return;
         const value = radio.value.toLowerCase();
-        const isSatisfied = this.SATISFIED_KEYWORDS.some(kw => value.includes(kw));
+        const isSatisfied = radio.dataset.isPositive
+            ? radio.dataset.isPositive === 'true'
+            : this.SATISFIED_KEYWORDS.some(kw => value.includes(kw));
 
         // Trouver le groupe de satisfaction (section ou module-prof)
         const group = radio.closest('[data-satisfaction-group]');
@@ -287,7 +290,9 @@ const SurveyModule = {
         const conditionalBlock = profBlock.querySelector('.prof-conditional-block');
         if (!conditionalBlock) return;
 
-        const isYes = radio.value.toLowerCase().includes('oui') || radio.value.toLowerCase().includes('yes');
+        const isYes = radio.dataset.isPositive
+            ? radio.dataset.isPositive === 'true'
+            : radio.value.toLowerCase().includes('oui') || radio.value.toLowerCase().includes('yes');
         conditionalBlock.style.display = isYes ? 'block' : 'none';
 
         if (!isYes) {
@@ -302,12 +307,10 @@ const SurveyModule = {
 
     // ─── Select Exclusive Prof (mode EXCLUSIF) ──────────
     selectExclusiveProf(radio) {
-        console.log("selectExclusiveProf")
-        console.log(radio);
         if (!radio.checked) // Prevent invalid call
             return;
         const moduleId = radio.dataset.module;
-        const selectedProf = radio.value;
+        const selectedProf = radio.dataset.selectedProf || '';
 
         document.querySelectorAll(`.exclusive-prof-block[data-module-id="${moduleId}"]`).forEach(block => {
             block.style.display = 'none';
@@ -320,7 +323,7 @@ const SurveyModule = {
             }
         });
 
-        if (selectedProf && selectedProf !== '__none__') {
+        if (selectedProf) {
             const block = document.querySelector(
                 `.exclusive-prof-block[data-module-id="${moduleId}"][data-prof="${selectedProf}"]`
             );
@@ -462,41 +465,25 @@ const SurveyModule = {
                 question_id: parseInt(r.dataset.question),
                 value: r.value,
             };
+            if (r.dataset.optionId) rep.option_id = parseInt(r.dataset.optionId);
             if (r.dataset.module) rep.module_id = parseInt(r.dataset.module);
             if (r.dataset.prof) rep.teacher = r.dataset.prof;
             answers.push(rep);
         });
 
         // Collecter les checkboxes
-        const checkboxGroups = {};
         form.querySelectorAll('input[type="checkbox"]:checked').forEach(c => {
             if (!isVisible(c)) return;
-            const key = c.name;
-            if (!checkboxGroups[key]) {
-                checkboxGroups[key] = {
-                    section_id: parseInt(c.dataset.section),
-                    question_id: parseInt(c.dataset.question),
-                    values: [],
-                    module_id: c.dataset.module ? parseInt(c.dataset.module) : null,
-                    teacher: c.dataset.prof || null,
-                };
-            }
-            checkboxGroups[key].values.push(c.value);
+            const rep = {
+                section_id: parseInt(c.dataset.section),
+                question_id: parseInt(c.dataset.question),
+                value: c.value,
+            };
+            if (c.dataset.optionId) rep.option_id = parseInt(c.dataset.optionId);
+            if (c.dataset.module) rep.module_id = parseInt(c.dataset.module);
+            if (c.dataset.prof) rep.teacher = c.dataset.prof;
+            answers.push(rep);
         });
-
-        for (const key of Object.keys(checkboxGroups)) {
-            const group = checkboxGroups[key];
-            for (const val of group.values) {
-                const rep = {
-                    section_id: group.section_id,
-                    question_id: group.question_id,
-                    value: val,
-                };
-                if (group.module_id) rep.module_id = group.module_id;
-                if (group.teacher) rep.teacher = group.teacher;
-                answers.push(rep);
-            }
-        }
 
         // Collecter les textareas
         form.querySelectorAll('textarea.open-answer').forEach(ta => {

@@ -53,6 +53,7 @@ header {
 .header-right {
     display: flex;
     align-items: center;
+    gap: 8px;
 }
 
 .header-logo-oceens {
@@ -748,3 +749,21 @@ main {
 .survey-status-banner.answered {
     background: #2e7d32;
 }
+
+.btn-retour {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 1);
+    color: #470a68;
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.btn-retour:hover {
+    background-color: #f4edf7;
+    color: #470a68;
+}
+

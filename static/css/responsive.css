@@ -1,0 +1,853 @@
+/* Responsive layout shared by the OcéEns pages.
+   Page-specific body classes keep these overrides isolated from one another. */
+
+html,
+body {
+    max-width: 100%;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+img,
+svg,
+canvas {
+    max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+    max-width: 100%;
+}
+
+/* Shared dashboard components */
+.account-nav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    min-width: 0;
+}
+
+.account-email {
+    color: #555;
+    font-size: 13px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sondage-main {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.survey-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    padding: 5px 11px;
+    border: 0.5px solid var(--border-accent);
+    border-radius: 8px;
+    background: var(--bg-accent);
+    color: var(--text-accent);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.survey-link svg {
+    flex: 0 0 auto;
+}
+
+.sondage-stats {
+    flex: 0 0 100px;
+    margin-inline: 12px;
+    text-align: right;
+}
+
+.sondage-stats-value {
+    color: #111;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.sondage-stats-label {
+    color: #aaa;
+    font-size: 10px;
+}
+
+.sondage-progress {
+    width: 72px;
+    height: 4px;
+    margin-top: 4px;
+    margin-left: auto;
+    overflow: hidden;
+    border-radius: 99px;
+    background: var(--border);
+}
+
+.sondage-progress-value {
+    height: 100%;
+    border-radius: inherit;
+    background: #470a68;
+}
+
+.users-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+}
+
+/* Home */
+@media (max-width: 768px) {
+    .page-home header {
+        height: 72px;
+    }
+
+    .page-home .header-logo {
+        left: 14px;
+        bottom: -30px;
+        height: 56px;
+    }
+
+    .page-home main {
+        min-height: calc(100svh - 72px);
+        padding: 56px 16px 32px;
+    }
+
+    .page-home .hero-content {
+        width: 100%;
+        max-width: 560px;
+        padding-inline: 12px;
+    }
+
+    .page-home .logo-title {
+        font-size: clamp(2.75rem, 14vw, 4.5rem);
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .page-home .logo-subtitle {
+        margin: 18px auto 42px;
+        font-size: clamp(0.82rem, 3.8vw, 1rem);
+        line-height: 1.5;
+        letter-spacing: 1px;
+        overflow-wrap: anywhere;
+    }
+
+    .page-home .hero-actions,
+    .page-home .hero-btn {
+        width: 100%;
+    }
+}
+
+/* Admin and program manager dashboards */
+@media (max-width: 768px) {
+
+    .page-admin .header,
+    .page-program-manager .header {
+        height: auto;
+        min-height: 58px;
+        padding: 10px 16px;
+        gap: 14px;
+    }
+
+    .page-admin .header-logo-oceens,
+    .page-program-manager .header-logo-oceens {
+        flex: 0 0 auto;
+    }
+
+    .page-admin .account-nav,
+    .page-program-manager .account-nav {
+        gap: 8px;
+    }
+
+    .page-admin .account-email,
+    .page-program-manager .account-email {
+        max-width: 34vw;
+    }
+
+    .page-admin .banner,
+    .page-program-manager .banner {
+        align-items: flex-start;
+        gap: 18px;
+        margin: 16px;
+        padding: 24px;
+    }
+
+    .page-admin main {
+        margin: 20px auto;
+        padding: 0 16px;
+    }
+
+    .page-admin .card,
+    .page-program-manager .questionnaires-card {
+        padding: 20px;
+    }
+
+    .page-program-manager .questionnaires-card {
+        margin: 0 16px 16px;
+    }
+
+    .page-admin .sondage-row,
+    .page-program-manager .sondage-row {
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 0;
+    }
+
+    .page-admin .sondage-main,
+    .page-program-manager .sondage-main {
+        flex-basis: 100%;
+    }
+
+    .page-admin .sondage-stats,
+    .page-program-manager .sondage-stats {
+        margin-inline: auto 0;
+    }
+
+    .page-admin .row-actions,
+    .page-program-manager .row-actions {
+        flex: 0 0 auto;
+    }
+
+    .page-admin .modal-overlay {
+        align-items: flex-end;
+        padding: 12px;
+    }
+
+    .page-admin .modal {
+        max-height: calc(100svh - 24px);
+    }
+}
+
+@media (max-width: 560px) {
+
+    .page-admin .account-email,
+    .page-program-manager .account-email {
+        display: none;
+    }
+
+    .page-admin .banner,
+    .page-program-manager .banner {
+        flex-direction: column;
+        margin: 12px;
+        padding: 20px;
+    }
+
+    .page-admin .btn-banner,
+    .page-program-manager .btn-banner {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .page-admin main {
+        margin-top: 16px;
+        padding-inline: 12px;
+    }
+
+    .page-admin .card,
+    .page-program-manager .questionnaires-card {
+        padding: 16px;
+    }
+
+    .page-program-manager .questionnaires-card {
+        margin-inline: 12px;
+    }
+
+    .page-admin .card-title {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .page-admin .filter-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .page-admin .filter-tab {
+        width: 100%;
+        padding-inline: 8px;
+    }
+
+    .page-admin .users-table,
+    .page-admin .users-table tbody,
+    .page-admin .users-table tr,
+    .page-admin .users-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .page-admin .users-table thead {
+        display: none;
+    }
+
+    .page-admin .users-table tbody tr {
+        margin-bottom: 12px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        cursor: default;
+    }
+
+    .page-admin .users-table td {
+        padding: 6px 0;
+    }
+
+    .page-admin .user-info {
+        align-items: flex-start;
+    }
+
+    .page-admin .user-email {
+        overflow-wrap: anywhere;
+    }
+
+    .page-admin .role-badge {
+        margin: 2px 2px 2px 0;
+        white-space: normal;
+    }
+
+    .page-admin .td-actions {
+        text-align: left;
+    }
+
+    .page-admin .btn-edit {
+        width: 100%;
+        min-height: 42px;
+    }
+
+    .page-admin .modal-header,
+    .page-admin .modal-body,
+    .page-admin .modal-footer {
+        padding-inline: 16px;
+    }
+
+    .page-admin .role-option {
+        min-width: calc(50% - 4px);
+    }
+
+    .page-admin .formations-select-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .page-admin .btn-add-formation {
+        min-height: 42px;
+    }
+
+    .page-admin .modal-footer>button {
+        flex: 1;
+    }
+
+    .survey-link {
+        white-space: normal;
+    }
+
+    .sondage-stats {
+        flex-basis: 92px;
+        text-align: left;
+    }
+
+    .sondage-progress {
+        margin-left: 0;
+    }
+}
+
+/* Student dashboard */
+@media (max-width: 768px) {
+    .page-student header {
+        height: auto;
+        min-height: 58px;
+        padding: 9px 16px;
+    }
+
+    .page-student header nav .user-email {
+        display: none;
+    }
+
+    .page-student .banner {
+        margin: 16px;
+        padding: 24px;
+    }
+
+    .page-student main {
+        width: 100%;
+        margin: 20px auto;
+        padding: 0 16px 24px;
+    }
+
+    .page-student .hero-content {
+        width: 100%;
+        max-width: 900px;
+        padding: 32px 24px;
+    }
+
+    .page-student .logo-title {
+        font-size: clamp(3.2rem, 14vw, 4.5rem);
+        line-height: 1;
+    }
+
+    .page-student .logo-subtitle {
+        margin-bottom: 44px;
+        line-height: 1.5;
+    }
+
+    .page-student .student-survey-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .page-student .student-survey-action,
+    .page-student .student-survey-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-student header .school-logo {
+        height: 34px;
+    }
+
+    .page-student header nav a.logout-btn {
+        padding-inline: 12px;
+    }
+
+    .page-student .banner {
+        margin: 12px;
+        padding: 20px;
+    }
+
+    .page-student main {
+        padding-inline: 12px;
+    }
+
+    .page-student .hero-content {
+        padding: 26px 16px;
+        border-radius: 14px;
+    }
+
+    .page-student .student-questionnaires-header h2 {
+        font-size: 20px;
+    }
+
+    .page-student .student-survey-title {
+        font-size: 16px;
+    }
+}
+
+/* Survey form */
+@media (max-width: 768px) {
+    .page-survey header {
+        height: auto;
+        min-height: 60px;
+        padding: 10px 16px;
+        gap: 12px;
+    }
+
+    .page-survey .header-left,
+    .page-survey .header-right {
+        min-width: 0;
+        gap: 8px;
+    }
+
+    .page-survey .header-title {
+        display: none;
+    }
+
+    .page-survey .header-left img {
+        height: 28px;
+    }
+
+    .page-survey .header-logo-oceens {
+        padding-inline: 10px;
+        letter-spacing: 1px;
+    }
+
+    .page-survey main {
+        margin-top: 76px;
+    }
+
+    .page-survey .questionnaire-hero,
+    .page-survey .section-card,
+    .page-survey .ue-group-card,
+    .page-survey .survey-status-banner {
+        max-width: 100%;
+    }
+
+    .page-survey .options-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .page-survey .nps-scale {
+        padding-bottom: 8px;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: thin;
+    }
+
+    .page-survey .nps-option {
+        flex: 0 0 44px;
+    }
+
+    .page-survey .nps-anchors {
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-survey header {
+        padding-inline: 10px;
+    }
+
+    .page-survey .header-left img {
+        display: none;
+    }
+
+    .page-survey .btn-retour,
+    .page-survey .langage-select {
+        min-height: 40px;
+        padding-inline: 11px;
+    }
+
+    .page-survey .header-logo-oceens {
+        font-size: 1rem;
+        padding: 7px 9px;
+    }
+
+    .page-survey main {
+        padding-inline: 10px;
+    }
+
+    .page-survey .questionnaire-hero {
+        padding-inline: 12px;
+    }
+
+    .page-survey .hero-subtitle {
+        line-height: 1.7;
+    }
+
+    .page-survey .section-header,
+    .page-survey .ue-group-header,
+    .page-survey .question-block,
+    .page-survey .prof-name-banner {
+        padding-inline: 14px;
+    }
+
+    .page-survey .section-header h2,
+    .page-survey .ue-group-header h2 {
+        overflow-wrap: anywhere;
+    }
+
+    .page-survey .section-number {
+        flex: 0 0 auto;
+    }
+}
+
+/* Survey creation */
+@media (max-width: 768px) {
+    .page-survey-create header {
+        height: auto;
+        min-height: 60px;
+        padding: 10px 16px;
+    }
+
+    .page-survey-create main {
+        width: 100%;
+        margin-top: 72px;
+        padding: 16px;
+    }
+
+    .page-survey-create .card {
+        padding: 22px;
+    }
+
+    .page-survey-create .pub-field,
+    .page-survey-create .param-selectors .param-field {
+        min-width: min(100%, 240px);
+    }
+
+    .page-survey-create .param-ue-header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .page-survey-create .param-ue-name {
+        flex: 1 1 220px;
+        min-width: 0;
+    }
+
+    .page-survey-create .param-ue-actions {
+        flex: 1 1 100%;
+        justify-content: flex-end;
+    }
+
+    .page-survey-create .param-module {
+        align-items: stretch;
+        flex-wrap: wrap;
+    }
+
+    .page-survey-create .param-module-name,
+    .page-survey-create .param-module-modalite,
+    .page-survey-create .param-module-profs {
+        flex: 1 1 220px;
+        min-width: 0;
+    }
+
+    .page-survey-create .param-prof-dropdown-content {
+        right: 0;
+        left: auto;
+        max-width: min(320px, calc(100vw - 48px));
+    }
+
+    .page-survey-create .dropzone {
+        padding-inline: 18px;
+    }
+
+    .page-survey-create .import-notification {
+        width: calc(100% - 24px);
+        min-width: 0;
+    }
+}
+
+@media (max-width: 520px) {
+    .page-survey-create header {
+        padding-inline: 12px;
+    }
+
+    .page-survey-create .header-left {
+        gap: 10px;
+    }
+
+    .page-survey-create .header-left img {
+        height: 28px;
+    }
+
+    .page-survey-create .header-logo-oceens {
+        padding-inline: 10px;
+        font-size: 1rem;
+        letter-spacing: 1px;
+    }
+
+    .page-survey-create main {
+        padding-inline: 10px;
+    }
+
+    .page-survey-create .card {
+        padding: 16px;
+    }
+
+    .page-survey-create .pub-header,
+    .page-survey-create .param-selectors {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .page-survey-create .pub-field,
+    .page-survey-create .param-selectors .param-field {
+        min-width: 0;
+    }
+
+    .page-survey-create .param-select-group {
+        align-items: stretch;
+        flex-wrap: wrap;
+    }
+
+    .page-survey-create .param-select-group select {
+        flex: 1 1 180px !important;
+        min-width: 0;
+    }
+
+    .page-survey-create .param-module,
+    .page-survey-create .param-module-name,
+    .page-survey-create .param-module-modalite,
+    .page-survey-create .param-module-profs {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .page-survey-create .param-ue-body {
+        padding-inline: 12px;
+    }
+
+    .page-survey-create .param-btn-add,
+    .page-survey-create .btn-import {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Visualisation */
+@media (max-width: 1100px) {
+    .page-visualisation .header {
+        height: auto;
+        min-height: 58px;
+        padding: 10px 20px;
+        gap: 16px;
+    }
+
+    .page-visualisation .account-nav {
+        gap: 8px;
+    }
+
+    .page-visualisation .account-email {
+        max-width: 28vw;
+    }
+
+    .page-visualisation .container {
+        padding-inline: 18px;
+    }
+
+    .page-visualisation .filters-bar {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 18px;
+        border-radius: 16px;
+    }
+
+    .page-visualisation .filter-item {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+
+    .page-visualisation .filter-select {
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .page-visualisation .filter-separator {
+        display: none;
+    }
+
+    .page-visualisation .kpi-banner {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        padding: 28px;
+    }
+
+    .page-visualisation .kpi-right {
+        width: 100%;
+        min-width: 0;
+        padding: 20px;
+    }
+
+    .page-visualisation .two-cols {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .page-visualisation .detailled-section {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .page-visualisation .chart-controls-overlay {
+        opacity: 0.8;
+    }
+}
+
+@media (max-width: 600px) {
+    .page-visualisation .header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 10px 14px;
+    }
+
+    .page-visualisation .account-nav {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    .page-visualisation .account-email {
+        display: none;
+    }
+
+    .page-visualisation .container {
+        margin-top: 16px;
+        padding-inline: 10px;
+    }
+
+    .page-visualisation .filters-bar {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 16px;
+    }
+
+    .page-visualisation .kpi-banner {
+        padding: 18px;
+        border-radius: 12px;
+    }
+
+    .page-visualisation .kpi-right {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .page-visualisation .card {
+        padding: 18px 14px;
+        border-radius: 12px;
+    }
+
+    .page-visualisation .card-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .page-visualisation .summary-row {
+        padding: 20px 0;
+    }
+
+    .page-visualisation .summary-title {
+        font-size: 17px;
+        overflow-wrap: anywhere;
+    }
+
+    .page-visualisation .summary-subtitle {
+        font-size: 15px;
+    }
+
+    .page-visualisation .summary-score-inline,
+    .page-visualisation .score-line {
+        align-items: flex-start;
+        flex-direction: column;
+        width: 100%;
+        gap: 7px;
+    }
+
+    .page-visualisation .score-bar {
+        width: min(100%, 220px);
+    }
+
+    .page-visualisation .answer-question-card {
+        padding: 14px 10px;
+    }
+
+    .page-visualisation .chart-container-wrapper {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .page-visualisation .chart-controls-overlay {
+        bottom: 4px;
+        left: 4px;
+    }
+
+    .page-visualisation .verbatim-list li {
+        overflow-wrap: anywhere;
+    }
+}

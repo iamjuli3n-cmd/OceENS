@@ -727,7 +727,10 @@ header {
 }
 
 .btn-retour {
-    color: rgba(255, 255, 255, 0.7);
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 1);
+    color: #470a68;
     text-decoration: none;
     font-size: 0.9rem;
     padding: 6px 14px;
@@ -736,13 +739,14 @@ header {
 }
 
 .btn-retour:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background-color: #f4edf7;
+    color: #470a68;
 }
 
 .header-right {
     display: flex;
     align-items: center;
+    gap: 8px;
 }
 
 .header-logo-oceens {

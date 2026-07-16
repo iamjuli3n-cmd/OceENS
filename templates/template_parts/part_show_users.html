@@ -21,6 +21,7 @@
     <button class="filter-tab" data-filter="program_manager" onclick="filter('program_manager')">RP-RM</button>
 </div>
 
+<div class="users-table-wrapper">
 <table class="users-table" id="users-table">
     <thead>
         <tr>
@@ -71,6 +72,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 
 <div class="empty-state" id="empty-state" style="display:none;">
     <svg width="48" height="48" fill="none" stroke="#470a68" stroke-width="1.5" viewBox="0 0 24 24">
@@ -85,9 +87,9 @@
 <script>
 
     function filter(role) {
-        allUsers = document.querySelectorAll("#users-tbody tr");
+        const allUsers = document.querySelectorAll("#users-tbody tr");
         allUsers.forEach(user => {
-            if (role === "all" || user.classList.contains(role)) {
+            if (role === "all" || user.querySelector(`.role-badge.${role}`)) {
                 user.style.display = "";
             } else {
                 user.style.display = "none";
