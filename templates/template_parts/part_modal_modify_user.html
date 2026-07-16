@@ -213,7 +213,7 @@
         }
     }
 
-    .formation-tag-remove {
+    .formation-tag-remove,.formation-facilitator-tag-remove{
         background: none;
         border: none;
         cursor: pointer;
@@ -225,7 +225,7 @@
         transition: opacity .2s;
     }
 
-    .formation-tag-remove:hover {
+    .formation-tag-remove:hover,.formation-facilitator-tag-remove:hover{
         opacity: 1;
     }
 
@@ -464,7 +464,7 @@
         container.innerHTML = selectedFacilitatorPrograms.map(function (f) {
             return '<span class="formation-tag">'
                 + f
-                + '<button class="formation-tag-remove" data-filiere="' + f + '" title="Retirer">×</button>'
+                + '<button class="formation-facilitator-tag-remove" data-filiere="' + f + '" title="Retirer">×</button>'
                 + '</span>';
         }).join('');
 
