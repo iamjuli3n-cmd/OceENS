@@ -65,11 +65,11 @@
         };
 
         const specific = chartType === 'pie' ? {
-            chart: { type: 'pie', height: Math.max(260, enriched.length * 42) },
+            chart: { type: 'pie', height: enriched.length *30 },
             tooltip: { pointFormat: `<b>{point.y}</b> ${countLabel} — {point.percentage:.0f}%` },
             plotOptions: { pie: { dataLabels: { format: '<b>{point.name}</b>: {point.percentage:.0f}%' } } }
         } : {
-            chart: { type: 'bar', height: Math.max(240, enriched.length * 46) },
+            chart: { type: 'bar', height: enriched.length *30},
             xAxis: { categories: enriched.map(item => item.label), title: { text: null } },
             yAxis: {
                 min: 0,
