@@ -20,6 +20,9 @@
             items.push({ "label": key, "count": value, "is_positive": 1 ? (positive_list.includes(key)) : 0 });
             total += value;
         }
+        if (payload.sort_desc === true) {
+            items.sort((first, second) => second.count - first.count);
+        }
         const percentageDenominator = payload.attendance_count ?? total;
         const positiveColors = ['#5dbb47', '#91c83e', '#c7d93a'];
         const negativeColors = ['#f1ac16', '#ea761f', '#f02024'];

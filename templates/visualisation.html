@@ -149,7 +149,7 @@
 
                                     {% elif question.question_type == 'QCM_Insatisfaction' %}
                                     {{ chart_block( ns.graph_counter , {"items":question.histo,
-                                    "positive_list":question.is_positive,"allow_pie":False, "attendance_count":teacher['attendance_count'], "suffix_text":'des personnes ayant eu cet.te enseignant.e.'} ) }}
+                                    "positive_list":question.is_positive,"allow_pie":False, "sort_desc":true, "attendance_count":teacher['attendance_count'], "suffix_text":'des personnes ayant eu cet.te enseignant.e.'} ) }}
                                     {% set ns.graph_counter = ns.graph_counter + 1 %}
 
                                     {% elif question.question_type == 'Question_ouverte' %}
@@ -241,7 +241,7 @@
                                 {% elif question.question_type == 'QCM_Insatisfaction' %}
 
                                 {{ chart_block( ns.graph_counter , {"items":question.histo,
-                                "positive_list":question.is_positive,"allow_pie":False, "attendance_count":submissions_count} ) }}
+                                "positive_list":question.is_positive,"allow_pie":False, "sort_desc":true, "attendance_count":submissions_count} ) }}
                                 {% set ns.graph_counter = ns.graph_counter + 1 %}
 
                                 {% elif question.question_type == 'Question_ouverte' %}
