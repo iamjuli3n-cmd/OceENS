@@ -216,3 +216,25 @@ body {
     width: 14px;
     height: 14px;
 }
+
+/* Container styling */
+.program-container {
+    text-align: left;
+}
+
+/* Text styling */
+.program-intro {
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+/* List styling */
+.program-list {
+    list-style-type: disc;
+    padding-left: 20px; /* Ensures bullets are visible */
+}
+
+.program-list li {
+    margin-bottom: 5px;
+}
+

@@ -82,11 +82,7 @@
   </svg>
   <div style="font-size:15px; font-weight:600; color:#111; margin-bottom:8px;">Aucun questionnaire pour l'instant
   </div>
-  <div style="font-size:13px; color:#aaa; margin-bottom:20px;">Vous n'avez pas encore créé de
-    questionnaire.<br>Cliquez sur le bouton pour commencer.</div>
-  <a href="/dashboard/survey-create"
-    style="background:#df231d; color:white; border-radius:24px; padding:10px 22px; text-decoration:none; font-size:13px; font-weight:600;">+
-    Créer un questionnaire</a>
+  <div style="font-size:13px; color:#aaa; margin-bottom:20px;">{{ msg_no_survey | safe }}
 </div>
 
 {% endfor %}
