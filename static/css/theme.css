@@ -1,0 +1,460 @@
+:root {
+    --theme-bg: #f5f4f0;
+    --theme-surface: #ffffff;
+    --theme-surface-soft: #f5f7fa;
+    --theme-surface-hover: #f7f4fa;
+    --theme-border: #dce4ec;
+    --theme-text: #1a1a1a;
+    --theme-text-soft: #556170;
+    --theme-text-muted: #7f8fa6;
+    --theme-control-bg: rgba(255, 255, 255, .92);
+    --theme-control-shadow: 0 8px 26px rgba(30, 22, 38, .16);
+    color-scheme: light;
+}
+
+html[data-theme="dark"] {
+    --theme-bg: #11131a;
+    --theme-surface: #1b1e28;
+    --theme-surface-soft: #232733;
+    --theme-surface-hover: #2a2e3c;
+    --theme-border: #373c4c;
+    --theme-text: #eef1f7;
+    --theme-text-soft: #c2c8d4;
+    --theme-text-muted: #9ca5b5;
+    --theme-control-bg: rgba(27, 30, 40, .94);
+    --theme-control-shadow: 0 10px 30px rgba(0, 0, 0, .4);
+    --bg: var(--theme-surface-soft);
+    --white: var(--theme-surface);
+    --border: var(--theme-border);
+    --text: var(--theme-text);
+    --text-muted: var(--theme-text-muted);
+    --blue-label: #a9bfdf;
+    --bg-color: var(--theme-bg);
+    --card-bg: var(--theme-surface);
+    --text-primary: var(--theme-text);
+    --text-secondary: var(--theme-text-muted);
+    color-scheme: dark;
+}
+
+.theme-switcher {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 4px;
+    padding: 3px;
+    background: var(--theme-control-bg);
+    border: 1px solid var(--theme-border);
+    border-radius: 999px;
+    box-shadow: 0 3px 12px rgba(30, 22, 38, .12);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.theme-switcher__choice {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--theme-text-soft);
+    font: inherit;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    opacity: .68;
+    transition: background-color .2s ease, opacity .2s ease, transform .2s ease;
+}
+
+.theme-switcher__choice:hover {
+    background: var(--theme-surface-hover);
+    opacity: 1;
+}
+
+.theme-switcher__choice.is-selected {
+    background: #470a68;
+    box-shadow: 0 3px 9px rgba(71, 10, 104, .28);
+    opacity: 1;
+    transform: scale(1.04);
+}
+
+.theme-switcher__choice:focus-visible {
+    outline: 3px solid rgba(123, 47, 160, .38);
+    outline-offset: 2px;
+}
+
+.page-home > header .theme-switcher {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+}
+
+/* Dark mode uses deep blue-gray surfaces instead of pure black. */
+html[data-theme="dark"] body {
+    background: var(--theme-bg) !important;
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] body.page-admin,
+html[data-theme="dark"] body.page-program-manager {
+    --bg-accent: #1d3048;
+    --text-accent: #9ec8ff;
+    --border-accent: #35577d;
+    --border: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-admin .header,
+html[data-theme="dark"] .page-program-manager .header,
+html[data-theme="dark"] .page-student > header,
+html[data-theme="dark"] .page-visualisation .header {
+    background: #181b24;
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .account-email,
+html[data-theme="dark"] .page-student header nav .user-email {
+    color: var(--theme-text-soft);
+}
+
+html[data-theme="dark"] .btn-logout:not([style]) {
+    color: var(--theme-text-soft);
+    background: var(--theme-surface-soft);
+}
+
+html[data-theme="dark"] .page-student header nav a.logout-btn {
+    color: var(--theme-text);
+    background: transparent;
+}
+
+html[data-theme="dark"] .langage-select {
+    color: var(--theme-text);
+    background-color: var(--theme-surface-soft);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-home .logo-subtitle,
+html[data-theme="dark"] .page-student .logo-subtitle,
+html[data-theme="dark"] .page-student .incentive-text h1,
+html[data-theme="dark"] .page-student .student-questionnaires-header h2,
+html[data-theme="dark"] .page-student .student-survey-title,
+html[data-theme="dark"] .questionnaires-title,
+html[data-theme="dark"] .sondage-row-name,
+html[data-theme="dark"] .sondage-stats-value {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .sondage-row-meta,
+html[data-theme="dark"] .sondage-stats-label,
+html[data-theme="dark"] .page-student .incentive-text p.welcome,
+html[data-theme="dark"] .page-student .student-survey-meta,
+html[data-theme="dark"] .page-student .student-empty-state {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] .page-student .hero-content {
+    background: rgba(27, 30, 40, .72);
+    border-color: rgba(255, 255, 255, .08);
+    box-shadow: 0 12px 38px rgba(0, 0, 0, .28);
+}
+
+html[data-theme="dark"] .page-admin .card,
+html[data-theme="dark"] .page-program-manager .questionnaires-card,
+html[data-theme="dark"] .page-program-manager .stat-card-new,
+html[data-theme="dark"] .page-survey-create .card,
+html[data-theme="dark"] .page-survey .section-card,
+html[data-theme="dark"] .page-survey .ue-group-card,
+html[data-theme="dark"] .page-survey .confirmation-card,
+html[data-theme="dark"] .page-visualisation .card,
+html[data-theme="dark"] .page-visualisation .filters-bar,
+html[data-theme="dark"] .page-visualisation .answer-question-card {
+    color: var(--theme-text);
+    background: var(--theme-surface);
+    border-color: var(--theme-border);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .2);
+}
+
+html[data-theme="dark"] .sondage-row,
+html[data-theme="dark"] .page-admin .users-table tbody tr,
+html[data-theme="dark"] .page-visualisation .indicator-item,
+html[data-theme="dark"] .page-visualisation .module-row,
+html[data-theme="dark"] .page-visualisation .summary-row {
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-admin .users-table thead tr,
+html[data-theme="dark"] .page-admin .users-table tbody tr:hover {
+    background: var(--theme-surface-soft);
+}
+
+html[data-theme="dark"] .page-admin .search-input,
+html[data-theme="dark"] .page-admin .search-input:focus,
+html[data-theme="dark"] .page-admin .filter-tab,
+html[data-theme="dark"] .row-icon {
+    color: var(--theme-text-soft);
+    background: var(--theme-surface-soft);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-admin .tab {
+    color: var(--theme-text-soft);
+    background: var(--theme-surface-soft);
+}
+
+html[data-theme="dark"] .page-admin .tab:hover {
+    color: var(--theme-text);
+    background: var(--theme-surface-hover);
+}
+
+html[data-theme="dark"] .page-admin .tab.active {
+    color: #fff;
+    background: #470a68;
+}
+
+html[data-theme="dark"] .row-icon svg {
+    stroke: var(--theme-text-soft);
+}
+
+/* Survey form */
+html[data-theme="dark"] .page-survey .questionnaire-hero h1,
+html[data-theme="dark"] .page-survey .q-number,
+html[data-theme="dark"] .page-survey .prof-name-banner,
+html[data-theme="dark"] .page-survey .ue-filter-block .question-label {
+    color: #c891e4;
+}
+
+html[data-theme="dark"] .page-survey .hero-subtitle,
+html[data-theme="dark"] .page-survey .progress-text,
+html[data-theme="dark"] .page-survey .hint,
+html[data-theme="dark"] .page-survey .nps-anchors {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] .page-survey .hero-subtitle strong,
+html[data-theme="dark"] .page-survey .question-label,
+html[data-theme="dark"] .page-survey .option-label,
+html[data-theme="dark"] .page-survey .confirmation-card h2 {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .page-survey .hero-progress,
+html[data-theme="dark"] .page-survey .module-inside-ue,
+html[data-theme="dark"] .page-survey .prof-block,
+html[data-theme="dark"] .page-survey .question-block {
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-survey .hero-progress,
+html[data-theme="dark"] .page-survey .prof-name-banner,
+html[data-theme="dark"] .page-survey .ue-filter-block,
+html[data-theme="dark"] .page-survey .option-radio,
+html[data-theme="dark"] .page-survey .option-checkbox,
+html[data-theme="dark"] .page-survey .open-answer,
+html[data-theme="dark"] .page-survey .open-answer:focus,
+html[data-theme="dark"] .page-survey .nps-label {
+    color: var(--theme-text);
+    background: var(--theme-surface-soft);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-survey .prof-banner-optional {
+    background: #30281c;
+}
+
+html[data-theme="dark"] .page-survey .option-radio:hover,
+html[data-theme="dark"] .page-survey .option-checkbox:hover,
+html[data-theme="dark"] .page-survey .option-radio:has(input:checked),
+html[data-theme="dark"] .page-survey .option-checkbox:has(input:checked),
+html[data-theme="dark"] .page-survey .nps-label:hover {
+    color: #e3b8f5;
+    background: #30233a;
+    border-color: #8f55aa;
+}
+
+html[data-theme="dark"] .page-survey .option-radio:has(input:checked) .option-label,
+html[data-theme="dark"] .page-survey .option-checkbox:has(input:checked) .option-label {
+    color: #e3b8f5;
+}
+
+/* Survey creation */
+html[data-theme="dark"] .page-survey-create .card h2,
+html[data-theme="dark"] .page-survey-create .param-ue-name,
+html[data-theme="dark"] .page-survey-create .param-ue-name input,
+html[data-theme="dark"] .page-survey-create .dropzone-section h3 {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .page-survey-create label,
+html[data-theme="dark"] .page-survey-create .param-ue-actions label,
+html[data-theme="dark"] .page-survey-create .dropzone__text,
+html[data-theme="dark"] .page-survey-create .dropzone__text small {
+    color: var(--theme-text-soft);
+}
+
+html[data-theme="dark"] .page-survey-create .param-ue,
+html[data-theme="dark"] .page-survey-create .param-module,
+html[data-theme="dark"] .page-survey-create .param-prof-dropdown-content,
+html[data-theme="dark"] .page-survey-create .param-checkbox-label,
+html[data-theme="dark"] .page-survey-create .param-btn-add,
+html[data-theme="dark"] .page-survey-create .btn-icon,
+html[data-theme="dark"] .page-survey-create .dropzone,
+html[data-theme="dark"] .page-survey-create input,
+html[data-theme="dark"] .page-survey-create select,
+html[data-theme="dark"] .page-survey-create textarea {
+    color: var(--theme-text);
+    background: var(--theme-surface);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-survey-create .param-ue-header,
+html[data-theme="dark"] .page-survey-create .param-module,
+html[data-theme="dark"] .page-survey-create .param-prof-item,
+html[data-theme="dark"] .page-survey-create .param-prof-dropdown-content .param-prof-option-new {
+    color: var(--theme-text-soft);
+    background: var(--theme-surface-soft);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-survey-create .param-ue-header:hover,
+html[data-theme="dark"] .page-survey-create .param-prof-dropdown-content .param-prof-option:hover {
+    color: #e3b8f5;
+    background: var(--theme-surface-hover);
+}
+
+html[data-theme="dark"] .page-survey-create .param-checkbox-label:has(input:checked) {
+    color: #e3b8f5;
+    background: #30233a;
+    border-color: #8f55aa;
+}
+
+html[data-theme="dark"] .page-survey-create hr {
+    border-color: var(--theme-border) !important;
+}
+
+/* Visualisation: preserve data colors, adapt only neutral chart chrome. */
+html[data-theme="dark"] .page-visualisation .ind-label,
+html[data-theme="dark"] .page-visualisation .mod-name,
+html[data-theme="dark"] .page-visualisation .summary-title,
+html[data-theme="dark"] .page-visualisation .answer-question-card h3 {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .page-visualisation .summary-subtitle,
+html[data-theme="dark"] .page-visualisation .answer-context,
+html[data-theme="dark"] .page-visualisation .answer-count {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] .page-visualisation .mod-rank,
+html[data-theme="dark"] .page-visualisation .mod-bar-bg,
+html[data-theme="dark"] .page-visualisation .score-bar,
+html[data-theme="dark"] .page-visualisation .verbatim-list li {
+    background: var(--theme-surface-soft);
+}
+
+html[data-theme="dark"] .page-visualisation .verbatim-list li,
+html[data-theme="dark"] .page-visualisation .answer-question-card {
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-visualisation .filter-select {
+    color: #d9a7ee;
+}
+
+html[data-theme="dark"] .page-visualisation .chart-controls-overlay {
+    background: rgba(27, 30, 40, .72);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-visualisation .highcharts-background {
+    fill: transparent;
+}
+
+html[data-theme="dark"] .page-visualisation .highcharts-title,
+html[data-theme="dark"] .page-visualisation .highcharts-axis-labels text,
+html[data-theme="dark"] .page-visualisation .highcharts-data-label text {
+    fill: var(--theme-text) !important;
+    color: var(--theme-text) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="dark"] .page-visualisation .highcharts-grid-line,
+html[data-theme="dark"] .page-visualisation .highcharts-axis-line,
+html[data-theme="dark"] .page-visualisation .highcharts-tick {
+    stroke: var(--theme-border);
+}
+
+/* Shared modals */
+html[data-theme="dark"] .modal-usr,
+html[data-theme="dark"] .modal-qrcode-content,
+html[data-theme="dark"] .modal-survey-students {
+    color: var(--theme-text);
+    background: var(--theme-surface);
+}
+
+html[data-theme="dark"] .modal-survey-students-add,
+html[data-theme="dark"] .role-option,
+html[data-theme="dark"] .modal-survey-students-add textarea {
+    color: var(--theme-text);
+    background: var(--theme-surface-soft);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .modal-survey-students-add .dropzone-section h3,
+html[data-theme="dark"] .modal-survey-students-count,
+html[data-theme="dark"] .modal-survey-students-list li,
+html[data-theme="dark"] .modal-survey-students-mail {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .modal-survey-students-list {
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .modal-survey-students-list li,
+html[data-theme="dark"] .modal-header,
+html[data-theme="dark"] .modal-footer {
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .modal-survey-students-subtitle,
+html[data-theme="dark"] .modal-survey-students-add-hint,
+html[data-theme="dark"] .modal-survey-students-state,
+html[data-theme="dark"] .modal-subtitle {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] .role-option:hover,
+html[data-theme="dark"] .role-option.selected {
+    background: #30233a;
+}
+
+html[data-theme="dark"] .modal-usr .formations-select:focus {
+    background: var(--theme-surface);
+}
+
+html[data-theme="dark"] .modal-qrcode-content p {
+    color: var(--theme-text-muted) !important;
+}
+
+html[data-theme="dark"] .close-btn-qrcode:hover {
+    color: var(--theme-text);
+}
+
+@media (max-width: 600px) {
+    .theme-switcher__choice {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-switcher__choice {
+        transition: none;
+    }
+}

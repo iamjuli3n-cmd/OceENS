@@ -232,12 +232,14 @@
         }
     </style>
     <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}" />
 </head>
 
 <body class="page-home">
 
     <header>
         <img src="/static/img/logo.png" alt="EPF Engineering School" class="header-logo">
+        {% include 'template_parts/part_theme_switcher.html' %}
     </header>
 
     <main>
