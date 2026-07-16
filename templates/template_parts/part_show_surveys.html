@@ -1,4 +1,7 @@
   {% include 'template_parts/part_modal_qrcode.html' %}
+  {% if can_view_survey_students %}
+  {% include 'template_parts/part_modal_survey_students.html' %}
+  {% endif %}
 
   {% for survey in surveys %}
 
@@ -32,12 +35,13 @@
       <div class="sondage-stats-value">{% if survey['submissions_count'] != survey['answers_count'] %}<a
           style="font-size:11px; vertical-align: top; cursor: default;"
           title="Attention le nombre de répondants ({{survey['answers_count']}}) et de soumissions ({{survey['submissions_count']}}) ne collent pas !">⚠️</a>{%
-        endif %}{{
-        survey['submissions_count'] }} / {{
-        survey['respondents_count'] }} </div>
+        endif %}{{ survey['submissions_count'] }} /
+        <span data-survey-respondents-count="{{ survey['survey_id'] }}">{{ survey['respondents_count'] }}</span>
+      </div>
       <div class="sondage-stats-label">ont répondu / inscrits</div>
       <div class="sondage-progress">
-        <div class="sondage-progress-value"
+        <div class="sondage-progress-value" data-survey-progress="{{ survey['survey_id'] }}"
+          data-submissions-count="{{ survey['submissions_count'] }}"
           style="width: {% if survey['respondents_count'] > 0 %}{{ (survey['submissions_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
         </div>
       </div>
@@ -58,6 +62,19 @@
       {% endif %}
     </form>
     <div class="row-actions">
+      {% if can_view_survey_students %}
+      <button type="button" class="row-icon" title="Afficher les étudiants associés"
+        aria-label="Afficher les étudiants associés au sondage"
+        onclick='openSurveyStudentsModal({{ survey["survey_id"] }}, {{ survey["program_name"] | tojson }}, {{ survey["school_year"] | tojson }}, {{ survey["semester"] | tojson }}, this)'>
+        <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24"
+          aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      </button>
+      {% endif %}
       <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
         onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
         <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">

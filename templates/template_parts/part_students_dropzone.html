@@ -1,7 +1,20 @@
 {% include 'template_parts/part_show_notification.html' %}
+{% set student_list_area_id = student_list_area_id | default('student-list-area') %}
+{% set student_list_section_id = student_list_section_id | default('student-list') %}
+{% set student_dropzone_id = student_dropzone_id | default('dropzone-etudiants') %}
+{% set student_file_input_id = student_file_input_id | default('dropzone-file-input') %}
+{% set student_list_title = student_list_title | default('📋 Liste des étudiant.e.s') %}
+{% set student_list_hint = student_list_hint | default('Un mail par ligne') %}
+{% set student_list_value = student_list_value | default('mickey.mouse@epfedu.fr\nnaruto.uzumaki@epfedu.fr') %}
+{% set student_excel_import_enabled = student_excel_import_enabled | default(true) %}
 <script>
+    const studentListAreaId = {{ student_list_area_id | tojson }};
+    const studentDropzoneId = {{ student_dropzone_id | tojson }};
+    const studentFileInputId = {{ student_file_input_id | tojson }};
+
     function toggleDropZone() {
-        dropzone = document.getElementById('dropzone-etudiants');
+        const dropzone = document.getElementById(studentDropzoneId);
+        if (!dropzone) return;
         if (dropzone.style.display == 'none') {
             dropzone.style.display = 'block';
         } else {
@@ -12,7 +25,7 @@
     // ─── Fichier : validation et stockage ────────────────
     function handleFile(file) {
         if (!file.name.toLowerCase().endsWith('.xlsx')) {
-            this.showNotification('Format invalide. Seuls les fichiers .xlsx sont acceptés.', 'error');
+            showNotification('Format invalide. Seuls les fichiers .xlsx sont acceptés.', 'error');
             return;
         }
 
@@ -32,9 +45,9 @@
             */
 
             try {
-                workbook = XLSX.read(content, { type: 'binary', cellStyles: true });
-                list = document.getElementById('student-list-area');
-                list_txt = ""
+                const workbook = XLSX.read(content, { type: 'binary', cellStyles: true });
+                const list = document.getElementById(studentListAreaId);
+                let list_txt = ""
                 workbook.Strings.forEach((mail) => {
                     if (mail.t.includes("@")) {
                         if (list_txt != "") {
@@ -57,8 +70,8 @@
     }
 
     function bindDropzone() {
-        const dropzone = document.getElementById('dropzone-etudiants');
-        const fileInput = document.getElementById('dropzone-file-input');
+        const dropzone = document.getElementById(studentDropzoneId);
+        const fileInput = document.getElementById(studentFileInputId);
         if (!dropzone || !fileInput) return;
 
         // Empêcher le clic sur l'input de remonter au dropzone (cause du double-open)
@@ -114,16 +127,17 @@
 </script>
 
 
-<div class="dropzone-section" id="student-list">
+<div class="dropzone-section" id="{{ student_list_section_id }}">
     <div style="width:50%; float:left;">
-        <h3>📋 Liste des étudiant.e.s </h3>
-        <p><i>Un mail par ligne</i></p>
+        <h3>{{ student_list_title }}</h3>
+        <p><i>{{ student_list_hint }}</i></p>
     </div>
+    {% if student_excel_import_enabled %}
     <div style="width:50%; float:left;">
-        <button class="btn-import" onclick="toggleDropZone()">Importer la liste depuis Excel (un mail
+        <button type="button" class="btn-import" onclick="toggleDropZone()">Importer la liste depuis Excel (un mail
             par ligne)</button>
-        <div class="dropzone" id="dropzone-etudiants" style="display:none; float:right;">
-            <input type="file" id="dropzone-file-input" accept=".xlsx">
+        <div class="dropzone" id="{{ student_dropzone_id }}" style="display:none; float:right;">
+            <input type="file" id="{{ student_file_input_id }}" accept=".xlsx">
             <span class="dropzone__icon">📥</span>
             <div class="dropzone__text">
                 <strong>Glissez-déposez</strong> votre fichier Excel ici<br>
@@ -132,6 +146,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
     <textarea class="student-list-area"
-        id="student-list-area">mickey.mouse@epfedu.fr&#013;&#010;naruto.uzumaki@epfedu.fr</textarea>
+        id="{{ student_list_area_id }}">{{ student_list_value }}</textarea>
 </div>
