@@ -108,10 +108,16 @@ def get_dashboard_navigation(
     ]
 
 
-def can_access_student_dashboard(roles: list[str]) -> bool:
-    """Interdit la vue étudiant aux RP-RM, sauf s'ils sont administrateurs."""
+def get_student_dashboard_redirect(roles: list[str]) -> str | None:
+    """Redirige les rôles métier hors de la vue étudiant, sauf les admins."""
     role_names = {role.split(":", 1)[0] for role in roles}
-    return "program_manager" not in role_names or "admin" in role_names
+    if "admin" in role_names:
+        return None
+    if "program_manager" in role_names:
+        return "/dashboard/program-manager"
+    if "facilitator" in role_names:
+        return "/dashboard/facilitator"
+    return None
 
 
 def can_manage_survey(roles: list[str], survey_program: str | None) -> bool:
@@ -1500,8 +1506,9 @@ def create_app():
         ).first()
         roles = roles_query.split(",") if roles_query else ["student"]
 
-        if not can_access_student_dashboard(roles):
-            return RedirectResponse(url="/dashboard/program-manager")
+        dashboard_redirect = get_student_dashboard_redirect(roles)
+        if dashboard_redirect:
+            return RedirectResponse(url=dashboard_redirect)
 
         rows = session.exec(
             select(
@@ -1650,6 +1657,7 @@ def create_app():
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
             "can_delete_survey": True,
+            "can_update_survey_status": True,
             "dashboard_navigation": get_dashboard_navigation(
                 roles, "program-manager"
             ),
@@ -1764,6 +1772,7 @@ def create_app():
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
             "can_delete_survey": False,
+            "can_update_survey_status": False,
             "dashboard_navigation": get_dashboard_navigation(roles, "facilitator"),
         }
 
@@ -1881,6 +1890,7 @@ def create_app():
             "users": users,
             "can_view_survey_students": True,
             "can_delete_survey": True,
+            "can_update_survey_status": True,
             "dashboard_navigation": get_dashboard_navigation(roles, "admin"),
         }
         return templates.TemplateResponse(
