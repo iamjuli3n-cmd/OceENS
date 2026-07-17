@@ -444,7 +444,7 @@ body {
     color: #4b5b76;
     font-size: 17px;
     line-height: 1.3;
-    cursor:pointer;
+    cursor: pointer;
 }
 
 .summary-teachers {
@@ -528,13 +528,16 @@ body {
 }
 
 .detailled-section {
-    display:none;
-    max-width:600px;
+    display: none;
+    max-width: 600px;
 }
+
+
 
 /* The container for the chart and the buttons */
 .chart-container-wrapper {
-    position: relative; /* Required to anchor the absolute buttons */
+    position: relative;
+    /* Required to anchor the absolute buttons */
     width: 100%;
     margin-bottom: 20px;
 }
@@ -542,19 +545,22 @@ body {
 /* The floating button group */
 .chart-controls-overlay {
     position: absolute;
-    bottom: 10px;    /* Distance from bottom of graph */
-    left: 10px;  /* Distance from left of graph */
-    z-index: 10;  /* Ensures buttons stay above the Highcharts SVG */
+    bottom: 10px;
+    /* Distance from bottom of graph */
+    left: 10px;
+    /* Distance from left of graph */
+    z-index: 10;
+    /* Ensures buttons stay above the Highcharts SVG */
     display: flex;
     gap: 5px;
     padding: 4px;
-    
+
     /* Glassmorphism effect */
-    background: rgba(255, 255, 255, 0.6); 
+    background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(4px);
     border-radius: 25px;
     border: 1px solid rgba(25, 0, 0, 0.1);
-    
+
     /* Discrete appearance: semi-transparent by default */
     opacity: 0.4;
     transition: opacity 0.3s ease, transform 0.2s ease;
@@ -582,12 +588,14 @@ body {
 }
 
 .btn-control img {
-    filter: grayscale(100%); /* Makes icons look more professional/discrete */
+    filter: grayscale(100%);
+    /* Makes icons look more professional/discrete */
     transition: filter 0.3s ease;
 }
 
 .btn-control:hover img {
-    filter: grayscale(0%); /* Color returns on hover */
+    filter: grayscale(0%);
+    /* Color returns on hover */
 }
 
 .visualisation-warning {
@@ -609,7 +617,7 @@ body {
     margin-top: 24px;
 }
 
-.answers-section > h2 {
+.answers-section>h2 {
     margin: 0 0 14px;
     color: var(--epf-purple);
 }
@@ -635,11 +643,12 @@ body {
 }
 
 .verbatim-list {
-    display: grid;
+    display: none;
     gap: 8px;
     margin: 14px 0 0;
     padding: 0;
     list-style: none;
+
 }
 
 .verbatim-list li {

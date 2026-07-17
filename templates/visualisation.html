@@ -12,6 +12,17 @@
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/theme.css">
     {% include 'template_parts/part_graphs_header.html' %}
+    <script>
+        function toggleElement(id, type = 'block') {
+
+            const element = document.getElementById(id);
+            console.log(id, element);
+            if (!element) return;
+
+            element.style.display = element.style.display === type ? 'none' : type;
+        }
+
+    </script>
 </head>
 
 <body class="page-visualisation">
@@ -101,6 +112,7 @@
                 {% set ns = namespace() %}
                 {% set ns.section_counter = 0 %}
                 {% set ns.graph_counter = 0 %}
+                {% set ns.verbatim_counter = 0 %}
 
                 {% for section_name in sections %}
                 {% if sections[section_name].section_type == "ME" %}
@@ -119,7 +131,8 @@
                         </div>
                         {% for teacher_name in sections[section_name]["modules"][module]["teachers"] %}
                         {% set teacher = sections[section_name]["modules"][module]["teachers"][teacher_name] %}
-                        <div class="summary-score-inline" onclick="toggleDetail({{ ns.section_counter }})">
+                        <div class="summary-score-inline"
+                            onclick="toggleElement('detailled-section-{{ ns.section_counter }}')">
                             <span class="summary-subtitle">
 
                                 {{ teacher_name }}
@@ -150,7 +163,16 @@
                             {% else %}
 
                             <article class="answer-question-card">
-                                <h3>{{ question.text | safe }}</h3>
+                                <h3>
+                                    {% if question.question_type == 'Question_ouverte' %}
+                                    <a style="cursor:pointer;"
+                                        onclick="toggleElement('verbatim-list-{{ ns.verbatim_counter }}','grid')">
+                                        {% endif %}
+                                        {{ question.text | safe }}
+                                        {% if question.question_type == 'Question_ouverte' %}
+                                    </a>
+                                    {% endif %}
+                                </h3>
                                 <p class="answer-count">{{ question.question_submissions_count }} réponse(s)</p>
 
                                 {% if question.question_type == 'QCU_Satisfaction' %}
@@ -171,12 +193,15 @@
 
                                 {% elif question.question_type == 'Question_ouverte' %}
 
-                                <ul class="verbatim-list">
+
+                                <ul class="verbatim-list" id="verbatim-list-{{ ns.verbatim_counter }}">
                                     {% for answer in question.histo %}<li>{{ answer }} {% if
                                         question.histo[answer] > 1
                                         %} (x{{ question.histo[answer] }}) {% endif %}</li>
                                     {% endfor %}
                                 </ul>
+                                {% set ns.verbatim_counter = ns.verbatim_counter + 1 %}
+
 
                                 {% endif %}
                                 {#{% if detail.is_open %}
@@ -214,7 +239,8 @@
                         <div class="summary-title-line">
                             <span class="summary-title">{{ section_name }}</span>
                         </div>
-                        <div class="summary-score-inline" onclick="toggleDetail({{ ns.section_counter }})">
+                        <div class="summary-score-inline"
+                            onclick="toggleElement('detailled-section-{{ ns.section_counter }}')">
                             <span class="summary-subtitle">
                                 {% if sections[section_name].section_type == "C" %}
                                 {{ program.campus }}
@@ -243,7 +269,16 @@
                             {% set question = sections[section_name].questions[question_idx] %}
 
                             <article class="answer-question-card">
-                                <h3>{{ question.text | safe }}</h3>
+                                <h3>
+                                    {% if question.question_type == 'Question_ouverte' %}
+                                    <a style="cursor:pointer;"
+                                        onclick="toggleElement('verbatim-list-{{ ns.verbatim_counter }}','grid')">
+                                        {% endif %}
+                                        {{ question.text | safe }}
+                                        {% if question.question_type == 'Question_ouverte' %}
+                                    </a>
+                                    {% endif %}
+                                </h3>
                                 <p class="answer-count">{{ question.question_submissions_count }} réponse(s)</p>
 
                                 {% if question.question_type == 'QCU_Satisfaction' %}
@@ -264,12 +299,14 @@
 
                                 {% elif question.question_type == 'Question_ouverte' %}
 
-                                <ul class="verbatim-list">
+                                <ul class="verbatim-list" id="verbatim-list-{{ ns.verbatim_counter }}">
                                     {% for answer in question.histo %}<li>{{ answer }} {% if
                                         question.histo[answer] > 1
                                         %} (x{{ question.histo[answer] }}) {% endif %}</li>
                                     {% endfor %}
                                 </ul>
+                                {% set ns.verbatim_counter = ns.verbatim_counter + 1 %}
+
 
                                 {% endif %}
                                 {#{% if detail.is_open %}
