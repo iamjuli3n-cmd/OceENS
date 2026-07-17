@@ -514,6 +514,24 @@ main {
     outline: none;
 }
 
+.row-icon-summary {
+    color: #b42318;
+    padding: 0;
+    transition: background-color .2s, color .2s;
+}
+
+.row-icon-summary:hover,
+.row-icon-summary:focus-visible {
+    color: #fff;
+    background: #b42318;
+    outline: none;
+}
+
+.row-icon-summary:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
 .status-toggle-form {
     display: flex;
 }

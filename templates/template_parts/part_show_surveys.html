@@ -91,6 +91,16 @@
         </svg>
       </button>
       {% endif %}
+
+      {% if can_generate_summary %}
+      <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/generate-summary" class="generate-summary">
+        <button type="submit" class="row-icon row-icon-summary"  {% if survey['is_closed'] %} title="Genérer les résumés"
+          aria-label="Genérer les résumés" {% else %} title="La génération nécessite de fermer le sondage"
+          aria-label="La génération nécessite de fermer le sondage" disabled {% endif %}>🤖</button>
+      </form>
+      {% endif %}
+
+
       <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
         onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
         <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">

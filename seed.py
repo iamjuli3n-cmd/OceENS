@@ -14,6 +14,7 @@ from models import (
     Respondent,
     Answer,
     Submission,
+    Prompt,
 )
 from database import engine
 
@@ -762,6 +763,26 @@ def seed_answers(session: Session):
 
     session.commit()
 
+def seed_prompts(session: Session):
+    """Remplit la table prompts."""
+
+    prompt = Prompt(
+        description="Phrases représentatives (positives et négatives) avec Gemma4",
+        model="gemma4:26b",
+        prompt_text="""
+Tu trouveras ci-dessous une une liste de réponses à une question.
+1/ Regroupe les phrases positives et les phrases négatives en deux catégories sous forme de liste à puce avec une phrase par ligne). En cas de doublon, ne met qu'une seule ligne et rajoute le nombre d’occurrences entre parenthèse. Si une catégorie est vide ne l'affiche pas.
+2/ Si il y a plus de 5 phrases dans la catégorie, extrait les deux phrases les plus représentatives de la catégories en justifiant pourquoi elle le sont. Affiche ces deux phrases à la place de la liste. Si une catégorie est vide ne l'affiche pas.
+
+Question : {QUESTION}
+Réponses : ```{ANSWERS}```
+"""
+    )
+    session.merge(
+        prompt
+    )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
+    session.commit()
+
 
 def seed_all_if_necessary():
     with Session(engine) as session:
@@ -786,5 +807,7 @@ def seed_all_if_necessary():
         seed_submissions(session)
 
         seed_answers(session)
+
+        seed_prompts(session)
 
         print("Database seeding completed successfully!")
