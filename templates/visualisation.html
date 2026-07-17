@@ -10,6 +10,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="/static/css/visualisation.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="stylesheet" href="/static/css/site_header.css">
     <link rel="stylesheet" href="/static/css/theme.css">
     {% include 'template_parts/part_graphs_header.html' %}
     <script>
@@ -29,19 +30,11 @@
 
     {% from "template_parts/part_graphs_macro.html" import question_detail,chart_block with context %}
 
-    <header class="header">
-        <div class="header-logo-oceens">
-            <span style="color: var(--epf-red);">Océ</span><span style="color: var(--epf-purple);">Ens</span>
-        </div>
-        <nav class="account-nav">
-            {% include 'template_parts/part_theme_switcher.html' %}
-            {% include 'template_parts/part_language_selection.html' %}
-            <span class="account-email">{{ user.email }}</span>
-            <a href="/logout" class="btn-logout">Déconnexion</a>
-            <a href="javascript:history.back()" class="btn-logout"
-                style="background:var(--epf-purple); color:white;">Retour</a>
-        </nav>
-    </header>
+    {% set header_title_fr = "Résultats du questionnaire" %}
+    {% set header_title_en = "Survey results" %}
+    {% set header_show_language = true %}
+    {% set header_back_url = "javascript:history.back()" %}
+    {% include 'template_parts/part_site_header.html' %}
 
     <div class="container">
         {% if warning_msg %}

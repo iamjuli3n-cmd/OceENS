@@ -471,6 +471,7 @@ def create_app():
                 "programs": programs_list,
                 "school_years": school_years,
                 "teachers_list": sorted(list(teachers)),
+                "user": user,
             },
         )
 
@@ -981,6 +982,7 @@ def create_app():
                 "module_attendance_question": module_attendance_question,
                 "survey_is_closed": survey_is_closed,
                 "user_has_answered": user_has_answered,
+                "user": user,
             },
         )
 
