@@ -87,13 +87,6 @@ html[data-theme="dark"] {
     outline-offset: 2px;
 }
 
-.page-home > header .theme-switcher {
-    position: absolute;
-    top: 50%;
-    right: 20px;
-    transform: translateY(-50%);
-}
-
 /* Dark mode uses deep blue-gray surfaces instead of pure black. */
 html[data-theme="dark"] body {
     background: var(--theme-bg) !important;

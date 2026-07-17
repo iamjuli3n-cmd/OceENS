@@ -1,0 +1,60 @@
+<header class="site-header">
+  <div class="site-header__left">
+    <a class="site-header__brand" href="/" aria-label="Accueil OcéEns">
+      <img class="site-header__epf-logo" src="/static/img/epf_logo.png" alt="EPF Engineering School">
+      <span class="site-header__oceens" aria-label="OcéEns">
+        <span>Océ</span><span>Ens</span>
+      </span>
+    </a>
+
+    {% if header_title_fr is defined and header_title_fr %}
+    <span class="site-header__title">
+      <text class="text_fr">{{ header_title_fr }}</text>
+      {% if header_title_en is defined and header_title_en %}
+      <text class="text_en">{{ header_title_en }}</text>
+      {% endif %}
+    </span>
+    {% endif %}
+
+    {% if user is defined and user %}
+    <span class="site-header__account" title="{{ user.email }}">
+      <span class="site-header__account-dot" aria-hidden="true"></span>
+      <span class="site-header__account-label">
+        <text class="text_fr">Connecté :</text>
+        {% if header_show_language | default(false) %}
+        <text class="text_en">Signed in:</text>
+        {% endif %}
+      </span>
+      <span class="site-header__account-email">{{ user.email }}</span>
+    </span>
+    {% endif %}
+  </div>
+
+  <nav class="site-header__actions account-nav" aria-label="Actions du site">
+    {% include 'template_parts/part_theme_switcher.html' %}
+
+    {% if header_show_language | default(false) %}
+    {% include 'template_parts/part_language_selection.html' %}
+    {% endif %}
+
+    {% include 'template_parts/part_dashboard_navigation.html' %}
+
+    {% if header_back_url is defined and header_back_url %}
+    <a href="{{ header_back_url }}" class="site-header__button site-header__button--secondary">
+      <text class="text_fr">Retour</text>
+      {% if header_show_language | default(false) %}
+      <text class="text_en">Back</text>
+      {% endif %}
+    </a>
+    {% endif %}
+
+    {% if user is defined and user %}
+    <a href="/logout" class="site-header__button">
+      <text class="text_fr">Déconnexion</text>
+      {% if header_show_language | default(false) %}
+      <text class="text_en">Log out</text>
+      {% endif %}
+    </a>
+    {% endif %}
+  </nav>
+</header>

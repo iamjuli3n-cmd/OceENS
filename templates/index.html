@@ -232,15 +232,14 @@
         }
     </style>
     <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}" />
 </head>
 
 <body class="page-home">
 
-    <header>
-        <img src="/static/img/logo.png" alt="EPF Engineering School" class="header-logo">
-        {% include 'template_parts/part_theme_switcher.html' %}
-    </header>
+    {% set header_title_fr = "Plateforme d'évaluation des enseignements" %}
+    {% include 'template_parts/part_site_header.html' %}
 
     <main>
         <div class="hero-bg"></div>

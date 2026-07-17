@@ -14,27 +14,16 @@
   <link rel="stylesheet" href="{{ url_for('static', path='css/student.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard_navigation.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}" />
 </head>
 
 <body class="page-student">
 
-  <header>
-    <div class="brand">
-      <img src="/static/img/epf_logo.png" alt="EPF Logo" class="school-logo">
-    </div>
-
-    <nav>
-      {% include 'template_parts/part_theme_switcher.html' %}
-      {% include 'template_parts/part_language_selection.html' %}
-      {% include 'template_parts/part_dashboard_navigation.html' %}
-      <span class="user-email">{{ user.email }}</span>
-      <a href="/logout" class="logout-btn">
-        <text class="text_fr">Déconnexion</text>
-        <text class="text_en">Log out</text>
-      </a>
-    </nav>
-  </header>
+  {% set header_title_fr = "Tableau de bord étudiant" %}
+  {% set header_title_en = "Student dashboard" %}
+  {% set header_show_language = true %}
+  {% include 'template_parts/part_site_header.html' %}
 
   <div class="banner">
     <div>
