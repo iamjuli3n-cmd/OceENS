@@ -57,6 +57,68 @@ load_dotenv()
 # Les trois slugs de dashboard reconnus par l'application
 VALID_ROLES = {"admin", "student", "program_manager"}
 
+DASHBOARD_NAVIGATION = (
+    {
+        "role": "facilitator",
+        "slug": "facilitator",
+        "label": "Animateur",
+    },
+    {
+        "role": "program_manager",
+        "slug": "program-manager",
+        "label": "RP-RM",
+    },
+    {
+        "role": "admin",
+        "slug": "admin",
+        "label": "Administrateur",
+    },
+    {
+        "role": "student",
+        "slug": "student",
+        "label": "Étudiant",
+    },
+)
+
+
+def get_dashboard_navigation(
+    roles: list[str], current_dashboard: str
+) -> list[dict[str, str]]:
+    """Retourne les autres dashboards accessibles pour les rôles fournis."""
+    role_names = {role.split(":", 1)[0] for role in roles}
+
+    if "admin" in role_names:
+        available_roles = {
+            "facilitator",
+            "program_manager",
+            "admin",
+            "student",
+        }
+    else:
+        available_roles = role_names & {"facilitator", "program_manager"}
+
+    return [
+        {
+            "url": f"/dashboard/{dashboard['slug']}",
+            "label": dashboard["label"],
+        }
+        for dashboard in DASHBOARD_NAVIGATION
+        if dashboard["role"] in available_roles
+        and dashboard["slug"] != current_dashboard
+    ]
+
+
+def get_student_dashboard_redirect(roles: list[str]) -> str | None:
+    """Redirige les rôles métier hors de la vue étudiant, sauf les admins."""
+    role_names = {role.split(":", 1)[0] for role in roles}
+    if "admin" in role_names:
+        return None
+    if "program_manager" in role_names:
+        return "/dashboard/program-manager"
+    if "facilitator" in role_names:
+        return "/dashboard/facilitator"
+    return None
+
 
 def can_manage_survey(roles: list[str], survey_program: str | None) -> bool:
     """Vérifie qu'un admin ou un RPRM de la formation peut gérer le sondage."""
@@ -1436,6 +1498,18 @@ def create_app():
         user = get_current_user(request)
         if not user:
             return RedirectResponse(url="/")
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        dashboard_redirect = get_student_dashboard_redirect(roles)
+        if dashboard_redirect:
+            return RedirectResponse(url=dashboard_redirect)
+
         rows = session.exec(
             select(
                 Survey.survey_id,
@@ -1472,6 +1546,7 @@ def create_app():
             "user": user,
             "surveys": surveys,
             "all_answered_or_closed": all_answered_or_closed,
+            "dashboard_navigation": get_dashboard_navigation(roles, "student"),
         }
         return templates.TemplateResponse(
             request=request,
@@ -1582,6 +1657,10 @@ def create_app():
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
             "can_delete_survey": True,
+            "can_update_survey_status": True,
+            "dashboard_navigation": get_dashboard_navigation(
+                roles, "program-manager"
+            ),
         }
 
         return templates.TemplateResponse(
@@ -1693,6 +1772,8 @@ def create_app():
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
             "can_delete_survey": False,
+            "can_update_survey_status": False,
+            "dashboard_navigation": get_dashboard_navigation(roles, "facilitator"),
         }
 
         return templates.TemplateResponse(
@@ -1809,6 +1890,8 @@ def create_app():
             "users": users,
             "can_view_survey_students": True,
             "can_delete_survey": True,
+            "can_update_survey_status": True,
+            "dashboard_navigation": get_dashboard_navigation(roles, "admin"),
         }
         return templates.TemplateResponse(
             request=request,

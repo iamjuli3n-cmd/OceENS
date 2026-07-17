@@ -11,6 +11,7 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard_navigation.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}">
 </head>
@@ -23,6 +24,7 @@
     </div>
     <nav class="account-nav">
       {% include 'template_parts/part_theme_switcher.html' %}
+      {% include 'template_parts/part_dashboard_navigation.html' %}
       <span class="account-email">{{ user.email }}</span>
       <a href="/logout" class="btn-logout">Déconnexion</a>
     </nav>

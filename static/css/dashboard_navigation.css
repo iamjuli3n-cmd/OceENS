@@ -1,0 +1,70 @@
+.dashboard-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.dashboard-navigation-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    border: 1px solid rgba(71, 10, 104, 0.18);
+    border-radius: 999px;
+    color: #470a68;
+    background: #f7f1fa;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.dashboard-navigation-link:hover,
+.dashboard-navigation-link:focus-visible {
+    border-color: rgba(71, 10, 104, 0.4);
+    background: #eee1f4;
+}
+
+.dashboard-navigation-link:focus-visible {
+    outline: 2px solid #df231d;
+    outline-offset: 2px;
+}
+
+html[data-theme="dark"] .dashboard-navigation-link {
+    color: #e6c8f4;
+    border-color: #55346a;
+    background: #2b2033;
+}
+
+html[data-theme="dark"] .dashboard-navigation-link:hover,
+html[data-theme="dark"] .dashboard-navigation-link:focus-visible {
+    border-color: #8d5cab;
+    background: #3a2945;
+}
+
+@media (max-width: 768px) {
+    .page-admin .account-nav,
+    .page-program-manager .account-nav,
+    .page-student header nav {
+        flex-wrap: wrap;
+    }
+
+    .dashboard-navigation {
+        order: 10;
+        flex-basis: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-navigation {
+        gap: 4px;
+    }
+
+    .dashboard-navigation-link {
+        padding-inline: 8px;
+        font-size: 11px;
+    }
+}
