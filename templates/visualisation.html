@@ -10,6 +10,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="/static/css/visualisation.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="stylesheet" href="/static/css/theme.css">
     {% include 'template_parts/part_graphs_header.html' %}
 </head>
 
@@ -22,6 +23,7 @@
             <span style="color: var(--epf-red);">Océ</span><span style="color: var(--epf-purple);">Ens</span>
         </div>
         <nav class="account-nav">
+            {% include 'template_parts/part_theme_switcher.html' %}
             {% include 'template_parts/part_language_selection.html' %}
             <span class="account-email">{{ user.email }}</span>
             <a href="/logout" class="btn-logout">Déconnexion</a>

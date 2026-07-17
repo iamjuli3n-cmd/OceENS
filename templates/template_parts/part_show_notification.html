@@ -1,30 +1,116 @@
+<style>
+    .import-notification {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: min(340px, calc(100vw - 32px));
+        max-width: min(560px, calc(100vw - 32px));
+        padding: 14px 22px;
+        color: white;
+        font-size: .9rem;
+        font-weight: 500;
+        pointer-events: none;
+        opacity: 0;
+        border-radius: 10px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, .18);
+        transform: translateX(-50%) translateY(120%);
+        transition: all .4s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .import-notification.show {
+        pointer-events: auto;
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .import-notification--success {
+        color: #d4edda;
+        background: #1a472a;
+        border: 1px solid #27ae60;
+    }
+
+    .import-notification--error {
+        color: #f8d7da;
+        background: #4a1a1a;
+        border: 1px solid #e74c3c;
+    }
+
+    .import-notification--info {
+        color: #d1ecf1;
+        background: #1a2a4a;
+        border: 1px solid #17a2b8;
+    }
+
+    .import-notification__icon {
+        flex-shrink: 0;
+        font-size: 1.3rem;
+    }
+
+    .import-notification__message {
+        overflow-wrap: anywhere;
+    }
+
+    .import-notification__close {
+        margin-left: auto;
+        padding: 2px 6px;
+        color: inherit;
+        font-size: 1.1rem;
+        cursor: pointer;
+        opacity: .6;
+        background: none;
+        border: none;
+        border-radius: 4px;
+        transition: opacity .2s;
+    }
+
+    .import-notification__close:hover,
+    .import-notification__close:focus-visible {
+        opacity: 1;
+        outline: none;
+    }
+</style>
+
 <script>
-    function // ─── Notification (banner en bas de l'écran) ─────────
-        showNotification(message, type = 'info') {
-        // Supprimer l'ancienne notification si présente
+    function showNotification(message, type = 'info') {
         const existing = document.getElementById('import-notification');
         if (existing) existing.remove();
-        if (this._notifTimer) clearTimeout(this._notifTimer);
+        if (window.importNotificationTimer) clearTimeout(window.importNotificationTimer);
 
         const icons = { success: '✅', error: '❌', info: 'ℹ️' };
-        const el = document.createElement('div');
-        el.id = 'import-notification';
-        el.className = `import-notification import-notification--${type}`;
-        el.innerHTML = `
-<span class="import-notification__icon">${icons[type] || icons.info}</span>
-<span>${message}</span>
-<button class="import-notification__close"
-    onclick="this.parentElement.classList.remove('show'); setTimeout(() => this.parentElement.remove(), 400);">&times;</button>
-`;
-        document.body.appendChild(el);
+        const notification = document.createElement('div');
+        const icon = document.createElement('span');
+        const text = document.createElement('span');
+        const closeButton = document.createElement('button');
 
-        // Trigger l'animation
-        requestAnimationFrame(() => el.classList.add('show'));
+        notification.id = 'import-notification';
+        notification.className = `import-notification import-notification--${type}`;
 
-        // Auto-dismiss après 6 secondes
-        this._notifTimer = setTimeout(() => {
-            el.classList.remove('show');
-            setTimeout(() => el.remove(), 400);
+        icon.className = 'import-notification__icon';
+        icon.textContent = icons[type] || icons.info;
+
+        text.className = 'import-notification__message';
+        text.textContent = message;
+
+        closeButton.type = 'button';
+        closeButton.className = 'import-notification__close';
+        closeButton.setAttribute('aria-label', 'Fermer la notification');
+        closeButton.textContent = '×';
+        closeButton.addEventListener('click', () => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 400);
+        });
+
+        notification.append(icon, text, closeButton);
+        document.body.appendChild(notification);
+        requestAnimationFrame(() => notification.classList.add('show'));
+
+        window.importNotificationTimer = setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 400);
         }, 6000);
     }
 </script>

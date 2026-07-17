@@ -13,6 +13,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/student.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}" />
 </head>
 
 <body class="page-student">
@@ -23,6 +24,7 @@
     </div>
 
     <nav>
+      {% include 'template_parts/part_theme_switcher.html' %}
       {% include 'template_parts/part_language_selection.html' %}
       <span class="user-email">{{ user.email }}</span>
       <a href="/logout" class="logout-btn">

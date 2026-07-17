@@ -10,6 +10,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/program_manager.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}" />
   <style>
 
   </style>
@@ -22,6 +23,7 @@
       <span style="color: #df231d;">Océ</span><span style="color: #470a68;">Ens</span>
     </div>
     <nav class="account-nav">
+      {% include 'template_parts/part_theme_switcher.html' %}
       <span class="account-email">{{ user.email }}</span>
       <a href="/logout" class="btn-logout">Déconnexion</a>
     </nav>

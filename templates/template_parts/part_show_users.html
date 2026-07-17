@@ -19,59 +19,64 @@
     <button class="filter-tab" data-filter="student" onclick="filter('student')">Étudiants</button>
     <button class="filter-tab" data-filter="admin" onclick="filter('admin')">Admins</button>
     <button class="filter-tab" data-filter="program_manager" onclick="filter('program_manager')">RP-RM</button>
+    <button class="filter-tab" data-filter="facilitator" onclick="filter('facilitator')">Animateur</button>
+
 </div>
 
 <div class="users-table-wrapper">
-<table class="users-table" id="users-table">
-    <thead>
-        <tr>
-            <th>Utilisateur</th>
-            <th>Rôle</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody id="users-tbody">
-        {% set AVATAR_COLORS = [ '#7b2fa0', '#df231d', '#1565c0', '#2e7d32', '#e65100', '#ad1457', '#0277bd', '#558b2f']
-        %}
+    <table class="users-table" id="users-table">
+        <thead>
+            <tr>
+                <th>Utilisateur</th>
+                <th>Rôle</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="users-tbody">
+            {% set AVATAR_COLORS = [ '#7b2fa0', '#df231d', '#1565c0', '#2e7d32', '#e65100', '#ad1457', '#0277bd',
+            '#558b2f']
+            %}
 
-        {% set ROLE_TITLE = { 'admin': 'Administrateur', 'student': 'Étudiant', 'program_manager': 'RPRM', 'facilitator': 'Animateur' } %}
+            {% set ROLE_TITLE = { 'admin': 'Administrateur', 'student': 'Étudiant', 'program_manager': 'RPRM',
+            'facilitator': 'Animateur' } %}
 
 
-        {% for user in users %}
+            {% for user in users %}
 
-        <tr data-id="{{ user.user_id }}">
-            <td>
-                <div class="user-info">
-                    <div class="avatar" style="background: {{ AVATAR_COLORS[user.user_id % AVATAR_COLORS|length] }}">
-                        {{ user.initials }}
+            <tr data-id="{{ user.user_id }}">
+                <td>
+                    <div class="user-info">
+                        <div class="avatar"
+                            style="background: {{ AVATAR_COLORS[user.user_id % AVATAR_COLORS|length] }}">
+                            {{ user.initials }}
+                        </div>
+                        <div>
+                            <div class="user-name">{{ user.name }}</div>
+                            <div class="user-email">{{ user.mail }}</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="user-name">{{ user.name }}</div>
-                        <div class="user-email">{{ user.mail }}</div>
-                    </div>
-                </div>
-            </td>
+                </td>
 
-            <td>
-                {% for full_role in user.roles %}
-                {% set role,program = full_role.split(":", 1) if ":" in full_role else (full_role, "") %}
+                <td>
+                    {% for full_role in user.roles %}
+                    {% set role,program = full_role.split(":", 1) if ":" in full_role else (full_role, "") %}
 
-                <span class="role-badge {{ role }}">
-                    <span class="role-dot"></span>
-                    {{ ROLE_TITLE.get(role) }} {% if program %} : {{program }} {% endif %}
+                    <span class="role-badge {{ role }}">
+                        <span class="role-dot"></span>
+                        {{ ROLE_TITLE.get(role) }} {% if program %} : {{program }} {% endif %}
 
-                </span>
-                {% endfor %}
-            </td>
+                    </span>
+                    {% endfor %}
+                </td>
 
-            <td class="td-actions">
-                <button class="btn-edit" data-id="{{ user.user_id }}"
-                    onclick="openUsrModal({{ user.user_id }})">Modifier</button>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                <td class="td-actions">
+                    <button class="btn-edit" data-id="{{ user.user_id }}"
+                        onclick="openUsrModal({{ user.user_id }})">Modifier</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
 <div class="empty-state" id="empty-state" style="display:none;">

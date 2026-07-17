@@ -1,0 +1,103 @@
+<script>
+  (() => {
+    const storageKey = 'oceens-theme';
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const allowedPreferences = new Set(['light', 'dark', 'system']);
+
+    function readPreference() {
+      try {
+        const savedPreference = localStorage.getItem(storageKey);
+        return allowedPreferences.has(savedPreference) ? savedPreference : 'system';
+      } catch (error) {
+        return 'system';
+      }
+    }
+
+    function resolveTheme(preference) {
+      return preference === 'system'
+        ? (mediaQuery.matches ? 'dark' : 'light')
+        : preference;
+    }
+
+    function applyTheme(preference, persist = false) {
+      const safePreference = allowedPreferences.has(preference) ? preference : 'system';
+      const resolvedTheme = resolveTheme(safePreference);
+
+      document.documentElement.dataset.theme = resolvedTheme;
+      document.documentElement.dataset.themePreference = safePreference;
+
+      if (persist) {
+        try {
+          localStorage.setItem(storageKey, safePreference);
+        } catch (error) {
+          // The theme still works when browser storage is unavailable.
+        }
+      }
+
+      document.dispatchEvent(new CustomEvent('oceens:themechange', {
+        detail: { preference: safePreference, theme: resolvedTheme }
+      }));
+    }
+
+    window.OceensTheme = {
+      apply: applyTheme,
+      getPreference: () => document.documentElement.dataset.themePreference || 'system',
+      mediaQuery
+    };
+
+    applyTheme(readPreference());
+  })();
+</script>
+
+<div class="theme-switcher" role="group" aria-label="Choisir le thème d’affichage">
+  <button type="button" class="theme-switcher__choice" data-theme-choice="light"
+    aria-label="Utiliser le mode clair" title="Mode clair">
+    <span aria-hidden="true">☀️</span>
+  </button>
+  <button type="button" class="theme-switcher__choice" data-theme-choice="dark"
+    aria-label="Utiliser le mode sombre" title="Mode sombre">
+    <span aria-hidden="true">🌙</span>
+  </button>
+  <button type="button" class="theme-switcher__choice" data-theme-choice="system"
+    aria-label="Utiliser le thème du système" title="Thème du système">
+    <span aria-hidden="true">💻</span>
+  </button>
+</div>
+
+<script>
+  (() => {
+    const buttons = Array.from(document.querySelectorAll('[data-theme-choice]'));
+
+    function updateThemeButtons(preference) {
+      buttons.forEach((button) => {
+        const isSelected = button.dataset.themeChoice === preference;
+        button.classList.toggle('is-selected', isSelected);
+        button.setAttribute('aria-pressed', String(isSelected));
+      });
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        window.OceensTheme.apply(button.dataset.themeChoice, true);
+      });
+    });
+
+    document.addEventListener('oceens:themechange', (event) => {
+      updateThemeButtons(event.detail.preference);
+    });
+
+    const handleSystemThemeChange = () => {
+      if (window.OceensTheme.getPreference() === 'system') {
+        window.OceensTheme.apply('system');
+      }
+    };
+
+    if (typeof window.OceensTheme.mediaQuery.addEventListener === 'function') {
+      window.OceensTheme.mediaQuery.addEventListener('change', handleSystemThemeChange);
+    } else {
+      window.OceensTheme.mediaQuery.addListener(handleSystemThemeChange);
+    }
+
+    updateThemeButtons(window.OceensTheme.getPreference());
+  })();
+</script>

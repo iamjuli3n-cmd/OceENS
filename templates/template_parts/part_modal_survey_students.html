@@ -1,0 +1,548 @@
+<style>
+  .modal-survey-students-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(20, 10, 30, .45);
+    backdrop-filter: blur(3px);
+  }
+
+  .modal-survey-students-overlay[hidden],
+  .modal-survey-students [hidden] {
+    display: none;
+  }
+
+  .modal-survey-students {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 680px;
+    max-height: min(760px, calc(100vh - 40px));
+    overflow: hidden;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+    animation: surveyStudentsModalIn .2s ease-out;
+  }
+
+  .modal-survey-students-header {
+    position: relative;
+    flex-shrink: 0;
+    padding: 22px 56px 18px 24px;
+    color: #fff;
+    background: linear-gradient(135deg, #470a68, #5c1a7a);
+  }
+
+  .modal-survey-students-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .modal-survey-students-header p {
+    margin: 4px 0 0;
+    font-size: .82rem;
+    opacity: .8;
+  }
+
+  .modal-survey-students-close {
+    position: absolute;
+    top: 13px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: #fff;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+  }
+
+  .modal-survey-students-close:hover,
+  .modal-survey-students-close:focus-visible {
+    background: rgba(255, 255, 255, .15);
+    outline: none;
+  }
+
+  .modal-survey-students-body {
+    flex: 1;
+    min-height: 240px;
+    padding: 20px 24px 24px;
+    overflow-y: auto;
+  }
+
+  .modal-survey-students-add {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    background: #f7f4fa;
+    border: 1px solid #e6ddec;
+    border-radius: 10px;
+  }
+
+  .modal-survey-students-add .dropzone-section {
+    min-width: 0;
+    margin: 0;
+  }
+
+  .modal-survey-students-add .dropzone-section>div {
+    width: 100% !important;
+    float: none !important;
+  }
+
+  .modal-survey-students-add .dropzone-section h3 {
+    margin: 0 0 3px;
+    color: #3d5a80;
+    font-size: .88rem;
+    font-weight: 600;
+  }
+
+  .modal-survey-students-add .dropzone-section p {
+    margin: 0 0 8px;
+    color: #7f8fa6;
+    font-size: .75rem;
+  }
+
+  .modal-survey-students-add .student-list-area {
+    display: block;
+    width: 100%;
+    min-height: 76px;
+    max-height: 160px;
+    padding: 9px 10px;
+    resize: vertical;
+    color: #2c3e50;
+    font: inherit;
+    font-size: .85rem;
+    background: #fff;
+    border: 1px solid #cfd9e3;
+    border-radius: 8px;
+  }
+
+  .modal-survey-students-add .student-list-area:focus {
+    border-color: #7b2fa0;
+    outline: 3px solid rgba(123, 47, 160, .12);
+  }
+
+  .modal-survey-students-add-button {
+    min-height: 38px;
+    padding: 9px 16px;
+    color: #fff;
+    font-size: .82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    background: #470a68;
+    border: 0;
+    border-radius: 8px;
+  }
+
+  .modal-survey-students-add-button:hover,
+  .modal-survey-students-add-button:focus-visible {
+    background: #5c1a7a;
+    outline: none;
+  }
+
+  .modal-survey-students-add-button:disabled {
+    cursor: wait;
+    opacity: .65;
+  }
+
+  .modal-survey-students-count {
+    margin-bottom: 12px;
+    color: #3d5a80;
+    font-size: .82rem;
+    font-weight: 600;
+  }
+
+  .modal-survey-students-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: hidden;
+    border: 1px solid #dce4ec;
+    border-radius: 10px;
+  }
+
+  .modal-survey-students-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 8px 10px;
+    color: #2c3e50;
+    font-size: .86rem;
+    overflow-wrap: anywhere;
+    border-bottom: 1px solid #edf1f5;
+  }
+
+  .modal-survey-students-list li:last-child {
+    border-bottom: 0;
+  }
+
+  .modal-survey-students-mail {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .modal-survey-students-status {
+    flex: 0 0 auto;
+    padding: 3px 7px;
+    font-size: .68rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border-radius: 99px;
+  }
+
+  .modal-survey-students-answered {
+    color: #2e7d32;
+    background: #eaf7ef;
+  }
+
+  .modal-survey-students-unanswered {
+    color: #b42318;
+    background: #fff1f0;
+  }
+
+  .modal-survey-students-remove {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    color: #b42318;
+    font-size: .72rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: #fff1f0;
+    border: 0;
+    border-radius: 6px;
+  }
+
+  .modal-survey-students-remove:hover,
+  .modal-survey-students-remove:focus-visible {
+    color: #fff;
+    background: #b42318;
+    outline: none;
+  }
+
+  .modal-survey-students-remove:disabled {
+    color: #a5adb5;
+    cursor: not-allowed;
+    background: #f1f3f5;
+  }
+
+  .modal-survey-students-state {
+    display: flex;
+    min-height: 120px;
+    align-items: center;
+    justify-content: center;
+    color: #7f8fa6;
+    font-size: .9rem;
+    text-align: center;
+  }
+
+  .modal-survey-students-state.error {
+    color: #b42318;
+  }
+
+  @keyframes surveyStudentsModalIn {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(.98);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .modal-survey-students-overlay {
+      align-items: flex-end;
+      padding: 12px;
+    }
+
+    .modal-survey-students {
+      max-height: calc(100svh - 24px);
+    }
+
+    .modal-survey-students-body {
+      padding: 16px;
+    }
+
+    .modal-survey-students-add {
+      grid-template-columns: 1fr;
+    }
+
+    .modal-survey-students-add-button {
+      width: 100%;
+    }
+
+    .modal-survey-students-list li {
+      gap: 7px;
+      padding-inline: 8px;
+    }
+
+    .modal-survey-students-status {
+      padding-inline: 6px;
+      font-size: .62rem;
+    }
+
+    .modal-survey-students-remove:disabled {
+      display: none;
+    }
+  }
+</style>
+
+<link rel="stylesheet" href="/static/css/responsive.css">
+
+<div id="modal-survey-students-overlay" class="modal-survey-students-overlay" hidden>
+  <section class="modal-survey-students" role="dialog" aria-modal="true" aria-labelledby="modal-survey-students-title"
+    aria-describedby="modal-survey-students-subtitle">
+    <header class="modal-survey-students-header">
+      <h3 id="modal-survey-students-title">Étudiants associés</h3>
+      <p id="modal-survey-students-subtitle"></p>
+      <button type="button" class="modal-survey-students-close" aria-label="Fermer la fenêtre"
+        onclick="closeSurveyStudentsModal()">&times;</button>
+    </header>
+    <div class="modal-survey-students-body">
+      <div class="modal-survey-students-add">
+        {% with student_list_area_id='survey-students-add-area',
+        student_list_section_id='survey-students-add-section',
+        student_list_title='Ajouter des étudiants',
+        student_list_hint='Un e-mail par ligne ou séparé par un espace',
+        student_list_value='',
+        student_excel_import_enabled=false %}
+        {% include 'template_parts/part_students_dropzone.html' %}
+        {% endwith %}
+        <button type="button" id="modal-survey-students-add-button" class="modal-survey-students-add-button"
+          onclick="addSurveyStudents()">Ajouter au sondage</button>
+      </div>
+
+      <div id="modal-survey-students-loading" class="modal-survey-students-state">Chargement des étudiants…</div>
+      <div id="modal-survey-students-error" class="modal-survey-students-state error" hidden></div>
+      <div id="modal-survey-students-empty" class="modal-survey-students-state" hidden>
+        Aucun étudiant n'est associé à ce sondage.
+      </div>
+      <div id="modal-survey-students-content" hidden>
+        <div id="modal-survey-students-count" class="modal-survey-students-count"></div>
+        <ol id="modal-survey-students-list" class="modal-survey-students-list"></ol>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  let surveyStudentsRequestController = null;
+  let surveyStudentsTrigger = null;
+  let surveyStudentsContext = null;
+
+  function setSurveyStudentsModalState(state, message = '') {
+    const stateIds = ['loading', 'error', 'empty', 'content'];
+    stateIds.forEach((stateId) => {
+      document.getElementById(`modal-survey-students-${stateId}`).hidden = stateId !== state;
+    });
+
+    if (state === 'error') {
+      document.getElementById('modal-survey-students-error').textContent = message;
+    }
+  }
+
+  function updateSurveyRespondentsCount(surveyId, count) {
+    const countElement = document.querySelector(`[data-survey-respondents-count="${surveyId}"]`);
+    const progressElement = document.querySelector(`[data-survey-progress="${surveyId}"]`);
+    if (countElement) countElement.textContent = count;
+    if (progressElement) {
+      const submissionsCount = Number(progressElement.dataset.submissionsCount || 0);
+      progressElement.style.width = `${count > 0 ? Math.min(100, submissionsCount / count * 100) : 0}%`;
+    }
+  }
+
+  function renderSurveyStudents(data) {
+    const list = document.getElementById('modal-survey-students-list');
+    list.replaceChildren();
+    updateSurveyRespondentsCount(data.survey_id, data.count);
+
+    if (data.students.length === 0) {
+      setSurveyStudentsModalState('empty');
+      return;
+    }
+
+    data.students.forEach((student) => {
+      const item = document.createElement('li');
+      const itemMail = document.createElement('span');
+      const statusBadge = document.createElement('span');
+      const removeButton = document.createElement('button');
+
+      itemMail.className = 'modal-survey-students-mail';
+      itemMail.textContent = student.mail;
+
+      removeButton.type = 'button';
+      removeButton.className = 'modal-survey-students-remove';
+      removeButton.textContent = 'Retirer';
+      removeButton.setAttribute('aria-label', `Retirer ${student.mail} du sondage`);
+
+      if (student.has_answered) {
+        statusBadge.className = 'modal-survey-students-status modal-survey-students-answered';
+        statusBadge.textContent = 'A répondu';
+        removeButton.disabled = true;
+        removeButton.title = 'Un étudiant ayant répondu ne peut plus être retiré';
+      } else {
+        statusBadge.className = 'modal-survey-students-status modal-survey-students-unanswered';
+        statusBadge.textContent = 'N’a pas répondu';
+        removeButton.addEventListener('click', () => {
+          removeSurveyStudent(student.mail, removeButton);
+        });
+      }
+
+      item.append(itemMail, statusBadge);
+      item.appendChild(removeButton);
+      list.appendChild(item);
+    });
+
+    document.getElementById('modal-survey-students-count').textContent =
+      `${data.count} étudiant${data.count > 1 ? 's' : ''}`;
+    setSurveyStudentsModalState('content');
+  }
+
+  async function readSurveyStudentsResponse(response, fallbackMessage) {
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || fallbackMessage);
+    }
+    return data;
+  }
+
+  async function openSurveyStudentsModal(surveyId, programName, schoolYear, semester, trigger) {
+    const overlay = document.getElementById('modal-survey-students-overlay');
+    surveyStudentsTrigger = trigger;
+    surveyStudentsContext = { surveyId, programName, schoolYear, semester };
+
+    document.getElementById('modal-survey-students-title').textContent = `Étudiants associés — ${programName}`;
+    document.getElementById('modal-survey-students-subtitle').textContent = `${schoolYear} · ${semester}`;
+    document.getElementById('survey-students-add-area').value = '';
+    document.getElementById('modal-survey-students-list').replaceChildren();
+    setSurveyStudentsModalState('loading');
+    overlay.hidden = false;
+    document.querySelector('.modal-survey-students-close').focus();
+
+    if (surveyStudentsRequestController) surveyStudentsRequestController.abort();
+    surveyStudentsRequestController = new AbortController();
+
+    try {
+      const response = await fetch(`/api/surveys/${surveyId}/students`, {
+        headers: { 'Accept': 'application/json' },
+        signal: surveyStudentsRequestController.signal
+      });
+      const data = await readSurveyStudentsResponse(
+        response,
+        'Impossible de charger la liste des étudiants.'
+      );
+      renderSurveyStudents(data);
+    } catch (error) {
+      if (error.name !== 'AbortError') setSurveyStudentsModalState('error', error.message);
+    }
+  }
+
+  async function addSurveyStudents() {
+    if (!surveyStudentsContext) return;
+
+    const textarea = document.getElementById('survey-students-add-area');
+    const addButton = document.getElementById('modal-survey-students-add-button');
+    const emails = [...new Set(
+      textarea.value.split(/\s+/).map((email) => email.trim().toLowerCase()).filter(Boolean)
+    )];
+
+    if (emails.length === 0) {
+      showNotification('Saisissez au moins une adresse e-mail.', 'error');
+      textarea.focus();
+      return;
+    }
+
+    addButton.disabled = true;
+    addButton.textContent = 'Ajout…';
+    try {
+      const response = await fetch(`/api/surveys/${surveyStudentsContext.surveyId}/students`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails })
+      });
+      const data = await readSurveyStudentsResponse(
+        response,
+        "Impossible d'ajouter les étudiants au sondage."
+      );
+
+      textarea.value = '';
+      renderSurveyStudents(data);
+      if (data.added_count > 0) {
+        showNotification(
+          `${data.added_count} étudiant${data.added_count > 1 ? 's ajoutés' : ' ajouté'} au sondage.`,
+          'success'
+        );
+      } else {
+        showNotification('Ces étudiants étaient déjà associés au sondage.', 'info');
+      }
+    } catch (error) {
+      showNotification(error.message, 'error');
+    } finally {
+      addButton.disabled = false;
+      addButton.textContent = 'Ajouter au sondage';
+    }
+  }
+
+  async function removeSurveyStudent(mail, button) {
+    if (!surveyStudentsContext) return;
+    if (!window.confirm(`Retirer ${mail} de ce sondage ?`)) return;
+
+    button.disabled = true;
+    button.textContent = 'Retrait…';
+    try {
+      const response = await fetch(
+        `/api/surveys/${surveyStudentsContext.surveyId}/students?email=${encodeURIComponent(mail)}`,
+        { method: 'DELETE', headers: { 'Accept': 'application/json' } }
+      );
+      const data = await readSurveyStudentsResponse(
+        response,
+        'Impossible de retirer cet étudiant du sondage.'
+      );
+      renderSurveyStudents(data);
+      showNotification(`${mail} a été retiré du sondage.`, 'success');
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = 'Retirer';
+      showNotification(error.message, 'error');
+    }
+  }
+
+  function closeSurveyStudentsModal() {
+    document.getElementById('modal-survey-students-overlay').hidden = true;
+    surveyStudentsContext = null;
+
+    if (surveyStudentsRequestController) {
+      surveyStudentsRequestController.abort();
+      surveyStudentsRequestController = null;
+    }
+
+    if (surveyStudentsTrigger) {
+      surveyStudentsTrigger.focus();
+      surveyStudentsTrigger = null;
+    }
+  }
+
+  document.getElementById('modal-survey-students-overlay').addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) closeSurveyStudentsModal();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    const overlay = document.getElementById('modal-survey-students-overlay');
+    if (event.key === 'Escape' && !overlay.hidden) closeSurveyStudentsModal();
+  });
+</script>
