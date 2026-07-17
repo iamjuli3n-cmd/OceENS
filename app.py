@@ -1676,6 +1676,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": True,
             "can_update_survey_status": True,
+            "can_generate_summary":True,
             "dashboard_navigation": get_dashboard_navigation(
                 roles, "program-manager"
             ),
@@ -1791,6 +1792,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": False,
             "can_update_survey_status": False,
+            "can_generate_summary":True,
             "dashboard_navigation": get_dashboard_navigation(roles, "facilitator"),
         }
 
@@ -1909,6 +1911,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": True,
             "can_update_survey_status": True,
+            "can_generate_summary":True,
             "dashboard_navigation": get_dashboard_navigation(roles, "admin"),
         }
         return templates.TemplateResponse(
