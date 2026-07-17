@@ -339,7 +339,7 @@ class Summary(SQLModel, table=True):
         default=None, sa_column=Column("http_status", Integer)
     )
 
-    summary_text: Optional[str] = Field(sa_column=Column("prompt_text", Text))
+    summary_text: Optional[str] = Field(sa_column=Column("summary_text", Text))
 
 
 
