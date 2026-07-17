@@ -48,20 +48,34 @@
 
     </div>
 
-    {% if can_update_survey_status %}
-    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
-      {% if survey['is_closed'] %}
-      <input type="hidden" name="status" value="1">
-      <button type="submit" class="row-icon" title="Ouvrir le sondage">
-        <img src="{{ url_for('static', path='img/locked_red.svg') }}" alt="Ouvrir le sondage">
-      </button>
-      {% else %}
-      <input type="hidden" name="status" value="0">
-      <button type="submit" class="row-icon" title="Fermer le sondage">
-        <img src="{{ url_for('static', path='img/unlocked_green.svg')}}" alt="Fermer le sondage">
-      </button>
+    {% if can_update_survey_status or can_duplicate_survey %}
+    <div class="row-actions survey-primary-actions">
+      {% if can_update_survey_status %}
+      <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
+        {% if survey['is_closed'] %}
+        <input type="hidden" name="status" value="1">
+        <button type="submit" class="row-icon" title="Ouvrir le sondage">
+          <img src="{{ url_for('static', path='img/locked_red.svg') }}" alt="Ouvrir le sondage">
+        </button>
+        {% else %}
+        <input type="hidden" name="status" value="0">
+        <button type="submit" class="row-icon" title="Fermer le sondage">
+          <img src="{{ url_for('static', path='img/unlocked_green.svg')}}" alt="Fermer le sondage">
+        </button>
+        {% endif %}
+      </form>
       {% endif %}
-    </form>
+      {% if can_duplicate_survey %}
+      <a href="/dashboard/survey-create?duplicate_from={{ survey['survey_id'] }}" class="row-icon"
+        title="Dupliquer le sondage" aria-label="Dupliquer le sondage">
+        <svg width="15" height="15" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24"
+          aria-hidden="true">
+          <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+          <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+        </svg>
+      </a>
+      {% endif %}
+    </div>
     {% endif %}
     <div class="row-actions">
       {% if can_view_survey_students %}
