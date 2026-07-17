@@ -523,13 +523,45 @@ main {
 .row-icon-summary:hover,
 .row-icon-summary:focus-visible {
     color: #fff;
-    background: #b42318;
+    background: #1876b4;
     outline: none;
+}
+
+@keyframes colorShift {
+  0% {
+    background: #fff;
+  }
+  50% {
+    background: #18b4ac;
+  }
+  100% {
+    background: #fff;
+  }
+}
+
+.row-icon-summary-processing:hover,
+.row-icon-summary-processing:focus-visible {
+    color: #fff;
+    outline: none;
+    animation: colorShift 3s infinite;
 }
 
 .row-icon-summary:disabled {
     opacity: .6;
     cursor: not-allowed;
+}
+
+.row-icon-summary-destroy{
+    color: red;
+    text-decoration: line-through;
+    text-decoration-thickness: 0.3rem;
+}
+
+.row-icon-summary-destroy:hover,
+.row-icon-summary-destroy:focus-visible {
+    color: #fff;
+    background: #b42318;
+    outline: none;
 }
 
 .status-toggle-form {
