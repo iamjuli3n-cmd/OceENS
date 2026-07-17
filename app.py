@@ -1581,6 +1581,7 @@ def create_app():
             "programs": programs,
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
+            "can_delete_survey": True,
         }
 
         return templates.TemplateResponse(
@@ -1690,6 +1691,8 @@ def create_app():
             "surveys": surveys,
             "programs": programs,
             "allowed_programs":allowed_programs,
+            "can_view_survey_students": True,
+            "can_delete_survey": False,
         }
 
         return templates.TemplateResponse(
@@ -1805,6 +1808,7 @@ def create_app():
             "programs": programs,
             "users": users,
             "can_view_survey_students": True,
+            "can_delete_survey": True,
         }
         return templates.TemplateResponse(
             request=request,
