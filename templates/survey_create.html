@@ -29,6 +29,12 @@
         <div class="card">
 
             <h2>Paramétrage du sondage</h2>
+            {% if survey_prefill %}
+            <div class="duplicate-survey-notice" role="status">
+                Sondage prérempli à partir du sondage n°{{ survey_prefill.source_survey_id }}.
+                Vérifiez et modifiez les champs avant de le publier.
+            </div>
+            {% endif %}
             <div id="parametrage-container">
                 <div class="pub-header">
                     <div class="pub-field">
@@ -70,6 +76,9 @@
 
                 {% include 'template_parts/part_add_ues_and_modules.html' %}
 
+                {% if survey_prefill %}
+                {% set student_list_value = '' %}
+                {% endif %}
                 {% include 'template_parts/part_students_dropzone.html' %}
 
                 {% include 'template_parts/part_publish_survey.html' %}

@@ -135,6 +135,66 @@ def can_manage_survey(roles: list[str], survey_program: str | None) -> bool:
     return survey_program in allowed_programs
 
 
+def can_duplicate_survey(roles: list[str], survey_program: str | None) -> bool:
+    """Vérifie qu'un RPRM peut dupliquer un sondage de l'une de ses formations."""
+    if "admin" in roles: # Admin can duplicate any survey
+        return True
+    
+    program_manager_roles = [
+        role for role in roles if role.split(":", 1)[0] == "program_manager"
+    ]
+    if not program_manager_roles:
+        return False
+
+    allowed_programs = {
+        program
+        for role in program_manager_roles
+        for program in parse_rprm_formations(role)
+    }
+    return survey_program in allowed_programs
+
+
+def build_survey_prefill(survey: Survey, modules: list[Module]) -> dict:
+    """Construit les données éditables du formulaire depuis un sondage existant."""
+    ues_by_name: Dict[str, dict] = {}
+    next_module_id = 1
+
+    for module in modules:
+        ue_name = module.ue or "Sans UE"
+        if ue_name not in ues_by_name:
+            ues_by_name[ue_name] = {
+                "id": len(ues_by_name) + 1,
+                "name": ue_name,
+                "is_optional": bool(module.is_optional),
+                "_open": True,
+                "modules": [],
+            }
+
+        teachers = [
+            teacher.strip()
+            for teacher in (module.teacher or "").split(",")
+            if teacher.strip()
+        ]
+        ues_by_name[ue_name]["modules"].append(
+            {
+                "id": next_module_id,
+                "name": module.name or "Module",
+                "one_teacher_in_list": bool(module.one_teacher_in_list),
+                "teachers": teachers,
+            }
+        )
+        next_module_id += 1
+
+    return {
+        "source_survey_id": survey.survey_id,
+        "template_id": survey.template_id,
+        "program": survey.program,
+        "semester": survey.semester,
+        "school_year": survey.school_year,
+        "ues": list(ues_by_name.values()),
+    }
+
+
 def delete_survey_with_relations(session: Session, survey_id: int) -> None:
     """Supprime les données propres au sondage sans supprimer son modèle partagé."""
     submission_ids = select(Submission.submission_id).where(
@@ -370,8 +430,8 @@ def create_app():
                 return RedirectResponse(url="/", status_code=303)
             raise
 
-        if response.status_code >= 400 and request.url.path != "/":
-            return RedirectResponse(url="/", status_code=303)
+        if response.status_code == 404 and request.url.path != "/":
+             return RedirectResponse(url="/", status_code=303)
         return response
 
     # Routeur d'authentification (login/logout/callback Azure Entra ID)
@@ -414,7 +474,11 @@ def create_app():
 
     # ┌─ Route : Paramétrage (accès restreint Admin + RP-RM) ──────────────┐
     @dashboard_router.get("/survey-create", response_class=HTMLResponse)
-    def surveys_create(request: Request, session: SessionDep):
+    def surveys_create(
+        request: Request,
+        session: SessionDep,
+        duplicate_from: Optional[int] = None,
+    ):
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
         user = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
@@ -437,6 +501,29 @@ def create_app():
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
 
+        survey_prefill = None
+        if duplicate_from is not None:
+            # La duplication est réservée aux RP-RM, même si la page de
+            # création classique reste aussi accessible aux admins.
+            if not check_role(roles, ["program_manager","admin"]):
+                return HTMLResponse(content="Accès refusé.", status_code=403)
+
+            source_survey = session.exec(
+                select(Survey).where(Survey.survey_id == duplicate_from)
+            ).first()
+            if source_survey is None:
+                return HTMLResponse(content="Sondage source introuvable.", status_code=409)
+
+            if not can_duplicate_survey(roles, source_survey.program):
+                return HTMLResponse(content="Accès refusé.", status_code=403)
+
+            source_modules = session.exec(
+                select(Module)
+                .where(Module.survey_id == source_survey.survey_id)
+                .order_by(Module.module_id)
+            ).all()
+            survey_prefill = build_survey_prefill(source_survey, source_modules)
+
         # Fetch all potential templates
         survey_templates = session.exec(select(Template)).all()
 
@@ -447,8 +534,12 @@ def create_app():
         associated_teachers = session.exec(select(Module.teacher).distinct()).all()
         teachers = set()
         for at in associated_teachers:
+            if not at:
+                continue
             for teacher in at.split(","):
-                teachers.add(teacher.strip())
+                teacher = teacher.strip()
+                if teacher:
+                    teachers.add(teacher)
 
         if (allowed_programs is None or allowed_programs == []) and "admin" in roles:
             programs_list = session.exec(select(Program)).all()
@@ -471,122 +562,9 @@ def create_app():
                 "programs": programs_list,
                 "school_years": school_years,
                 "teachers_list": sorted(list(teachers)),
+                "survey_prefill": survey_prefill,
                 "user": user,
             },
-        )
-
-    # └────────────────────────────────────────────────────────────────┘
-
-    # ┌─ API : Modules du survey de l'année précédente ─────────────────┐
-    @api_router.get("/modules/previous")
-    def modules_precedents_api(
-        session: SessionDep,
-        semester: str = "",
-        program: str = "",
-        school_year: str = "",
-    ):
-        """
-        Retourne les modules du survey de l'année scolaire précédente
-        pour le même semester et la même program.
-
-        Exemple : school_year="2025-2026" → cherche "2024-2025".
-        Si aucun survey précédent n'existe, renvoie un tableau vide.
-        """
-        if not semester or not program or not school_year:
-            return JSONResponse(content={"ues": [], "teachers_list": []})
-
-        # ── Calcul de l'année précédente ──────────────────────────────
-        try:
-            parts = school_year.split("-")
-            if len(parts) == 2:
-                year_start = int(parts[0]) - 1
-                year_end = int(parts[1]) - 1
-                previous_school_year = f"{year_start}-{year_end}"
-            else:
-                return JSONResponse(content={"ues": [], "teachers_list": []})
-        except (ValueError, IndexError):
-            return JSONResponse(content={"ues": [], "teachers_list": []})
-
-        # ── Recherche du survey de l'année précédente ────────────────
-        previous_survey = session.exec(
-            select(Survey).where(
-                Survey.school_year == previous_school_year,
-                Survey.semester == semester,
-                Survey.program == program,
-            )
-        ).first()
-
-        if not previous_survey:
-            return JSONResponse(content={"ues": [], "teachers_list": []})
-
-        # ── Récupération des modules liés à ce sondage ────────────────
-        modules = session.exec(
-            select(Module).where(
-                Module.survey_id == previous_survey.survey_id,
-            )
-        ).all()
-
-        if not modules:
-            return JSONResponse(content={"ues": [], "teachers_list": []})
-
-        # ── Groupement par UE + extraction des professeurs ────────────
-        ues_dict = {}
-        teachers_seen = {}
-        teachers = []
-        teacher_index = 1
-
-        for module in modules:
-            ue_name = module.ue or "Sans UE"
-            if ue_name not in ues_dict:
-                ues_dict[ue_name] = {
-                    "id": len(ues_dict) + 1,
-                    "name": ue_name,
-                    "is_optional": bool(module.is_optional),
-                    "_open": True,
-                    "modules": [],
-                }
-
-            teachers_list = []
-            if module.teacher:
-                teachers_list_as_string = [
-                    p.strip() for p in module.teacher.split(",") if p.strip()
-                ]
-                for teacher_as_string in teachers_list_as_string:
-                    parsed = parse_name(teacher_as_string, teacher_index)
-                    if parsed["firstname"] or parsed["name"]:
-                        key = (
-                            (parsed["firstname"] or "").lower(),
-                            (parsed["name"] or "").lower(),
-                        )
-                        if key not in teachers_seen:
-                            teachers_seen[key] = teacher_index
-                            parsed["id"] = teacher_index
-                            teachers.append(parsed)
-                            teacher_index += 1
-                        teachers_list.append(
-                            {
-                                "id": teachers_seen[key],
-                                "firstname": parsed["firstname"],
-                                "name": parsed["name"],
-                            }
-                        )
-
-            ues_dict[ue_name]["modules"].append(
-                {
-                    "id": int(module.module_id or 0),
-                    "name": module.name or "Module",
-                    "one_teacher_in_list": bool(module.one_teacher_in_list),
-                    "teachers": teachers_list,
-                }
-            )
-
-        return JSONResponse(
-            content={
-                "ues": list(ues_dict.values()),
-                "teachersList": teachers_list,
-                "previousSchoolYear": previous_school_year,
-                "surveyId": previous_survey.survey_id,
-            }
         )
 
     # └────────────────────────────────────────────────────────────────┘
@@ -634,6 +612,19 @@ def create_app():
                 },
                 status_code=403,
             )
+        
+        equivalent_survey = session.exec(select(Survey).where(Survey.template_id==survey.template_id,
+                        Survey.program==survey.program,
+                        Survey.semester==survey.semester,
+                        Survey.school_year==survey.school_year)).first()
+        
+        if equivalent_survey is not None:
+            print(f"TTTTTTTT {equivalent_survey}")
+            return JSONResponse(
+                content={"error": "Un sondage existe déjà pour la même formation, même semestre, même année !"},
+                status_code=403,
+            )
+
 
         # ── Transaction unique : Survey + Modules + Users + Respondent ──
         nb_crees = 0
@@ -783,7 +774,7 @@ def create_app():
         ).first()
 
         if not survey:
-            return HTMLResponse(content="Survey introuvable.", status_code=404)
+            return HTMLResponse(content="Survey introuvable.", status_code=409)
 
         program = session.exec(
             select(Program).where(Program.code == survey.program)
@@ -1026,7 +1017,7 @@ def create_app():
         ).first()
         if not survey:
             return JSONResponse(
-                content={"error": "Survey introuvable."}, status_code=404
+                content={"error": "Survey introuvable."}, status_code=409
             )
 
         if survey.status == 0:
@@ -1188,7 +1179,7 @@ def create_app():
         if not survey:
             return JSONResponse(
                 content={"error": "Sondage introuvable."},
-                status_code=404,
+                status_code=409,
             )
 
         roles_query = session.exec(
@@ -1430,7 +1421,7 @@ def create_app():
         if not respondent:
             return JSONResponse(
                 content={"error": "Étudiant non associé à ce sondage."},
-                status_code=404,
+                status_code=409,
             )
         if respondent.submission_date is not None:
             return JSONResponse(
@@ -1474,7 +1465,7 @@ def create_app():
         if not survey:
             return JSONResponse(
                 content={"error": "Sondage introuvable."},
-                status_code=404,
+                status_code=409,
             )
 
         roles_query = session.exec(
@@ -1676,6 +1667,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": True,
             "can_update_survey_status": True,
+            "can_duplicate_survey": True,
             "dashboard_navigation": get_dashboard_navigation(
                 roles, "program-manager"
             ),
@@ -1791,6 +1783,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": False,
             "can_update_survey_status": False,
+            "can_duplicate_survey": False,
             "dashboard_navigation": get_dashboard_navigation(roles, "facilitator"),
         }
 
@@ -1909,6 +1902,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": True,
             "can_update_survey_status": True,
+            "can_duplicate_survey": True,
             "dashboard_navigation": get_dashboard_navigation(roles, "admin"),
         }
         return templates.TemplateResponse(
@@ -1945,7 +1939,7 @@ def create_app():
         if not user:
             return JSONResponse(
                 content={"detail": f"Utilisateur {user_id} introuvable"},
-                status_code=404,
+                status_code=409,
             )
         # Remove all previous roles
         session.exec(delete(Role).where(Role.user_id == user_id))
@@ -1971,7 +1965,7 @@ def create_app():
         if not survey:
             return (
                 None,
-                {"error": "Survey introuvable.", "status_code": 404},
+                {"error": "Survey introuvable.", "status_code": 409},
                 None,
                 None,
             )

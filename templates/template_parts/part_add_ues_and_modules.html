@@ -1,9 +1,49 @@
 <script>
-    var ues=[];
-    var teachersList = {{ teachers_list | safe}} || [];
-    var nextUEId = 0;
-    var nextModuleId = 0;
+    const surveyPrefill = {{ survey_prefill | tojson }};
+    var ues = surveyPrefill ? surveyPrefill.ues : [];
+    var teachersList = {{ teachers_list | tojson }} || [];
+    var nextUEId = ues.reduce((maxId, ue) => Math.max(maxId, Number(ue.id) || 0), 0);
+    var nextModuleId = ues.reduce(
+        (maxId, ue) => Math.max(
+            maxId,
+            ...(ue.modules || []).map(module => Number(module.id) || 0)
+        ),
+        0
+    );
     var nextTeacherId = 0;
+
+    function applySurveyPrefill() {
+        if (!surveyPrefill) return;
+
+        const fields = {
+            'param-template': surveyPrefill.template_id,
+            'param-filiere': surveyPrefill.program,
+            'param-semestre': surveyPrefill.semester,
+            //'param-annee': surveyPrefill.school_year,
+        };
+
+        Object.entries(fields).forEach(([fieldId, value]) => {
+            const field = document.getElementById(fieldId);
+            if (!field || value === null || value === undefined) return;
+
+            const stringValue = String(value);
+            if (fieldId === 'param-annee' && !Array.from(field.options).some(option => option.value === stringValue)) {
+                field.add(new Option(stringValue, stringValue));
+            }
+            field.value = stringValue;
+        });
+
+        const syllabusTeachers = ues.flatMap(ue =>
+            (ue.modules || []).flatMap(module => module.teachers || [])
+        );
+        teachersList = [...new Set([...teachersList, ...syllabusTeachers])]
+            .filter(Boolean)
+            .sort((left, right) => left.localeCompare(right, 'fr'));
+
+        renderUEs();
+    }
+
+    document.addEventListener('DOMContentLoaded', applySurveyPrefill);
 
     // Util
     function esc(str) {

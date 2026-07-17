@@ -858,3 +858,13 @@ main {
     transform: none;
     box-shadow: none;
 }
+.duplicate-survey-notice {
+    margin: 0 0 20px;
+    padding: 12px 14px;
+    border: 1px solid #d7c4e2;
+    border-radius: 8px;
+    background: #f8f3fb;
+    color: #470a68;
+    font-size: 14px;
+    line-height: 1.45;
+}
