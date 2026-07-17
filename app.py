@@ -135,6 +135,63 @@ def can_manage_survey(roles: list[str], survey_program: str | None) -> bool:
     return survey_program in allowed_programs
 
 
+def can_duplicate_survey(roles: list[str], survey_program: str | None) -> bool:
+    """Vérifie qu'un RPRM peut dupliquer un sondage de l'une de ses formations."""
+    program_manager_roles = [
+        role for role in roles if role.split(":", 1)[0] == "program_manager"
+    ]
+    if not program_manager_roles:
+        return False
+
+    allowed_programs = {
+        program
+        for role in program_manager_roles
+        for program in parse_rprm_formations(role)
+    }
+    return survey_program in allowed_programs
+
+
+def build_survey_prefill(survey: Survey, modules: list[Module]) -> dict:
+    """Construit les données éditables du formulaire depuis un sondage existant."""
+    ues_by_name: Dict[str, dict] = {}
+    next_module_id = 1
+
+    for module in modules:
+        ue_name = module.ue or "Sans UE"
+        if ue_name not in ues_by_name:
+            ues_by_name[ue_name] = {
+                "id": len(ues_by_name) + 1,
+                "name": ue_name,
+                "is_optional": bool(module.is_optional),
+                "_open": True,
+                "modules": [],
+            }
+
+        teachers = [
+            teacher.strip()
+            for teacher in (module.teacher or "").split(",")
+            if teacher.strip()
+        ]
+        ues_by_name[ue_name]["modules"].append(
+            {
+                "id": next_module_id,
+                "name": module.name or "Module",
+                "one_teacher_in_list": bool(module.one_teacher_in_list),
+                "teachers": teachers,
+            }
+        )
+        next_module_id += 1
+
+    return {
+        "source_survey_id": survey.survey_id,
+        "template_id": survey.template_id,
+        "program": survey.program,
+        "semester": survey.semester,
+        "school_year": survey.school_year,
+        "ues": list(ues_by_name.values()),
+    }
+
+
 def delete_survey_with_relations(session: Session, survey_id: int) -> None:
     """Supprime les données propres au sondage sans supprimer son modèle partagé."""
     submission_ids = select(Submission.submission_id).where(
@@ -414,7 +471,11 @@ def create_app():
 
     # ┌─ Route : Paramétrage (accès restreint Admin + RP-RM) ──────────────┐
     @dashboard_router.get("/survey-create", response_class=HTMLResponse)
-    def surveys_create(request: Request, session: SessionDep):
+    def surveys_create(
+        request: Request,
+        session: SessionDep,
+        duplicate_from: Optional[int] = None,
+    ):
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
         user = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
@@ -437,6 +498,29 @@ def create_app():
             if role.startswith("program_manager"):
                 allowed_programs.extend(parse_rprm_formations(role))
 
+        survey_prefill = None
+        if duplicate_from is not None:
+            # La duplication est réservée aux RP-RM, même si la page de
+            # création classique reste aussi accessible aux admins.
+            if not check_role(roles, ["program_manager"]):
+                return HTMLResponse(content="Accès refusé.", status_code=403)
+
+            source_survey = session.exec(
+                select(Survey).where(Survey.survey_id == duplicate_from)
+            ).first()
+            if source_survey is None:
+                return HTMLResponse(content="Sondage source introuvable.", status_code=404)
+
+            if not can_duplicate_survey(roles, source_survey.program):
+                return HTMLResponse(content="Accès refusé.", status_code=403)
+
+            source_modules = session.exec(
+                select(Module)
+                .where(Module.survey_id == source_survey.survey_id)
+                .order_by(Module.module_id)
+            ).all()
+            survey_prefill = build_survey_prefill(source_survey, source_modules)
+
         # Fetch all potential templates
         survey_templates = session.exec(select(Template)).all()
 
@@ -447,8 +531,12 @@ def create_app():
         associated_teachers = session.exec(select(Module.teacher).distinct()).all()
         teachers = set()
         for at in associated_teachers:
+            if not at:
+                continue
             for teacher in at.split(","):
-                teachers.add(teacher.strip())
+                teacher = teacher.strip()
+                if teacher:
+                    teachers.add(teacher)
 
         if (allowed_programs is None or allowed_programs == []) and "admin" in roles:
             programs_list = session.exec(select(Program)).all()
@@ -471,6 +559,7 @@ def create_app():
                 "programs": programs_list,
                 "school_years": school_years,
                 "teachers_list": sorted(list(teachers)),
+                "survey_prefill": survey_prefill,
                 "user": user,
             },
         )
@@ -1676,6 +1765,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": True,
             "can_update_survey_status": True,
+            "can_duplicate_survey": check_role(roles, ["program_manager"]),
             "dashboard_navigation": get_dashboard_navigation(
                 roles, "program-manager"
             ),
@@ -1791,6 +1881,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": False,
             "can_update_survey_status": False,
+            "can_duplicate_survey": False,
             "dashboard_navigation": get_dashboard_navigation(roles, "facilitator"),
         }
 
@@ -1909,6 +2000,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": True,
             "can_update_survey_status": True,
+            "can_duplicate_survey": False,
             "dashboard_navigation": get_dashboard_navigation(roles, "admin"),
         }
         return templates.TemplateResponse(
