@@ -45,33 +45,33 @@
     }
 
     .btn-generate {
-    display: block;
-    width: 100%;
-    padding: 15px;
-    font-size: 1.15rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #470a68, #5c1a7a);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 30px;
-    transition: all 0.25s;
-    letter-spacing: 0.3px;
-}
+        display: block;
+        width: 100%;
+        padding: 15px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #470a68, #5c1a7a);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 30px;
+        transition: all 0.25s;
+        letter-spacing: 0.3px;
+    }
 
-.btn-generate:hover {
-    background: linear-gradient(135deg, #5c1a7a, #7b2fa0);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(71, 10, 104, 0.35);
-}
+    .btn-generate:hover {
+        background: linear-gradient(135deg, #5c1a7a, #7b2fa0);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(71, 10, 104, 0.35);
+    }
 
-.btn-generate:disabled {
-    background: #c5d0db;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
+    .btn-generate:disabled {
+        background: #c5d0db;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
 
     /* --- THE MODAL OVERLAY --- */
     .modal-prompt {
@@ -172,10 +172,12 @@
                 {% endfor %}
             </select>
             {% else %}
-            <p>Aucun prompts disponibles.</p><p style="color: #666; margin-top: 15px;"><i>Contactez un administrateur.</i></p>
+            <p>Aucun prompts disponibles.</p>
+            <p style="color: #666; margin-top: 15px;"><i>Contactez un administrateur.</i></p>
             {% endif %}
         </div>
-        <button class="btn-generate" type="submit" onclick=generateSummaries() {% if prompts | length == 0 %}disabled{% endif %}>Générer les résumés</button>
+        <button class="btn-generate" type="submit" onclick=generateSummaries() {% if prompts | length==0 %}disabled{%
+            endif %}>Générer les résumés</button>
 
 
     </div>
@@ -183,30 +185,29 @@
 
 <script type="text/javascript">
     function generateSummaries() {
-        survey_id=document.getElementById("surveyId").value;
-        prompt_id=parseInt(document.getElementById("prompt-choice").value);
-        fetch(`/api/surveys/${survey_id}/generate-summary`, {
+        survey_id = document.getElementById("surveyId").value;
+        prompt_id = parseInt(document.getElementById("prompt-choice").value);
+        fetch(`/api/surveys/${survey_id}/generate-summaries`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({"prompt_id":prompt_id}),
+            body: JSON.stringify({ "prompt_id": prompt_id }),
         }).then(response => {
-                console.log(response);
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.error || `Erreur serveur (${response.status})`);
-                    }).catch(parseErr => {
-                        if (parseErr.message && !parseErr.message.includes('Erreur serveur')) throw parseErr;
-                        throw new Error(`Erreur serveur (${response.status})`);
-                    });
-                }
-                closePromptModal();
-                return response.json();
-            })
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 500);
-        closePromptModal();
+            console.log(response);
+            if (!response.ok) {
+                return response.json().then(data => {
+                    alert(data.error);
+                     closePromptModal();
+            });
+            } else {
+
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 500);
+            closePromptModal();
+        }
+         
+        })
     }
 
     function openPromptModal(survey_id) {

@@ -24,7 +24,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from requests import session
-from sqlmodel import Session, SQLModel, create_engine, select, func, delete,insert
+from sqlmodel import Session, SQLModel, create_engine, select, func, delete,insert,case
 import uvicorn
 from seed import seed_all_if_necessary
 from database import engine, SessionDep, create_db_and_tables
@@ -1626,6 +1626,24 @@ def create_app():
             for p in db_programs
         ]
 
+        prompts = [
+            {"prompt_id": p.prompt_id, "description": p.description} for p in  session.exec(select(Prompt)).all()
+        ]
+
+        summary_rows = session.exec(select(Summary.survey_id,func.count(Summary.summary_id),func.count(Summary.summary_text),func.sum(case(
+       (
+           Summary.http_status == 0,0
+       ),
+       (
+           Summary.http_status == 200,0
+       ),
+       else_=1
+    ))).group_by(Summary.survey_id)).all()
+
+        summaries = { s[0]:
+             {"summaries_count": s[1], "summaries_done": s[2], "summaries_error": s[3]} for s in  summary_rows }
+        
+
         context = {
             "user": user,
             "surveys": surveys,
@@ -1635,7 +1653,9 @@ def create_app():
             "can_delete_survey": True,
             "can_update_survey_status": True,
             "can_duplicate_survey": True,
-            "can_generate_summary":True,
+            "can_generate_summaries":True,
+            "prompts":prompts,
+            "summaries":summaries,
             "dashboard_navigation": get_dashboard_navigation(
                 roles, "program-manager"
             ),
@@ -1744,6 +1764,23 @@ def create_app():
             for p in db_programs
         ]
 
+        prompts = [
+            {"prompt_id": p.prompt_id, "description": p.description} for p in  session.exec(select(Prompt)).all()
+        ]
+
+        summary_rows = session.exec(select(Summary.survey_id,func.count(Summary.summary_id),func.count(Summary.summary_text),func.sum(case(
+       (
+           Summary.http_status == 0,0
+       ),
+       (
+           Summary.http_status == 200,0
+       ),
+       else_=1
+    ))).group_by(Summary.survey_id)).all()
+
+        summaries = { s[0]:
+             {"summaries_count": s[1], "summaries_done": s[2], "summaries_error": s[3]} for s in  summary_rows }
+
         context = {
             "user": user,
             "surveys": surveys,
@@ -1753,7 +1790,9 @@ def create_app():
             "can_delete_survey": False,
             "can_update_survey_status": False,
             "can_duplicate_survey": False,
-            "can_generate_summary":True,
+            "can_generate_summaries":True,
+            "prompts":prompts,
+            "summaries":summaries,
             "dashboard_navigation": get_dashboard_navigation(roles, "facilitator"),
         }
 
@@ -1873,6 +1912,19 @@ def create_app():
             {"prompt_id": p.prompt_id, "description": p.description} for p in  session.exec(select(Prompt)).all()
         ]
 
+        summary_rows = session.exec(select(Summary.survey_id,func.count(Summary.summary_id),func.count(Summary.summary_text),func.sum(case(
+        (
+            Summary.http_status == 0,0
+        ),
+        (
+            Summary.http_status == 200,0
+        ),
+        else_=1
+        ))).group_by(Summary.survey_id)).all()
+
+        summaries = { s[0]:
+             {"summaries_count": s[1], "summaries_done": s[2], "summaries_error": s[3]} for s in  summary_rows }
+
         context = {
             "user": user,
             "surveys": surveys,
@@ -1882,8 +1934,9 @@ def create_app():
             "can_delete_survey": True,
             "can_update_survey_status": True,
             "can_duplicate_survey": True,
-            "can_generate_summary":True,
+            "can_generate_summaries":True,
             "prompts":prompts,
+            "summaries":summaries,
             "dashboard_navigation": get_dashboard_navigation(roles, "admin"),
         }
         return templates.TemplateResponse(
@@ -2057,8 +2110,8 @@ def create_app():
 
     # └───────────────────────────────────────────────────────────────────┘
 
-    @api_router.post("/surveys/{survey_id}/generate-summary")
-    def generate_summary(request: Request, survey_id: int, request_data: SummaryRequest, session: SessionDep):
+    @api_router.post("/surveys/{survey_id}/generate-summaries")
+    def generate_summaries(request: Request, survey_id: int, request_data: SummaryRequest, session: SessionDep):
         user,roles = require_roles(request, session, ["admin", "program_manager", "facilitator"])
         if user is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
@@ -2102,6 +2155,14 @@ def create_app():
                     .where(Submission.survey_id == survey_id, Question.question_type=="Question_ouverte")
                     .group_by(Answer.question_id,Answer.module_id,Answer.teacher)
                     ).all()
+            
+            if not answers:
+                session.rollback()
+                return JSONResponse(
+                    content={"error": "Aucune réponse dans ce sondage"},
+                    status_code=409,
+                )
+
 
             rows_to_insert = [{"survey_id":survey_id, "module_id":a[0], "teacher":a[1], "question_id":a[2], "prompt_id":prompt_id, "http_status":0, "summary_text":None} for a in answers]
             print(rows_to_insert)
@@ -2112,13 +2173,13 @@ def create_app():
             session.rollback()
             return JSONResponse(
                 content={"error": f"Impossible d'ajouter ces résumés. ({e})"},
-                status_code=500,
+                status_code=409,
             )
         
         return JSONResponse(content={"message":"everything's fine !"}, status_code=200)
 
-    @api_router.post("/surveys/{survey_id}/destroy-summary")
-    def destroy_summary(request: Request, survey_id: int, session: SessionDep):
+    @api_router.post("/surveys/{survey_id}/destroy-summaries")
+    def destroy_summaries(request: Request, survey_id: int, session: SessionDep):
         
         user,roles = require_roles(request, session, ["admin", "program_manager", "facilitator"])
         if user is None:
