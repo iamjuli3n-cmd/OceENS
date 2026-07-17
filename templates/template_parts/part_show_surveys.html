@@ -3,6 +3,13 @@
 {% include 'template_parts/part_modal_survey_students.html' %}
 {% endif %}
 
+{% if can_generate_summary %}
+{% include 'template_parts/part_modal_prompt_choice.html'%}
+{% endif %}
+
+
+
+
 {% for survey in surveys %}
 
 <div class="sondage-row">
@@ -100,11 +107,10 @@
     <button class="row-icon row-icon-summary row-icon-summary-destroy" title="Stopper la génération et supprimer les résumés">🤖</button>
     </form>
     {% else %}
-    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/generate-summary" class="generate-summary">
-      <button type="submit" class="row-icon row-icon-summary" {% if survey['is_closed'] %} title="Genérer les résumés"
-        aria-label="Genérer les résumés" {% else %} title="La génération nécessite de fermer le sondage"
+    
+      <button class="row-icon row-icon-summary" {% if survey['is_closed'] %} title="Genérer les résumés"
+        aria-label="Genérer les résumés" onclick="openPromptModal({{survey['survey_id']}})" {% else %} title="La génération nécessite de fermer le sondage"
         aria-label="La génération nécessite de fermer le sondage" disabled {% endif %}>🤖</button>
-    </form>
     {% endif %}
     {% endif %}
 

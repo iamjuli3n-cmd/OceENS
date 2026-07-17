@@ -316,6 +316,9 @@ class RoleUpdate(BaseModel):
 class SurveyStudentsAdd(BaseModel):
     emails: List[str]
 
+class SummaryRequest(BaseModel):
+    prompt_id: int
+
 
 import json
 
@@ -432,12 +435,12 @@ def create_app():
     @app.middleware("http")
     async def redirect_errors(request: Request, call_next):
         """Renvoie toute erreur vers l'accueil, qui choisit le dashboard."""
-        try:
-            response = await call_next(request)
-        except Exception:
-            if request.url.path != "/":
-                return RedirectResponse(url="/", status_code=303)
-            raise
+        # try:
+        response = await call_next(request)
+        # except Exception:
+        #     if request.url.path != "/":
+        #         return RedirectResponse(url="/", status_code=303)
+        #     raise
 
         if response.status_code == 404 and request.url.path != "/":
              return RedirectResponse(url="/", status_code=303)
@@ -1812,7 +1815,13 @@ def create_app():
         ).all()
 
         db_programs = session.exec(select(Program)).all()
+
+        programs = [
+            {"code": p.code, "name": p.name, "campus": p.campus} for p in db_programs
+        ]
+
         program_name_by_code = {p.code: {"name":p.name,"campus":p.campus}  for p in db_programs}
+
 
         submissions_rows = session.exec(
             select(
@@ -1858,8 +1867,10 @@ def create_app():
             for u in db_users
         ]
 
-        programs = [
-            {"code": p.code, "name": p.name, "campus": p.campus} for p in db_programs
+        
+
+        prompts = [
+            {"prompt_id": p.prompt_id, "description": p.description} for p in  session.exec(select(Prompt)).all()
         ]
 
         context = {
@@ -1872,6 +1883,7 @@ def create_app():
             "can_update_survey_status": True,
             "can_duplicate_survey": True,
             "can_generate_summary":True,
+            "prompts":prompts,
             "dashboard_navigation": get_dashboard_navigation(roles, "admin"),
         }
         return templates.TemplateResponse(
@@ -2046,8 +2058,7 @@ def create_app():
     # └───────────────────────────────────────────────────────────────────┘
 
     @api_router.post("/surveys/{survey_id}/generate-summary")
-    def generate_summary(request: Request, survey_id: int, session: SessionDep):
-        
+    def generate_summary(request: Request, survey_id: int, request_data: SummaryRequest, session: SessionDep):
         user,roles = require_roles(request, session, ["admin", "program_manager", "facilitator"])
         if user is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
@@ -2078,7 +2089,10 @@ def create_app():
         
         print("GENERATE")
 
+
         try:
+            prompt_id = request_data.prompt_id
+
             survey.status=2
             session.add(survey)
 
@@ -2089,7 +2103,7 @@ def create_app():
                     .group_by(Answer.question_id,Answer.module_id,Answer.teacher)
                     ).all()
 
-            rows_to_insert = [{"survey_id":survey_id, "module_id":a[0], "teacher":a[1], "question_id":a[2], "prompt_id":1, "http_status":0, "summary_text":None} for a in answers]
+            rows_to_insert = [{"survey_id":survey_id, "module_id":a[0], "teacher":a[1], "question_id":a[2], "prompt_id":prompt_id, "http_status":0, "summary_text":None} for a in answers]
             print(rows_to_insert)
 
             session.exec(insert(Summary),params=rows_to_insert)
@@ -2101,9 +2115,7 @@ def create_app():
                 status_code=500,
             )
         
-
-
-        return JSONResponse(content={"message":"everything's fine !"}, status=200)
+        return JSONResponse(content={"message":"everything's fine !"}, status_code=200)
 
     @api_router.post("/surveys/{survey_id}/destroy-summary")
     def destroy_summary(request: Request, survey_id: int, session: SessionDep):
@@ -2144,7 +2156,10 @@ def create_app():
                 status_code=500,
             )
 
-        return JSONResponse(content={"message":"everything's fine !"}, status=200)
+        return RedirectResponse(
+            url=request.headers.get("referer","/").split('?')[0], # Referer without eventual parameters
+            status_code=303,
+        )
 
     app.include_router(api_router)
     app.include_router(dashboard_router)

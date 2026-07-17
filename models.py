@@ -288,7 +288,7 @@ class Prompt(SQLModel, table=True):
     prompt_text: Optional[str] = Field(sa_column=Column("prompt_text", Text))
 
 class Summary(SQLModel, table=True):
-    __tablename__ = "summarys"
+    __tablename__ = "summaries"
 
     summary_id: Optional[int] = Field(
         default=None,
