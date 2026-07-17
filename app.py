@@ -351,9 +351,9 @@ def require_roles(
         dict avec {"name", "email", "role"} si autorisé, None sinon
 
     Exemple :
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
-            return RedirectResponse(url="/dashboard/student")
+            return RedirectResponse(url="/")
     """
     user = get_current_user(request)
     if not user:
@@ -371,7 +371,7 @@ def require_roles(
         roles = ["student"]
 
     if check_role(roles, allowed_roles):
-        return user
+        return user,roles
 
     # Aucun rôle autorisé ne correspond
     return None
@@ -480,22 +480,12 @@ def create_app():
         duplicate_from: Optional[int] = None,
     ):
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             # Utilisateur non connecté ou rôle insuffisant → redirection
             return RedirectResponse(url="/")
 
         # Déterminer les formations autorisées pour un RP-RM
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        if roles_query:
-            roles = roles_query.split(",")
-        else:
-            roles = ["student"]
-
         allowed_programs = []
         for role in roles:
             if role.startswith("program_manager"):
@@ -581,7 +571,7 @@ def create_app():
         Si l'import Excel échoue, le survey est annulé (ROLLBACK).
         """
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(
                 content={"error": "Accès refusé. Rôle Admin ou RP-RM requis."},
@@ -589,17 +579,6 @@ def create_app():
             )
 
         # ── Sécurité : vérifier que la program est autorisée pour le RP-RM ──
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        session.flush()
-        if roles_query:
-            roles = roles_query.split(",")
-        else:
-            roles = ["student"]
-
         allowed_programs = []
         for role in roles:
             if role.startswith("program_manager"):
@@ -1159,7 +1138,7 @@ def create_app():
         session: SessionDep,
         status: int = Form(...),
     ):
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(
                 content={"error": "Accès refusé."},
@@ -1181,16 +1160,6 @@ def create_app():
                 content={"error": "Sondage introuvable."},
                 status_code=409,
             )
-
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        if roles_query:
-            roles = roles_query.split(",")
-        else:
-            roles = ["student"]
 
         allowed_programs = []
         for role in roles:
@@ -1222,7 +1191,7 @@ def create_app():
         session: Session,
     ):
         """Retourne le sondage si l'utilisateur peut gérer ses étudiants."""
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return None, JSONResponse(
                 content={"error": "Accès refusé."}, status_code=403
@@ -1235,13 +1204,6 @@ def create_app():
             return None, JSONResponse(
                 content={"error": "Sondage introuvable."}, status_code=404
             )
-
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        roles = roles_query.split(",") if roles_query else ["student"]
 
         if not can_manage_survey(roles, survey.program):
             return None, JSONResponse(
@@ -1452,7 +1414,7 @@ def create_app():
         request: Request,
         session: SessionDep,
     ):
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(
                 content={"error": "Accès refusé."},
@@ -1467,13 +1429,6 @@ def create_app():
                 content={"error": "Sondage introuvable."},
                 status_code=409,
             )
-
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        roles = roles_query.split(",") if roles_query else ["student"]
 
         if not can_manage_survey(roles, survey.program):
             return JSONResponse(
@@ -1925,7 +1880,7 @@ def create_app():
         request: Request, user_id: int, body: RoleUpdate, session: SessionDep
     ):
         # ── Sécurité : seul un Admin peut modifier les rôles ──
-        admin = require_roles(request, session, ["admin"])
+        admin,roles = require_roles(request, session, ["admin"])
         if admin is None:
             return JSONResponse(
                 content={"error": "Accès refusé. Rôle Admin requis."},
@@ -2011,19 +1966,9 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/export")
     def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
-
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        if roles_query:
-            roles = roles_query.split(",")
-        else:
-            roles = ["student"]
 
         if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
@@ -2053,19 +1998,9 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
     def visualisation_page(request: Request, survey_id: int, session: SessionDep):
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return RedirectResponse(url="/")
-
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        if roles_query:
-            roles = roles_query.split(",")
-        else:
-            roles = ["student"]
 
         if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
@@ -2098,6 +2033,36 @@ def create_app():
         )
 
     # └───────────────────────────────────────────────────────────────────┘
+
+    @api_router.get("/surveys/{survey_id}/generate-summary")
+    def generate_summary(request: Request, survey_id: int, session: SessionDep):
+        user,roles = require_roles(request, session, ["admin", "program_manager", "facilitator"])
+        if user is None:
+            return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
+
+        allowed_programs = []
+        for role in roles:
+            if role.startswith("program_manager"):
+                allowed_programs.extend(parse_rprm_formations(role))
+
+        survey, error_or_warning, _, _ = _check_sondage_access_and_status(
+            session, survey_id, roles, allowed_programs
+        )
+        if not survey:
+            return JSONResponse(
+                content={"error": error_or_warning["error"]},
+                status_code=error_or_warning["status_code"],
+            )
+
+        # Utilisation de la BDD locale pour le loader sqlite3 natif
+        survey_obj = load_sondage_complet(survey_id)
+
+        resp = generate_csv_response(survey_obj)
+        if isinstance(error_or_warning, str):
+            resp.headers["X-Warning"] = "Sondage en cours - donnees partielles"
+
+        return resp
+
 
     app.include_router(api_router)
     app.include_router(dashboard_router)
