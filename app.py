@@ -137,6 +137,9 @@ def can_manage_survey(roles: list[str], survey_program: str | None) -> bool:
 
 def can_duplicate_survey(roles: list[str], survey_program: str | None) -> bool:
     """Vérifie qu'un RPRM peut dupliquer un sondage de l'une de ses formations."""
+    if "admin" in roles: # Admin can duplicate any survey
+        return True
+    
     program_manager_roles = [
         role for role in roles if role.split(":", 1)[0] == "program_manager"
     ]
@@ -427,8 +430,8 @@ def create_app():
                 return RedirectResponse(url="/", status_code=303)
             raise
 
-        if response.status_code >= 400 and request.url.path != "/":
-            return RedirectResponse(url="/", status_code=303)
+        if response.status_code == 404 and request.url.path != "/":
+             return RedirectResponse(url="/", status_code=303)
         return response
 
     # Routeur d'authentification (login/logout/callback Azure Entra ID)
@@ -502,14 +505,14 @@ def create_app():
         if duplicate_from is not None:
             # La duplication est réservée aux RP-RM, même si la page de
             # création classique reste aussi accessible aux admins.
-            if not check_role(roles, ["program_manager"]):
+            if not check_role(roles, ["program_manager","admin"]):
                 return HTMLResponse(content="Accès refusé.", status_code=403)
 
             source_survey = session.exec(
                 select(Survey).where(Survey.survey_id == duplicate_from)
             ).first()
             if source_survey is None:
-                return HTMLResponse(content="Sondage source introuvable.", status_code=404)
+                return HTMLResponse(content="Sondage source introuvable.", status_code=409)
 
             if not can_duplicate_survey(roles, source_survey.program):
                 return HTMLResponse(content="Accès refusé.", status_code=403)
@@ -723,6 +726,19 @@ def create_app():
                 },
                 status_code=403,
             )
+        
+        equivalent_survey = session.exec(select(Survey).where(Survey.template_id==survey.template_id,
+                        Survey.program==survey.program,
+                        Survey.semester==survey.semester,
+                        Survey.school_year==survey.school_year)).first()
+        
+        if equivalent_survey is not None:
+            print(f"TTTTTTTT {equivalent_survey}")
+            return JSONResponse(
+                content={"error": "Un sondage existe déjà pour la même formation, même semestre, même année !"},
+                status_code=403,
+            )
+
 
         # ── Transaction unique : Survey + Modules + Users + Respondent ──
         nb_crees = 0
@@ -872,7 +888,7 @@ def create_app():
         ).first()
 
         if not survey:
-            return HTMLResponse(content="Survey introuvable.", status_code=404)
+            return HTMLResponse(content="Survey introuvable.", status_code=409)
 
         program = session.exec(
             select(Program).where(Program.code == survey.program)
@@ -1115,7 +1131,7 @@ def create_app():
         ).first()
         if not survey:
             return JSONResponse(
-                content={"error": "Survey introuvable."}, status_code=404
+                content={"error": "Survey introuvable."}, status_code=409
             )
 
         if survey.status == 0:
@@ -1277,7 +1293,7 @@ def create_app():
         if not survey:
             return JSONResponse(
                 content={"error": "Sondage introuvable."},
-                status_code=404,
+                status_code=409,
             )
 
         roles_query = session.exec(
@@ -1519,7 +1535,7 @@ def create_app():
         if not respondent:
             return JSONResponse(
                 content={"error": "Étudiant non associé à ce sondage."},
-                status_code=404,
+                status_code=409,
             )
         if respondent.submission_date is not None:
             return JSONResponse(
@@ -1563,7 +1579,7 @@ def create_app():
         if not survey:
             return JSONResponse(
                 content={"error": "Sondage introuvable."},
-                status_code=404,
+                status_code=409,
             )
 
         roles_query = session.exec(
@@ -1765,7 +1781,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": True,
             "can_update_survey_status": True,
-            "can_duplicate_survey": check_role(roles, ["program_manager"]),
+            "can_duplicate_survey": True,
             "dashboard_navigation": get_dashboard_navigation(
                 roles, "program-manager"
             ),
@@ -2000,7 +2016,7 @@ def create_app():
             "can_view_survey_students": True,
             "can_delete_survey": True,
             "can_update_survey_status": True,
-            "can_duplicate_survey": False,
+            "can_duplicate_survey": True,
             "dashboard_navigation": get_dashboard_navigation(roles, "admin"),
         }
         return templates.TemplateResponse(
@@ -2037,7 +2053,7 @@ def create_app():
         if not user:
             return JSONResponse(
                 content={"detail": f"Utilisateur {user_id} introuvable"},
-                status_code=404,
+                status_code=409,
             )
         # Remove all previous roles
         session.exec(delete(Role).where(Role.user_id == user_id))
@@ -2063,7 +2079,7 @@ def create_app():
         if not survey:
             return (
                 None,
-                {"error": "Survey introuvable.", "status_code": 404},
+                {"error": "Survey introuvable.", "status_code": 409},
                 None,
                 None,
             )
