@@ -1,0 +1,7 @@
+{% if dashboard_navigation %}
+<div class="dashboard-navigation" role="group" aria-label="Changer de tableau de bord">
+  {% for dashboard in dashboard_navigation %}
+  <a class="dashboard-navigation-link" href="{{ dashboard.url }}">{{ dashboard.label }}</a>
+  {% endfor %}
+</div>
+{% endif %}

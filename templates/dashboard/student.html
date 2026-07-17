@@ -12,6 +12,7 @@
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@500;600&family=Montserrat:wght@400;500;600;700&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/student.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard_navigation.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}" />
 </head>
@@ -26,6 +27,7 @@
     <nav>
       {% include 'template_parts/part_theme_switcher.html' %}
       {% include 'template_parts/part_language_selection.html' %}
+      {% include 'template_parts/part_dashboard_navigation.html' %}
       <span class="user-email">{{ user.email }}</span>
       <a href="/logout" class="logout-btn">
         <text class="text_fr">Déconnexion</text>
