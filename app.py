@@ -108,6 +108,12 @@ def get_dashboard_navigation(
     ]
 
 
+def can_access_student_dashboard(roles: list[str]) -> bool:
+    """Interdit la vue étudiant aux RP-RM, sauf s'ils sont administrateurs."""
+    role_names = {role.split(":", 1)[0] for role in roles}
+    return "program_manager" not in role_names or "admin" in role_names
+
+
 def can_manage_survey(roles: list[str], survey_program: str | None) -> bool:
     """Vérifie qu'un admin ou un RPRM de la formation peut gérer le sondage."""
     if "admin" in roles:
@@ -1493,6 +1499,9 @@ def create_app():
             .where(User.mail == user["email"].casefold())
         ).first()
         roles = roles_query.split(",") if roles_query else ["student"]
+
+        if not can_access_student_dashboard(roles):
+            return RedirectResponse(url="/dashboard/program-manager")
 
         rows = session.exec(
             select(
