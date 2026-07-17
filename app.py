@@ -155,17 +155,19 @@ def role_to_dashboard_slug(roles: List[str]) -> str:
     Convertit le rôle stocké en BDD en slug de route dashboard.
 
     "admin"              → "admin"
-    "program_manager"              → "program_manager"
-    "program_manager:MDE_P2027"    → "program_manager"
+    "program_manager"              → "program-manager"
+    "program_manager:MDE_P2027"    → "program-manager"
+    "facilitator:MDE_P2027"        → "facilitator"
     "student" (ou autre) → "student"
     """
-    for role in roles:
-        if role.startswith("admin"):
-            return "admin"
-        elif role.startswith("program_manager"):
-            return "program-manager"
-        else:
-            return "student"
+    role_names = {role.split(":", 1)[0] for role in roles}
+    if "admin" in role_names:
+        return "admin"
+    if "program_manager" in role_names:
+        return "program-manager"
+    if "facilitator" in role_names:
+        return "facilitator"
+    return "student"
 
 
 def parse_rprm_formations(role: str) -> list[str]:
@@ -357,6 +359,20 @@ def create_app():
         https_only=True,
         same_site="lax",
     )
+
+    @app.middleware("http")
+    async def redirect_errors(request: Request, call_next):
+        """Renvoie toute erreur vers l'accueil, qui choisit le dashboard."""
+        try:
+            response = await call_next(request)
+        except Exception:
+            if request.url.path != "/":
+                return RedirectResponse(url="/", status_code=303)
+            raise
+
+        if response.status_code >= 400 and request.url.path != "/":
+            return RedirectResponse(url="/", status_code=303)
+        return response
 
     # Routeur d'authentification (login/logout/callback Azure Entra ID)
     app.include_router(auth_router)
