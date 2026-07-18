@@ -12,4 +12,5 @@ python-multipart>=0.0.6  # Requis par FastAPI dans app.py (pour Form et UploadFi
 Jinja2>=3.1.2            # Requis par FastAPI dans app.py (pour Jinja2Templates)
 itsdangerous>=2.1.2      # Requis par Starlette dans app.py (pour SessionMiddleware)
 pandas>=2.0.0            # Utilisé pour l'agrégation des données et l'export CSV
-requests-cache           # Utiliser pour mettre en cache les requêtes LLM
+requests-cache           # Utilisé pour mettre en cache les requêtes LLM
+markdown-it-py           # Utilisé pour transformer le markdown du LLM en HTML

@@ -15,6 +15,7 @@ from models import (
     Section,
     Submission,
     Survey,
+    Summary,
 )
 
 
@@ -166,6 +167,8 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
 
         # END SURVEY AND PROGRAM
 
+        
+
         # FETCH ANSWERS
 
         data = {}
@@ -295,6 +298,23 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                     options_value,
                     submissions_sets,
                 )
+
+        # FETCH SUMMARY
+
+        summary_rows = session.exec(select(Summary,Section.name, Module.name).select_from(Summary)
+            .join(Module, Module.module_id == Summary.module_id, isouter=True)
+            .join(Question, Question.question_id == Summary.question_id)
+            .join(Section, Section.section_id == Question.section_id)
+            .where(Summary.http_status==200,Summary.survey_id==survey_id)).all()
+
+        for row in summary_rows:
+            summary,section_name,module_name=row
+            print(summary.module_id)
+            if summary.module_id:
+                q = data[section_name]["modules"][module_name]["teachers"][summary.teacher]["questions"][summary.question_id]
+            else:
+                q = data[section_name]["questions"][summary.question_id]
+            q["summary"]={"text":summary.summary_text,"metadata":summary.metadata_text}
 
     context["sections"] = data
     # END ANSWERS
