@@ -2164,7 +2164,7 @@ def create_app():
                 )
 
 
-            rows_to_insert = [{"survey_id":survey_id, "module_id":a[0], "teacher":a[1], "question_id":a[2], "prompt_id":prompt_id, "http_status":0, "summary_text":None} for a in answers]
+            rows_to_insert = [{"survey_id":survey_id, "module_id":a[0], "teacher":a[1], "question_id":a[2], "prompt_id":prompt_id, "http_status":0, "summary_text":None, "metadata_text":None} for a in answers]
             print(rows_to_insert)
 
             session.exec(insert(Summary),params=rows_to_insert)

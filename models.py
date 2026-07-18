@@ -341,5 +341,7 @@ class Summary(SQLModel, table=True):
 
     summary_text: Optional[str] = Field(sa_column=Column("summary_text", Text))
 
+    metadata_text: Optional[str] = Field(sa_column=Column("metadata_text", Text))
+
 
 
