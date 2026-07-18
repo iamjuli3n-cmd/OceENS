@@ -5,7 +5,7 @@ import requests_cache
 import json
 from datetime import datetime
 from markdown_it import MarkdownIt
-
+import time
 
 
 import sys, signal
@@ -68,7 +68,8 @@ if __name__ == "__main__":
 
             if not summary_row:
                 print("Pas de résumé à réaliser.")
-                exit(0)
+                time.sleep(30)
+                continue
             # print(summary_row)
 
         
