@@ -328,7 +328,7 @@
                                 {% elif question.question_type == 'Question_ouverte' %}
 
                                 {% if question["summary"] %}
-                                <div>{{question["summary"]["text"] | safe}}</div>
+                                <div class="verbatim-list" style="display:grid;">{{question["summary"]["text"] | safe}}</div>
                                 {% endif %}
                                 <div class="summary-grid">
                                     {% if question["summary"] %}

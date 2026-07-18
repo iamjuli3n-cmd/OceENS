@@ -65,9 +65,11 @@ if __name__ == "__main__":
     
         with Session(engine) as session:
             summary_row = session.exec(select(Summary).where(Summary.http_status==0)).first()
+            
 
             if not summary_row:
                 print("Pas de résumé à réaliser.")
+                session.commit()
                 time.sleep(30)
                 continue
             # print(summary_row)
