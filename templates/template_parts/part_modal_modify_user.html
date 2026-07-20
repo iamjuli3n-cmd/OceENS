@@ -213,7 +213,7 @@
         }
     }
 
-    .formation-tag-remove,.formation-facilitator-tag-remove{
+    .formation-tag-remove,.formation-facilitator-tag-remove,.campus-tag-remove{
         background: none;
         border: none;
         cursor: pointer;
@@ -225,7 +225,7 @@
         transition: opacity .2s;
     }
 
-    .formation-tag-remove:hover,.formation-facilitator-tag-remove:hover{
+    .formation-tag-remove:hover,.formation-facilitator-tag-remove:hover,.campus-tag-remove:hover{
         opacity: 1;
     }
 
@@ -307,6 +307,10 @@
                     <input type="checkbox" value="facilitator" id="role-option-facilitator" /> <label class="ro-name"
                         for="role-option-facilitator">Animateur</label>
                 </div>
+                <div class="role-option" data-role="campus_manager">
+                    <input type="checkbox" value="campus_manager" id="role-option-campus-manager" /> <label
+                        class="ro-name" for="role-option-campus-manager">Direction de campus</label>
+                </div>
             </div>
 
             <!-- Section formations RP-RM -->
@@ -346,6 +350,23 @@
                     <button class="btn-add-formation" id="btn-add-formation" onclick="addNewFacilitatorProgram()">Ajouter</button>
                 </div>
             </div>
+
+            <!-- Section campus Direction de campus -->
+            <div class="rprm-formations-section" id="campus-manager-campuses-section">
+                <div class="rprm-section-title">Campus associés à la direction</div>
+
+                <div class="formations-tags" id="campus-manager-campuses-tags"></div>
+
+                <div class="formations-select-row">
+                    <select class="formations-select" id="campus-manager-campuses-select">
+                        <option value="">-- Sélectionner un campus --</option>
+                        {% for campus in campuses %}
+                        <option value="{{ campus }}">{{ campus }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn-add-formation" type="button" onclick="addNewCampus()">Ajouter</button>
+                </div>
+            </div>
         </div>
 
         <div class="modal-usr-footer">
@@ -359,13 +380,19 @@
 
     function checkStudent() {
         console.log("CHECKSTUDENT");
-        document.getElementById("role-option-student").checked = !(document.getElementById("role-option-admin").checked || document.getElementById("role-option-program-manager").checked || document.getElementById("role-option-facilitator").checked)
+        document.getElementById("role-option-student").checked = !(
+            document.getElementById("role-option-admin").checked
+            || document.getElementById("role-option-program-manager").checked
+            || document.getElementById("role-option-facilitator").checked
+            || document.getElementById("role-option-campus-manager").checked
+        )
     }
 
 
 
     var selectedPrograms = []; // filières choisies pour le RP-RM en cours d'édition
     var selectedFacilitatorPrograms = []; // filières choisies pour l'animateur en cours d'édition
+    var selectedCampuses = []; // campus choisis pour la direction en cours d'édition
 
 
     // ── Ouvrir la modale ────────────────────────────
@@ -379,9 +406,14 @@
 
     editingUser = user;
 
+    selectedPrograms = [];
+    selectedFacilitatorPrograms = [];
+    selectedCampuses = [];
+
     document.getElementById("role-option-admin").checked = false;
     document.getElementById("role-option-program-manager").checked = false;
     document.getElementById("role-option-facilitator").checked = false;
+    document.getElementById("role-option-campus-manager").checked = false;
 
     user.roles.forEach(role => {
         if (role.startsWith("admin")) {
@@ -397,6 +429,17 @@
             if (role.includes(":"))
                 selectedFacilitatorPrograms.push(role.split(":")[1])
         }
+        if (role.startsWith("campus_manager")) {
+            document.getElementById("role-option-campus-manager").checked = true;
+            if (role.includes(":")) {
+                role.split(":", 2)[1].split(";").forEach(function (campus) {
+                    campus = campus.trim();
+                    if (campus && selectedCampuses.indexOf(campus) === -1) {
+                        selectedCampuses.push(campus);
+                    }
+                });
+            }
+        }
 
 
     })
@@ -406,6 +449,10 @@
     document.getElementById('modal-usr-subtitle').textContent = user.mail;
 
     renderProgramTags();
+    renderFacilitatorProgramTags();
+    renderCampusTags();
+    updateRoleSections();
+    checkStudent();
 
     // Réactiver le bouton save
     var btnSave = document.getElementById('btn-save');
@@ -428,6 +475,31 @@
     }
     function hideFacilitatorProgramSection() {
         document.getElementById('rprm-formations-facilitator-section').classList.remove('visible');
+    }
+    function showCampusSection() {
+        document.getElementById('campus-manager-campuses-section').classList.add('visible');
+    }
+    function hideCampusSection() {
+        document.getElementById('campus-manager-campuses-section').classList.remove('visible');
+    }
+    function updateRoleSections() {
+        if (document.getElementById('role-option-program-manager').checked) {
+            showProgramSection();
+        } else {
+            hideProgramSection();
+        }
+
+        if (document.getElementById('role-option-facilitator').checked) {
+            showFacilitatorProgramSection();
+        } else {
+            hideFacilitatorProgramSection();
+        }
+
+        if (document.getElementById('role-option-campus-manager').checked) {
+            showCampusSection();
+        } else {
+            hideCampusSection();
+        }
     }
 
     // ── Rendu des tags filières ──────────────────────
@@ -478,6 +550,32 @@
         });
     }
 
+    function renderCampusTags() {
+        var container = document.getElementById('campus-manager-campuses-tags');
+        if (selectedCampuses.length === 0) {
+            container.innerHTML = '<span class="formations-empty-hint">Aucun campus ajouté</span>';
+            return;
+        }
+
+        container.innerHTML = selectedCampuses.map(function (campus) {
+            return '<span class="formation-tag">'
+                + campus
+                + '<button class="campus-tag-remove" data-campus="' + campus + '" title="Retirer">×</button>'
+                + '</span>';
+        }).join('');
+
+        container.querySelectorAll('.campus-tag-remove').forEach(function (btn) {
+            btn.addEventListener('click', function (event) {
+                event.stopPropagation();
+                var campus = btn.dataset.campus;
+                selectedCampuses = selectedCampuses.filter(function (item) {
+                    return item !== campus;
+                });
+                renderCampusTags();
+            });
+        });
+    }
+
 
 
 
@@ -487,6 +585,7 @@
         editingUserId = null;
         selectedPrograms = [];
         selectedFacilitatorPrograms = [];
+        selectedCampuses = [];
     }
 
     function buildRoles() {
@@ -504,6 +603,11 @@
                 roles.add("facilitator:"+program)
             })
         }
+        if(document.getElementById("role-option-campus-manager").checked) {
+            selectedCampuses.forEach(campus => {
+                roles.add("campus_manager:"+campus)
+            })
+        }
         return Array.from(roles);
     }
 
@@ -515,6 +619,10 @@
         document.getElementById("role-option-admin").addEventListener("change", checkStudent);
         document.getElementById("role-option-program-manager").addEventListener("change", checkStudent);
         document.getElementById("role-option-facilitator").addEventListener("change", checkStudent);
+        document.getElementById("role-option-campus-manager").addEventListener("change", checkStudent);
+        document.getElementById("role-option-program-manager").addEventListener("change", updateRoleSections);
+        document.getElementById("role-option-facilitator").addEventListener("change", updateRoleSections);
+        document.getElementById("role-option-campus-manager").addEventListener("change", updateRoleSections);
         checkStudent();
 
         // ── Sélection du rôle dans la modale ────────────
@@ -524,18 +632,10 @@
                 opt.classList.add('selected');
                 editingUser["role"] = opt.dataset.role;
 
-                if (opt.dataset.role === 'program_manager') {
-                    showProgramSection();
-                    renderProgramTags();
-                } else {
-                    hideProgramSection();
-                }
-                if (opt.dataset.role === 'facilitator') {
-                    showFacilitatorProgramSection();
-                    renderFacilitatorProgramTags();
-                } else {
-                    hideFacilitatorProgramSection();
-                }
+                updateRoleSections();
+                renderProgramTags();
+                renderFacilitatorProgramTags();
+                renderCampusTags();
             });
         });
 
@@ -546,6 +646,13 @@
 
         if (!editingUser) return;
 
+        if (
+            document.getElementById("role-option-campus-manager").checked
+            && selectedCampuses.length === 0
+        ) {
+            showToast('Sélectionnez au moins un campus.', 'error');
+            return;
+        }
 
 
         // Construire le rôle final
@@ -603,6 +710,18 @@
          if (selectedFacilitatorPrograms.indexOf(val) === -1) {
             selectedFacilitatorPrograms.push(val);
             renderFacilitatorProgramTags();
+        }
+        select.value = '';
+    };
+
+    function addNewCampus() {
+        var select = document.getElementById('campus-manager-campuses-select');
+        var campus = select.value;
+        if (!campus) return;
+
+        if (selectedCampuses.indexOf(campus) === -1) {
+            selectedCampuses.push(campus);
+            renderCampusTags();
         }
         select.value = '';
     };

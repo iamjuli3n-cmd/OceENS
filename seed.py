@@ -62,6 +62,34 @@ SEEDED_SUBMISSIONS = [
 ]
 
 
+SEEDED_SURVEYS = [
+    {
+        "survey_id": 1,
+        "program": "MDAI5",
+        "campus": "Montpellier",
+        "answers_file": "seed_answers.csv",
+    },
+    {
+        "survey_id": 2,
+        "program": "MDAI4",
+        "campus": "Montpellier",
+        "answers_file": "seed_answers_survey_2.csv",
+    },
+    {
+        "survey_id": 3,
+        "program": "MIAN5",
+        "campus": "Saint-Nazaire",
+        "answers_file": "seed_answers_survey_3.csv",
+    },
+    {
+        "survey_id": 4,
+        "program": "MDID5",
+        "campus": "Troyes",
+        "answers_file": "seed_answers_survey_4.csv",
+    },
+]
+
+
 def seed_users(session: Session):
     """Remplit la table users."""
 
@@ -91,6 +119,7 @@ def seed_roles(session: Session):
         (1, "admin"),
         (1, "program_manager:MDAI5"),
         (6, "admin"),
+        (6, "campus_manager:Montpellier"),
         (7, "admin"),
         (8, "admin"),
     ]
@@ -491,17 +520,24 @@ def seed_programs(session: Session):
 
 def seed_surveys(session: Session):
     """Remplit la table surveys."""
-    survey_data = {
-        "template_id": 1,
-        "survey_id": 1,
-        "program": "MDAI5",
-        "semester": "Automne",
-        "status": 1,
-        "school_year": "2026-2027",
-        "password": None,
-    }
-    survey = Survey(**survey_data)
-    session.merge(survey)
+    for survey_data in SEEDED_SURVEYS:
+        program = session.get(Program, survey_data["program"])
+        if program is None or program.campus != survey_data["campus"]:
+            raise ValueError(
+                "Formation de seed absente ou campus incohérent : "
+                f"{survey_data['program']} / {survey_data['campus']}"
+            )
+
+        survey = Survey(
+            template_id=1,
+            survey_id=survey_data["survey_id"],
+            program=survey_data["program"],
+            semester="Automne",
+            status=1,
+            school_year="2026-2027",
+            password=None,
+        )
+        session.merge(survey)
     session.commit()
 
 
@@ -710,74 +746,79 @@ def seed_modules(session: Session):
         ),
     ]
 
-    for m_data in modules_data:
-        module = Module(
-            module_id=m_data[0],
-            name=m_data[1],
-            teacher=m_data[2],
-            ue=m_data[3],
-            is_optional=bool(m_data[4]),
-            one_teacher_in_list=bool(m_data[5]),
-            template_id=m_data[6],
-            survey_id=m_data[7],
-        )
-        session.merge(module)
+    for survey_data in SEEDED_SURVEYS:
+        module_offset = (survey_data["survey_id"] - 1) * len(modules_data)
+        for m_data in modules_data:
+            module = Module(
+                module_id=m_data[0] + module_offset,
+                name=m_data[1],
+                teacher=m_data[2],
+                ue=m_data[3],
+                is_optional=bool(m_data[4]),
+                one_teacher_in_list=bool(m_data[5]),
+                template_id=m_data[6],
+                survey_id=survey_data["survey_id"],
+            )
+            session.merge(module)
     session.commit()
 
 
 def seed_respondents(session: Session):
     """Remplit la table respondents."""
 
-    for _submission_id, user_id, created_at in SEEDED_SUBMISSIONS:
-        respondent = Respondent(
-            survey_id=1,
-            user_id=user_id,
-            submission_date=created_at,
-        )
-        session.merge(
-            respondent
-        )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
+    for survey_data in SEEDED_SURVEYS:
+        for _submission_id, user_id, created_at in SEEDED_SUBMISSIONS:
+            respondent = Respondent(
+                survey_id=survey_data["survey_id"],
+                user_id=user_id,
+                submission_date=created_at,
+            )
+            session.merge(respondent)
     session.commit()
 
 
 def seed_submissions(session: Session):
     """Remplit la table submissions."""
 
-    for submission_id, _user_id, created_at in SEEDED_SUBMISSIONS:
-        submission = Submission(
-            survey_id=1,
-            submission_id=submission_id,
-            created_at=created_at,
-        )
-        session.merge(
-            submission
-        )  # Utilisation de merge pour éviter les erreurs si l'ID existe déjà
+    submissions_per_survey = len(SEEDED_SUBMISSIONS)
+    for survey_data in SEEDED_SURVEYS:
+        submission_offset = (
+            survey_data["survey_id"] - 1
+        ) * submissions_per_survey
+        for submission_id, _user_id, created_at in SEEDED_SUBMISSIONS:
+            submission = Submission(
+                survey_id=survey_data["survey_id"],
+                submission_id=submission_id + submission_offset,
+                created_at=created_at,
+            )
+            session.merge(submission)
     session.commit()
 
 
 def seed_answers(session: Session):
     """Remplit la table answers."""
 
-    csv_path = Path("import/seed_answers.csv")
+    for survey_data in SEEDED_SURVEYS:
+        csv_path = Path("import") / survey_data["answers_file"]
 
-    if not csv_path.exists():
-        print("[SEED] import/seed_answers.csv introuvable.")
-        return
+        if not csv_path.exists():
+            print(f"[SEED] {csv_path} introuvable.")
+            continue
 
-    with csv_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
-        reader = csv.reader(csv_file, delimiter=";")
-        next(reader, None)  # skip the headers
-        for r_data in reader:
-            answer = Answer(
-                submission_id=int(r_data[0]),
-                question_id=int(r_data[1]),
-                module_id=int(r_data[2]) if r_data[2] else None,
-                teacher=r_data[3] or None,
-                option_id=int(r_data[4]) if r_data[4] else None,
-                value=r_data[5] or None,
-            )
+        with csv_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
+            reader = csv.reader(csv_file, delimiter=";")
+            next(reader, None)  # skip the headers
+            for r_data in reader:
+                answer = Answer(
+                    submission_id=int(r_data[0]),
+                    question_id=int(r_data[1]),
+                    module_id=int(r_data[2]) if r_data[2] else None,
+                    teacher=r_data[3] or None,
+                    option_id=int(r_data[4]) if r_data[4] else None,
+                    value=r_data[5] or None,
+                )
 
-            session.add(answer)
+                session.add(answer)
 
     session.commit()
 

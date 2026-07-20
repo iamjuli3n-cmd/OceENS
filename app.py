@@ -56,8 +56,14 @@ from services.visualisation_data import get_visualisation_context2
 
 load_dotenv()
 # ┌─ Configuration ────────────────────────────────────────────────────────┐
-# Les trois slugs de dashboard reconnus par l'application
-VALID_ROLES = {"admin", "student", "program_manager"}
+# Rôles reconnus par l'application, avec ou sans périmètre associé.
+VALID_ROLES = {
+    "admin",
+    "student",
+    "program_manager",
+    "facilitator",
+    "campus_manager",
+}
 
 DASHBOARD_NAVIGATION = (
     {
@@ -69,6 +75,11 @@ DASHBOARD_NAVIGATION = (
         "role": "program_manager",
         "slug": "program-manager",
         "label": "RP-RM",
+    },
+    {
+        "role": "campus_manager",
+        "slug": "campus-manager",
+        "label": "Direction de campus",
     },
     {
         "role": "admin",
@@ -96,8 +107,14 @@ def get_dashboard_navigation(
             "admin",
             "student",
         }
+        if "campus_manager" in role_names:
+            available_roles.add("campus_manager")
     else:
-        available_roles = role_names & {"facilitator", "program_manager"}
+        available_roles = role_names & {
+            "facilitator",
+            "program_manager",
+            "campus_manager",
+        }
 
     return [
         {
@@ -115,6 +132,8 @@ def get_student_dashboard_redirect(roles: list[str]) -> str | None:
     role_names = {role.split(":", 1)[0] for role in roles}
     if "admin" in role_names:
         return None
+    if "campus_manager" in role_names:
+        return "/dashboard/campus-manager"
     if "program_manager" in role_names:
         return "/dashboard/program-manager"
     if "facilitator" in role_names:
@@ -228,17 +247,86 @@ def role_to_dashboard_slug(roles: List[str]) -> str:
     "admin"              → "admin"
     "program_manager"              → "program-manager"
     "program_manager:MDE_P2027"    → "program-manager"
+    "campus_manager:Paris"         → "campus-manager"
     "facilitator:MDE_P2027"        → "facilitator"
     "student" (ou autre) → "student"
     """
     role_names = {role.split(":", 1)[0] for role in roles}
     if "admin" in role_names:
         return "admin"
+    if "campus_manager" in role_names:
+        return "campus-manager"
     if "program_manager" in role_names:
         return "program-manager"
     if "facilitator" in role_names:
         return "facilitator"
     return "student"
+
+
+def parse_role_scopes(role: str) -> list[str]:
+    """Extract the non-empty scopes stored after a role name."""
+    if not role or not isinstance(role, str) or ":" not in role:
+        return []
+
+    return [
+        scope.strip()
+        for scope in role.split(":", 1)[1].split(";")
+        if scope.strip()
+    ]
+
+
+def get_role_scopes(roles: list[str], role_name: str) -> list[str]:
+    """Return the distinct scopes associated with one role, in input order."""
+    scopes: list[str] = []
+    seen_scopes: set[str] = set()
+
+    for role in roles:
+        if not isinstance(role, str) or role.split(":", 1)[0] != role_name:
+            continue
+
+        for scope in parse_role_scopes(role):
+            if scope not in seen_scopes:
+                seen_scopes.add(scope)
+                scopes.append(scope)
+
+    return scopes
+
+
+def get_allowed_campuses(roles: list[str]) -> list[str]:
+    """Return the campuses assigned to a campus manager."""
+    return get_role_scopes(roles, "campus_manager")
+
+
+def get_program_codes_for_campuses(
+    session: Session, campuses: list[str]
+) -> list[str]:
+    """Resolve all program codes belonging to the provided campuses."""
+    if not campuses:
+        return []
+
+    return list(
+        session.exec(
+            select(Program.code)
+            .where(Program.campus.in_(campuses))
+            .order_by(Program.code)
+        ).all()
+    )
+
+
+def get_campus_manager_program_codes(
+    session: Session, roles: list[str]
+) -> list[str]:
+    """Resolve the programs accessible through campus manager roles."""
+    return get_program_codes_for_campuses(session, get_allowed_campuses(roles))
+
+
+def get_results_program_codes(
+    session: Session, roles: list[str]
+) -> list[str]:
+    """Resolve programs whose survey results can be viewed or exported."""
+    program_codes = get_role_scopes(roles, "program_manager")
+    program_codes.extend(get_campus_manager_program_codes(session, roles))
+    return list(dict.fromkeys(program_codes))
 
 
 def parse_rprm_formations(role: str) -> list[str]:
@@ -252,9 +340,7 @@ def parse_rprm_formations(role: str) -> list[str]:
     "admin:PROGRAM1;PROGRAM2" → ["PROGRAM1", "PROGRAM2"]
     "admin:PROGRAM1"            → ["PROGRAM1"]
     """
-    if not role or not isinstance(role, str) or ":" not in role:
-        return []
-    return [f.strip() for f in role.split(":")[1].split(";")]
+    return parse_role_scopes(role)
 
 
 # └────────────────────────────────────────────────────────────────────────┘
@@ -365,13 +451,14 @@ def require_roles(
         dict avec {"name", "email", "role"} si autorisé, None sinon
 
     Exemple :
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             return RedirectResponse(url="/")
+        user,roles = auth_result
     """
     user = get_current_user(request)
     if not user:
-        return None
+        return None,None
 
     # Get all roles (or student if None)
     roles_query = session.exec(
@@ -502,10 +589,11 @@ def create_app():
         duplicate_from: Optional[int] = None,
     ):
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             # Utilisateur non connecté ou rôle insuffisant → redirection
             return RedirectResponse(url="/")
+        user,roles = auth_result
 
         # Déterminer les formations autorisées pour un RP-RM
         allowed_programs = []
@@ -593,12 +681,13 @@ def create_app():
         Si l'import Excel échoue, le survey est annulé (ROLLBACK).
         """
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             return JSONResponse(
                 content={"error": "Accès refusé. Rôle Admin ou RP-RM requis."},
                 status_code=403,
             )
+        user,roles = auth_result
 
         # ── Sécurité : vérifier que la program est autorisée pour le RP-RM ──
         allowed_programs = []
@@ -1161,12 +1250,13 @@ def create_app():
         session: SessionDep,
         status: int = Form(...),
     ):
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             return JSONResponse(
                 content={"error": "Accès refusé."},
                 status_code=403,
             )
+        user,roles = auth_result
 
         if status not in (0, 1):
             return JSONResponse(
@@ -1214,11 +1304,12 @@ def create_app():
         session: Session,
     ):
         """Retourne le sondage si l'utilisateur peut gérer ses étudiants."""
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             return None, JSONResponse(
                 content={"error": "Accès refusé."}, status_code=403
             )
+        user,roles = auth_result
 
         survey = session.exec(
             select(Survey).where(Survey.survey_id == survey_id)
@@ -1437,12 +1528,13 @@ def create_app():
         request: Request,
         session: SessionDep,
     ):
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             return JSONResponse(
                 content={"error": "Accès refusé."},
                 status_code=403,
             )
+        user,roles = auth_result
 
         survey = session.exec(
             select(Survey).where(Survey.survey_id == survey_id)
@@ -1679,6 +1771,101 @@ def create_app():
             context=context,
         )
 
+    @dashboard_router.get("/campus-manager", response_class=HTMLResponse)
+    async def campus_manager_dashboard(request: Request, session: SessionDep):
+        user = get_current_user(request)
+        if not user:
+            return RedirectResponse(url="/")
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if not check_role(roles, ["campus_manager"]):
+            return RedirectResponse(url="/")
+
+        allowed_campuses = get_allowed_campuses(roles)
+        program_codes = get_campus_manager_program_codes(session, roles)
+        db_programs = session.exec(
+            select(Program).where(Program.code.in_(program_codes))
+        ).all()
+        program_name_by_code = {
+            program.code: program.name for program in db_programs
+        }
+
+        rows = session.exec(
+            select(
+                Survey.survey_id,
+                Survey.program,
+                Program.campus,
+                Survey.semester,
+                Survey.school_year,
+                Survey.status,
+                func.count(Respondent.user_id).label("respondents_count"),
+                func.count(Respondent.submission_date).label("answers_count"),
+            )
+            .join(Program, Program.code == Survey.program, isouter=True)
+            .join(Respondent, Survey.survey_id == Respondent.survey_id, isouter=True)
+            .where(Survey.program.in_(program_codes))
+            .group_by(Survey.survey_id)
+            .order_by(Survey.survey_id.desc())
+        ).all()
+
+        survey_ids = [row[0] for row in rows]
+        submissions_count = {}
+        if survey_ids:
+            submissions_rows = session.exec(
+                select(
+                    Submission.survey_id,
+                    func.count(Submission.submission_id).label("submissions_count"),
+                )
+                .where(Submission.survey_id.in_(survey_ids))
+                .group_by(Submission.survey_id)
+            ).all()
+            submissions_count = {row[0]: row[1] for row in submissions_rows}
+
+        surveys = [
+            {
+                "survey_id": row[0],
+                "program": row[1],
+                "program_name": program_name_by_code.get(row[1], row[1]),
+                "campus": row[2],
+                "semester": row[3],
+                "school_year": row[4],
+                "is_closed": (row[5] != 1),
+                "is_generating": (row[5] == 2),
+                "respondents_count": row[6],
+                "answers_count": row[7],
+                "submissions_count": submissions_count.get(row[0], 0),
+            }
+            for row in rows
+        ]
+
+        context = {
+            "user": user,
+            "surveys": surveys,
+            "allowed_campuses": allowed_campuses,
+            "can_view_survey_students": False,
+            "can_delete_survey": False,
+            "can_update_survey_status": False,
+            "can_duplicate_survey": False,
+            "can_generate_summaries": False,
+            "can_view_visualisation": True,
+            "can_export_survey": True,
+            "dashboard_navigation": get_dashboard_navigation(
+                roles, "campus-manager"
+            ),
+        }
+
+        return templates.TemplateResponse(
+            request=request,
+            name="dashboard/campus_manager.html",
+            context=context,
+        )
+
     @dashboard_router.get("/facilitator", response_class=HTMLResponse)
     async def facilitator_dashboard(request: Request, session: SessionDep):
         user = get_current_user(request)
@@ -1870,6 +2057,7 @@ def create_app():
         programs = [
             {"code": p.code, "name": p.name, "campus": p.campus} for p in db_programs
         ]
+        campuses = sorted({p.campus for p in db_programs if p.campus})
 
         program_name_by_code = {p.code: {"name":p.name,"campus":p.campus}  for p in db_programs}
 
@@ -1941,6 +2129,7 @@ def create_app():
             "user": user,
             "surveys": surveys,
             "programs": programs,
+            "campuses": campuses,
             "users": users,
             "can_view_survey_students": True,
             "can_delete_survey": True,
@@ -1961,22 +2150,37 @@ def create_app():
 
     # ┌─ API : Gestion des rôles utilisateurs (accès restreint Admin) ────┐
     def _is_valid_role(roles: List[str]) -> bool:
-        return check_role(roles, ["student", "program_manager", "admin", "facilitator"])
+        return check_role(roles, list(VALID_ROLES))
+
+    def _has_valid_campus_scope(
+        role: str, valid_campuses: set[str]
+    ) -> bool:
+        if role.split(":", 1)[0] != "campus_manager":
+            return True
+
+        role_campuses = parse_role_scopes(role)
+        return bool(role_campuses) and set(role_campuses) <= valid_campuses
 
     @api_router.put("/users/{user_id}/role")
     def update_user_role(
         request: Request, user_id: int, body: RoleUpdate, session: SessionDep
     ):
         # ── Sécurité : seul un Admin peut modifier les rôles ──
-        admin,roles = require_roles(request, session, ["admin"])
-        if admin is None:
+        auth_result = require_roles(request, session, ["admin"])
+        if auth_result is None:
             return JSONResponse(
                 content={"error": "Accès refusé. Rôle Admin requis."},
                 status_code=403,
             )
+        admin,roles = auth_result
 
+        valid_campuses = set(
+            session.exec(select(Program.campus).distinct()).all()
+        )
         for role in body.roles:
-            if not _is_valid_role([role]):
+            if not _is_valid_role([role]) or not _has_valid_campus_scope(
+                role, valid_campuses
+            ):
                 return JSONResponse(
                     content={"detail": f"Rôle invalide : '{role}'"},
                     status_code=422,
@@ -2054,17 +2258,16 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/export")
     def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(
+            request,
+            session,
+            ["admin", "program_manager", "campus_manager"],
+        )
+        if auth_result is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
+        user,roles = auth_result
 
-        if not check_role(roles, ["program_manager", "admin"]):
-            return RedirectResponse(url="/")
-
-        allowed_programs = []
-        for role in roles:
-            if role.startswith("program_manager"):
-                allowed_programs.extend(parse_rprm_formations(role))
+        allowed_programs = get_results_program_codes(session, roles)
 
         survey, error_or_warning, _, _ = _check_sondage_access_and_status(
             session, survey_id, roles, allowed_programs
@@ -2086,17 +2289,16 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
     def visualisation_page(request: Request, survey_id: int, session: SessionDep):
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(
+            request,
+            session,
+            ["admin", "program_manager", "campus_manager"],
+        )
+        if auth_result is None:
             return RedirectResponse(url="/")
+        user,roles = auth_result
 
-        if not check_role(roles, ["program_manager", "admin"]):
-            return RedirectResponse(url="/")
-
-        allowed_programs = []
-        for role in roles:
-            if role.startswith("program_manager"):
-                allowed_programs.extend(parse_rprm_formations(role))
+        allowed_programs = get_results_program_codes(session, roles)
 
         survey, error_or_warning, respondents_count, answers_count = (
             _check_sondage_access_and_status(
@@ -2124,9 +2326,12 @@ def create_app():
 
     @api_router.post("/surveys/{survey_id}/generate-summaries")
     def generate_summaries(request: Request, survey_id: int, request_data: SummaryRequest, session: SessionDep):
-        user,roles = require_roles(request, session, ["admin", "program_manager", "facilitator"])
-        if user is None:
+        auth_result = require_roles(
+            request, session, ["admin", "program_manager", "facilitator"]
+        )
+        if auth_result is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
+        user,roles = auth_result
 
         allowed_programs = []
         for role in roles:
@@ -2193,9 +2398,12 @@ def create_app():
     @api_router.post("/surveys/{survey_id}/destroy-summaries")
     def destroy_summaries(request: Request, survey_id: int, session: SessionDep):
         
-        user,roles = require_roles(request, session, ["admin", "program_manager", "facilitator"])
-        if user is None:
+        auth_result = require_roles(
+            request, session, ["admin", "program_manager", "facilitator"]
+        )
+        if auth_result is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
+        user,roles = auth_result
 
         allowed_programs = []
         for role in roles:

@@ -1,0 +1,1847 @@
+﻿submission_id;question_id;module_id;teacher;option_id;answer_value
+41;1;;;1;
+42;1;;;1;
+43;1;;;1;
+44;1;;;3;
+45;1;;;6;
+46;1;;;6;
+45;2;;;10;
+46;2;;;7;
+46;2;;;10;
+46;2;;;13;
+45;3;;;;pas assez dasso
+46;3;;;;nullll
+45;4;;;;La vie associative permet de rencontrer d’autres étudiants et de créer une bonne ambiance sur le campus.
+46;4;;;;L’ambiance entre les étudiants reste conviviale et certains espaces du campus sont agréables.
+42;5;;;;L’ambiance sur le campus est agréable et les échanges entre étudiants sont faciles.
+44;5;;;;Très belle école
+42;6;;;14;
+43;6;;;14;
+44;6;;;16;
+45;6;;;19;
+41;6;;;14;
+46;6;;;19;
+45;7;;;21;
+46;7;;;20;
+46;7;;;22;
+46;7;;;23;
+45;8;;;;Le module manque de clarté dans l’organisation. Les notions abordées sont intéressantes, mais les explications restent parfois trop rapides et les consignes ne sont pas toujours assez précises.
+46;8;;;;les pofs sont nuuuuuls
+45;9;;;;Les sujets abordés sont utiles pour construire un profil polyvalent en data et en intelligence artificielle.
+46;9;;;;Les travaux pratiques permettent d’appliquer concrètement plusieurs notions vues en cours.
+42;10;;;;so far so good
+44;10;;;;Cursus assez complet
+41;11;42;Xavier C.;24;
+42;11;42;Xavier C.;25;
+43;11;42;Xavier C.;24;
+44;11;42;Xavier C.;24;
+45;11;42;Xavier C.;24;
+41;12;42;Xavier C.;26;
+43;12;42;Xavier C.;26;
+44;12;42;Xavier C.;28;
+45;12;42;Xavier C.;31;
+45;13;42;Xavier C.;32;
+46;13;42;Xavier C.;32;
+46;13;42;Xavier C.;36;
+46;13;42;Xavier C.;39;
+45;14;42;Xavier C.;;Beaucoup trop de charge de tavaille.
+46;14;42;Xavier C.;;Je suis globalement déçu par ce cours. Je n’ai pas eu l’impression de progresser malgré le temps passé dessus.
+45;15;42;Xavier C.;;Les exercices d’automatisation étaient intéressants et directement applicables.
+44;16;42;Xavier C.;;Je suis très satisfait de la qualité des enseignements. Les professeurs sont disponibles, pédagogues et prennent le temps de répondre aux questions. Cela aide beaucoup à progresser.
+41;11;43;Xavier C.;24;
+42;11;43;Xavier C.;25;
+43;11;43;Xavier C.;24;
+44;11;43;Xavier C.;24;
+45;11;43;Xavier C.;24;
+41;12;43;Xavier C.;26;
+43;12;43;Xavier C.;26;
+44;12;43;Xavier C.;28;
+45;12;43;Xavier C.;31;
+45;13;43;Xavier C.;34;
+45;13;43;Xavier C.;36;
+46;13;43;Xavier C.;32;
+46;13;43;Xavier C.;35;
+46;13;43;Xavier C.;39;
+45;14;43;Xavier C.;;Les notions sont importantes, mais elles ne sont pas toujours suffisamment expliquées.
+46;14;43;Xavier C.;;Le cours manque clairement de structure. On passe d’un sujet à l’autre sans vraie logique, ce qui rend la compréhension très difficile.
+45;15;43;Xavier C.;;Les cas d’usage abordés ont montré l’intérêt des architectures de services complexes.
+46;15;43;Xavier C.;;Le module présente des problématiques techniques utiles pour comprendre les échanges entre services.
+44;16;43;Xavier C.;;Les cours sont bien organisés et les enseignants maîtrisent très bien leurs sujets. Les supports sont utiles et les notions importantes sont bien expliquées.
+41;11;41;Théo B.;24;
+42;11;41;Théo B.;25;
+43;11;41;Théo B.;24;
+44;11;41;Théo B.;24;
+45;11;41;Théo B.;24;
+41;12;41;Théo B.;26;
+43;12;41;Théo B.;26;
+44;12;41;Théo B.;28;
+45;12;41;Théo B.;31;
+45;13;41;Théo B.;34;
+46;13;41;Théo B.;32;
+46;13;41;Théo B.;35;
+46;13;41;Théo B.;39;
+45;14;41;Théo B.;;Le module manque de clarté dans l’organisation. Les notions abordées sont intéressantes, mais les explications restent parfois trop rapides et les consignes ne sont pas toujours assez précises.
+46;14;41;Théo B.;;boffff
+45;15;41;Théo B.;;Les démonstrations pratiques ont permis de découvrir concrètement les principaux services cloud.
+44;16;41;Théo B.;;Les enseignants sont très investis et savent rendre les cours intéressants. Les explications sont claires, les exemples sont pertinents et l’ambiance en cours donne envie de participer.
+41;11;46;Enzo F.;24;
+42;11;46;Enzo F.;25;
+43;11;46;Enzo F.;24;
+44;11;46;Enzo F.;24;
+45;11;46;Enzo F.;24;
+41;12;46;Enzo F.;26;
+43;12;46;Enzo F.;26;
+44;12;46;Enzo F.;28;
+45;12;46;Enzo F.;31;
+45;13;46;Enzo F.;32;
+45;13;46;Enzo F.;36;
+45;13;46;Enzo F.;38;
+46;13;46;Enzo F.;32;
+46;13;46;Enzo F.;35;
+46;13;46;Enzo F.;39;
+45;14;46;Enzo F.;;Le sujet est actuel et motivant, mais le module pourrait être mieux cadré.
+46;14;46;Enzo F.;;Le cours manque d’interaction. On a surtout l’impression d’écouter passivement sans être vraiment impliqués.
+45;15;46;Enzo F.;;Les mises en pratique autour des LLM sont actuelles et particulièrement intéressantes.
+46;15;46;Enzo F.;;Les outils présentés donnent un bon aperçu des possibilités offertes par l’intelligence artificielle générative.
+44;16;46;Enzo F.;;Les enseignants sont très investis et savent rendre les cours intéressants. Les explications sont claires, les exemples sont pertinents et l’ambiance en cours donne envie de participer.
+41;11;44;Thalita D.;24;
+42;11;44;Thalita D.;25;
+43;11;44;Thalita D.;24;
+44;11;44;Thalita D.;24;
+45;11;44;Thalita D.;24;
+41;12;44;Thalita D.;26;
+43;12;44;Thalita D.;26;
+44;12;44;Thalita D.;28;
+45;12;44;Thalita D.;31;
+45;13;44;Thalita D.;33;
+45;13;44;Thalita D.;36;
+45;13;44;Thalita D.;38;
+46;13;44;Thalita D.;32;
+46;13;44;Thalita D.;35;
+46;13;44;Thalita D.;39;
+45;14;44;Thalita D.;;Le module est dense et le rythme est parfois trop rapide. Certaines notions complexes mériteraient d’être reprises plus progressivement avec plus d’exercices guidés.
+46;14;44;Thalita D.;;Le rythme du cours est mal adapté. Certaines notions importantes sont survolées alors que d’autres moins utiles prennent beaucoup trop de temps.
+45;15;44;Thalita D.;;Les sujets étudiés sont stimulants et les exemples donnent envie d’approfondir le machine learning.
+46;15;44;Thalita D.;;La découverte des réseaux de neurones apporte des connaissances utiles pour de futurs projets.
+44;16;44;Thalita D.;;J’ai beaucoup apprécié l’implication des professeurs. Ils rendent les séances dynamiques et accessibles, même lorsque les notions sont complexes.
+41;11;45;Maksim K.;24;
+42;11;45;Maksim K.;25;
+43;11;45;Maksim K.;24;
+44;11;45;Maksim K.;24;
+45;11;45;Maksim K.;24;
+41;12;45;Maksim K.;26;
+43;12;45;Maksim K.;26;
+44;12;45;Maksim K.;28;
+45;12;45;Maksim K.;31;
+45;13;45;Maksim K.;33;
+45;13;45;Maksim K.;36;
+45;13;45;Maksim K.;38;
+46;13;45;Maksim K.;32;
+46;13;45;Maksim K.;35;
+46;13;45;Maksim K.;39;
+45;14;45;Maksim K.;;Le cours manque parfois de pédagogie et d’exemples pratiques.
+46;14;45;Maksim K.;;Je suis globalement déçu par ce cours. Je n’ai pas eu l’impression de progresser malgré le temps passé dessus.
+45;15;45;Maksim K.;;Les applications concrètes du traitement du langage sont motivantes et utiles pour la suite.
+46;15;45;Maksim K.;;Le module permet de découvrir plusieurs usages actuels du traitement automatique du langage.
+44;16;45;Maksim K.;;Les enseignants sont motivants et à l’écoute. On sent qu’ils cherchent vraiment à nous accompagner et à nous faire comprendre les concepts en profondeur.
+41;11;49;Issame B.;24;
+42;11;49;Issame B.;25;
+43;11;49;Issame B.;24;
+44;11;49;Issame B.;24;
+45;11;49;Issame B.;24;
+41;12;49;Issame B.;26;
+43;12;49;Issame B.;26;
+44;12;49;Issame B.;28;
+45;12;49;Issame B.;31;
+45;13;49;Issame B.;35;
+45;13;49;Issame B.;39;
+46;13;49;Issame B.;32;
+46;13;49;Issame B.;34;
+46;13;49;Issame B.;39;
+45;14;49;Issame B.;;Le module manque parfois de fil conducteur.
+46;14;49;Issame B.;;Les objectifs du cours ne sont pas assez clairs. On ne comprend pas toujours pourquoi on étudie certaines notions.
+45;15;49;Issame B.;;La démarche d’expérimentation donne des outils concrets pour prendre des décisions fondées sur les données.
+46;15;49;Issame B.;;Les méthodes présentées sont utiles pour mesurer objectivement l’impact d’une expérimentation.
+44;16;49;Issame B.;;Les enseignants sont motivants et à l’écoute. On sent qu’ils cherchent vraiment à nous accompagner et à nous faire comprendre les concepts en profondeur.
+41;11;48;Florian L.;24;
+42;11;48;Florian L.;25;
+43;11;48;Florian L.;24;
+44;11;48;Florian L.;24;
+45;11;48;Florian L.;24;
+41;12;48;Florian L.;26;
+43;12;48;Florian L.;26;
+44;12;48;Florian L.;28;
+45;12;48;Florian L.;31;
+45;13;48;Florian L.;32;
+45;13;48;Florian L.;36;
+46;13;48;Florian L.;32;
+46;13;48;Florian L.;35;
+46;13;48;Florian L.;39;
+45;14;48;Florian L.;;Le contenu est pertinent, mais le cours pourrait être plus dynamique.
+46;14;48;Florian L.;;Les séances sont souvent longues et peu engageantes. Il est difficile de rester concentré jusqu’au bout.
+45;15;48;Florian L.;;Les sujets de sécurité et de protection des données sont essentiels et directement utiles.
+46;15;48;Florian L.;;Les exemples de risques informatiques sensibilisent efficacement aux bonnes pratiques de sécurité.
+44;16;48;Florian L.;;J’ai beaucoup apprécié l’implication des professeurs. Ils rendent les séances dynamiques et accessibles, même lorsque les notions sont complexes.
+41;11;47;Cédrine M.;24;
+42;11;47;Cédrine M.;25;
+43;11;47;Cédrine M.;24;
+44;11;47;Cédrine M.;24;
+45;11;47;Cédrine M.;24;
+41;12;47;Cédrine M.;26;
+43;12;47;Cédrine M.;26;
+44;12;47;Cédrine M.;28;
+45;12;47;Cédrine M.;31;
+45;13;47;Cédrine M.;32;
+45;13;47;Cédrine M.;35;
+45;13;47;Cédrine M.;38;
+46;13;47;Cédrine M.;32;
+46;13;47;Cédrine M.;35;
+46;13;47;Cédrine M.;39;
+45;14;47;Cédrine M.;;Le module semble important, mais il est parfois trop théorique.
+46;14;47;Cédrine M.;;Je trouve que le contenu du cours n’est pas assez bien organisé. Il est difficile de savoir ce qui est vraiment important à retenir.
+45;15;47;Cédrine M.;;Les notions de qualité et de gouvernance des données sont utiles pour comprendre les enjeux en entreprise.
+46;15;47;Cédrine M.;;Le module montre clairement pourquoi des données fiables sont indispensables à un projet.
+44;16;47;Cédrine M.;;Je suis très satisfait de la qualité des enseignements. Les professeurs sont disponibles, pédagogues et prennent le temps de répondre aux questions. Cela aide beaucoup à progresser.
+41;11;47;Daniel B.;24;
+42;11;47;Daniel B.;25;
+43;11;47;Daniel B.;24;
+44;11;47;Daniel B.;24;
+45;11;47;Daniel B.;24;
+41;12;47;Daniel B.;26;
+43;12;47;Daniel B.;26;
+44;12;47;Daniel B.;28;
+45;12;47;Daniel B.;31;
+45;13;47;Daniel B.;32;
+45;13;47;Daniel B.;34;
+45;13;47;Daniel B.;38;
+46;13;47;Daniel B.;32;
+46;13;47;Daniel B.;36;
+46;13;47;Daniel B.;39;
+45;14;47;Daniel B.;;Le module semble important, mais il est parfois trop théorique.
+46;14;47;Daniel B.;;Le cours manque d’exemples pratiques. Sans application concrète, les notions restent abstraites et difficiles à assimiler.
+45;15;47;Daniel B.;;Les exemples permettent de mesurer l’importance d’une stratégie de données fiable.
+46;15;47;Daniel B.;;Les concepts abordés donnent de bons repères pour organiser la gouvernance des données.
+44;16;47;Daniel B.;;Les cours sont bien organisés et les enseignants maîtrisent très bien leurs sujets. Les supports sont utiles et les notions importantes sont bien expliquées.
+41;11;51;Hannah G.;24;
+42;11;51;Hannah G.;25;
+43;11;51;Hannah G.;24;
+44;11;51;Hannah G.;24;
+45;11;51;Hannah G.;24;
+41;12;51;Hannah G.;26;
+43;12;51;Hannah G.;26;
+44;12;51;Hannah G.;28;
+45;12;51;Hannah G.;31;
+45;13;51;Hannah G.;32;
+45;13;51;Hannah G.;38;
+46;13;51;Hannah G.;32;
+46;13;51;Hannah G.;35;
+46;13;51;Hannah G.;39;
+45;14;51;Hannah G.;;Le contenu juridique est utile, mais il est difficile à suivre sans synthèse claire.
+46;14;51;Hannah G.;;Le cours est trop théorique et pas assez appliqué. Pour apprendre efficacement, il faudrait davantage de pratique guidée.
+45;15;51;Hannah G.;;Le cours permet de mieux comprendre les obligations juridiques liées aux données.
+46;15;51;Hannah G.;;Les notions abordées sensibilisent aux responsabilités légales des futurs professionnels de la data.
+44;16;51;Hannah G.;;Ce cours de qui contient le droits daccès aux donnée RGPD est intéressant.
+41;11;51;Joey B. F.;24;
+42;11;51;Joey B. F.;25;
+43;11;51;Joey B. F.;24;
+44;11;51;Joey B. F.;24;
+45;11;51;Joey B. F.;24;
+41;12;51;Joey B. F.;27;
+43;12;51;Joey B. F.;26;
+44;12;51;Joey B. F.;28;
+45;12;51;Joey B. F.;31;
+45;13;51;Joey B. F.;32;
+45;13;51;Joey B. F.;39;
+46;13;51;Joey B. F.;32;
+46;13;51;Joey B. F.;35;
+46;13;51;Joey B. F.;39;
+45;14;51;Joey B. F.;;Le contenu juridique est utile, mais il est difficile à suivre sans synthèse claire.
+46;14;51;Joey B. F.;;Les supports ne sont pas suffisants pour travailler en autonomie. Il manque des exemples, des corrections et des explications détaillées.
+45;15;51;Joey B. F.;;Les notions de RGPD abordées sont importantes pour les futurs projets professionnels.
+46;15;51;Joey B. F.;;Le module donne des repères utiles pour manipuler des données personnelles de manière responsable.
+44;16;51;Joey B. F.;;Ce cours de qui contient le droits daccés aux donnée RGPD est intéressant
+41;11;51;Robert R.;24;
+42;11;51;Robert R.;25;
+43;11;51;Robert R.;24;
+44;11;51;Robert R.;24;
+45;11;51;Robert R.;24;
+41;12;51;Robert R.;26;
+43;12;51;Robert R.;26;
+44;12;51;Robert R.;28;
+45;12;51;Robert R.;31;
+45;13;51;Robert R.;32;
+45;13;51;Robert R.;37;
+46;13;51;Robert R.;32;
+46;13;51;Robert R.;39;
+45;14;51;Robert R.;;Le contenu juridique est utile, mais il est difficile à suivre sans synthèse claire.
+46;14;51;Robert R.;;Le cours manque de lien avec des cas réels. Il est difficile de voir l’intérêt concret de ce qui est enseigné.
+45;15;51;Robert R.;;Les exemples juridiques montrent concrètement les responsabilités liées au traitement des données.
+46;15;51;Robert R.;;Les thèmes étudiés sont directement applicables aux projets utilisant des données personnelles.
+44;16;51;Robert R.;;Ce cours de qui contient le droits daccès aux donnée RGPD est intéressant.
+41;11;50;Ikram C.;24;
+42;11;50;Ikram C.;25;
+43;11;50;Ikram C.;24;
+44;11;50;Ikram C.;24;
+45;11;50;Ikram C.;24;
+41;12;50;Ikram C.;26;
+43;12;50;Ikram C.;26;
+44;12;50;Ikram C.;28;
+45;12;50;Ikram C.;31;
+45;13;50;Ikram C.;32;
+45;13;50;Ikram C.;38;
+46;13;50;Ikram C.;32;
+46;13;50;Ikram C.;36;
+46;13;50;Ikram C.;39;
+45;14;50;Ikram C.;;Le sujet est important, mais le cours reste parfois trop général.
+46;14;50;Ikram C.;;Les corrections d’exercices ne sont pas assez détaillées. On ne comprend pas toujours nos erreurs ni comment s’améliorer.
+45;15;50;Ikram C.;;Les débats éthiques poussent à prendre du recul sur les usages de la data et de l’IA.
+46;15;50;Ikram C.;;Le module aide à identifier les conséquences humaines et sociales des décisions algorithmiques.
+44;16;50;Ikram C.;;Lenseignante est très investie et sait rendre les cours intéressants. Les explications sont claires, les exemples sont pertinents et l’ambiance en cours donne envie de participer. Le cours mintéresse bien pour plus tard
+41;11;52;Sonia T.;24;
+42;11;52;Sonia T.;25;
+43;11;52;Sonia T.;24;
+44;11;52;Sonia T.;24;
+45;11;52;Sonia T.;24;
+41;12;52;Sonia T.;26;
+43;12;52;Sonia T.;26;
+44;12;52;Sonia T.;28;
+45;12;52;Sonia T.;30;
+45;13;52;Sonia T.;32;
+45;13;52;Sonia T.;38;
+46;13;52;Sonia T.;32;
+46;13;52;Sonia T.;36;
+46;13;52;Sonia T.;39;
+45;14;52;Sonia T.;;Le thème est intéressant, mais le cours donne parfois l’impression de rester en surface.
+46;14;52;Sonia T.;;Les séances manquent de cohérence entre elles. On a parfois l’impression que les chapitres ne sont pas vraiment reliés.
+45;15;52;Sonia T.;;Le module sensibilise utilement à l’impact environnemental du numérique.
+44;16;52;Sonia T.;;Ce cours qui évoque notament la notion de green IT et de réfléchir à notre planète est intéressant.
+41;11;52;Sylvie M.;24;
+42;11;52;Sylvie M.;25;
+43;11;52;Sylvie M.;24;
+44;11;52;Sylvie M.;24;
+45;11;52;Sylvie M.;24;
+41;12;52;Sylvie M.;26;
+43;12;52;Sylvie M.;26;
+44;12;52;Sylvie M.;28;
+45;12;52;Sylvie M.;31;
+45;13;52;Sylvie M.;32;
+45;13;52;Sylvie M.;35;
+46;13;52;Sylvie M.;32;
+46;13;52;Sylvie M.;34;
+46;13;52;Sylvie M.;39;
+45;14;52;Sylvie M.;;Il faudrait davantage de liens avec les métiers de la data et de l’IA.
+46;14;52;Sylvie M.;;Le cours pourrait être intéressant, mais la manière de l’enseigner le rend difficile à suivre et peu motivant.
+45;15;52;Sylvie M.;;Les thèmes abordés encouragent à intégrer des pratiques plus responsables dans nos projets.
+44;16;52;Sylvie M.;;Ce cours qui évoque notament la notion de green IT et de réfléchir à notre planète est intéressant.
+41;11;53;Valentin B.;24;
+42;11;53;Valentin B.;25;
+43;11;53;Valentin B.;24;
+44;11;53;Valentin B.;24;
+45;11;53;Valentin B.;24;
+41;12;53;Valentin B.;26;
+43;12;53;Valentin B.;26;
+44;12;53;Valentin B.;28;
+45;12;53;Valentin B.;31;
+45;13;53;Valentin B.;32;
+45;13;53;Valentin B.;35;
+45;13;53;Valentin B.;38;
+46;13;53;Valentin B.;32;
+46;13;53;Valentin B.;34;
+46;13;53;Valentin B.;39;
+45;14;53;Valentin B.;;Le module est original, mais les objectifs ne sont pas toujours évidents.
+46;14;53;Valentin B.;;Les exercices proposés ne préparent pas assez bien aux évaluations. Il y a un décalage entre l’entraînement et ce qui est demandé ensuite.
+45;15;53;Valentin B.;;Le module invite à questionner les limites des modèles et apporte un recul intéressant.
+44;16;53;Valentin B.;;merci pour ce cours jai appris beaucoup de choses
+41;11;56;Domenico M.;24;
+42;11;56;Domenico M.;25;
+43;11;56;Domenico M.;24;
+44;11;56;Domenico M.;24;
+45;11;56;Domenico M.;24;
+41;12;56;Domenico M.;27;
+43;12;56;Domenico M.;26;
+44;12;56;Domenico M.;28;
+45;12;56;Domenico M.;31;
+45;13;56;Domenico M.;32;
+45;13;56;Domenico M.;36;
+45;13;56;Domenico M.;39;
+46;13;56;Domenico M.;32;
+46;13;56;Domenico M.;37;
+45;14;56;Domenico M.;;Le module est complexe et manque parfois d’accompagnement.
+46;14;56;Domenico M.;;Globalement, je suis insatisfait de ce cours. Il manque de clarté, d’organisation et d’exemples concrets pour permettre une bonne compréhension.
+45;15;56;Domenico M.;;La découverte des graphes et de leurs applications en machine learning est particulièrement intéressante.
+44;16;56;Domenico M.;;Trop passioné par ce cours moi qui veut crée mon propre facebook
+41;11;55;Guillaume D.;24;
+42;11;55;Guillaume D.;25;
+43;11;55;Guillaume D.;24;
+44;11;55;Guillaume D.;24;
+45;11;55;Guillaume D.;24;
+41;12;55;Guillaume D.;27;
+43;12;55;Guillaume D.;26;
+44;12;55;Guillaume D.;28;
+45;12;55;Guillaume D.;31;
+45;13;55;Guillaume D.;32;
+45;13;55;Guillaume D.;33;
+45;13;55;Guillaume D.;39;
+46;13;55;Guillaume D.;32;
+46;13;55;Guillaume D.;38;
+46;13;55;Guillaume D.;39;
+45;14;55;Guillaume D.;;Le sujet est très utile, mais le cours pourrait être mieux structuré.
+46;14;55;Guillaume D.;;Le contenu est présenté de manière trop confuse. Même en étant attentif, il est difficile de suivre le raisonnement.
+45;15;55;Guillaume D.;;Le passage du prototype à la production apporte une vision très concrète du cycle de vie d’un projet.
+44;16;55;Guillaume D.;;jadore codé ce cours est incroyable.
+41;11;57;Abelle C.;24;
+42;11;57;Abelle C.;25;
+43;11;57;Abelle C.;24;
+44;11;57;Abelle C.;24;
+45;11;57;Abelle C.;24;
+41;12;57;Abelle C.;27;
+43;12;57;Abelle C.;26;
+44;12;57;Abelle C.;28;
+45;12;57;Abelle C.;31;
+45;13;57;Abelle C.;33;
+45;13;57;Abelle C.;38;
+46;13;57;Abelle C.;35;
+46;13;57;Abelle C.;39;
+45;14;57;Abelle C.;;Le module est intéressant, mais parfois difficile à suivre.
+46;14;57;Abelle C.;;Je n’ai pas été satisfait de l’accompagnement. Lorsqu’on ne comprend pas, il est difficile d’obtenir une explication claire.
+45;15;57;Abelle C.;;Les applications en télédétection et en vision par ordinateur sont concrètes et motivantes.
+44;16;57;Abelle C.;;ce cours est incroyable qui est très utile pour faire de lIA santé.
+41;11;57;Antoine G.;24;
+42;11;57;Antoine G.;25;
+43;11;57;Antoine G.;24;
+44;11;57;Antoine G.;25;
+45;11;57;Antoine G.;24;
+41;12;57;Antoine G.;28;
+43;12;57;Antoine G.;26;
+45;12;57;Antoine G.;31;
+46;13;57;Antoine G.;34;
+46;13;57;Antoine G.;35;
+46;14;57;Antoine G.;;Je n’ai pas apprécié la manière dont le cours est mené. Il manque de clarté, de dynamisme et de méthode.
+41;11;54;Abdoul Salam D.;24;
+42;11;54;Abdoul Salam D.;25;
+43;11;54;Abdoul Salam D.;24;
+44;11;54;Abdoul Salam D.;24;
+45;11;54;Abdoul Salam D.;24;
+41;12;54;Abdoul Salam D.;28;
+43;12;54;Abdoul Salam D.;26;
+44;12;54;Abdoul Salam D.;28;
+45;12;54;Abdoul Salam D.;31;
+45;13;54;Abdoul Salam D.;33;
+45;13;54;Abdoul Salam D.;35;
+45;13;54;Abdoul Salam D.;39;
+46;13;54;Abdoul Salam D.;32;
+46;13;54;Abdoul Salam D.;35;
+46;13;54;Abdoul Salam D.;39;
+45;14;54;Abdoul Salam D.;;ras
+46;14;54;Abdoul Salam D.;;Je trouve que le cours manque de pédagogie. Il faudrait prendre plus de temps pour expliquer les bases avant d’aller vers des notions avancées.
+45;15;54;Abdoul Salam D.;;Les méthodes de séries temporelles sont utiles et ouvrent de nombreuses possibilités d’application.
+44;16;54;Abdoul Salam D.;;merci pour ce cours jai appris beaucoup de choses
+41;11;60;Louis G.;24;
+42;11;60;Louis G.;25;
+43;11;60;Louis G.;25;
+44;11;60;Louis G.;24;
+45;11;60;Louis G.;24;
+41;12;60;Louis G.;27;
+44;12;60;Louis G.;28;
+45;12;60;Louis G.;31;
+45;13;60;Louis G.;32;
+45;13;60;Louis G.;35;
+45;13;60;Louis G.;39;
+46;13;60;Louis G.;32;
+46;13;60;Louis G.;35;
+45;14;60;Louis G.;;Le module est utile sur le principe, mais il pourrait être plus concret.
+46;14;60;Louis G.;;Le cours manque clairement de structure. On passe d’un sujet à l’autre sans vraie logique, ce qui rend la compréhension très difficile.
+45;15;60;Louis G.;;Les échanges autour du monde professionnel donnent des repères utiles pour préparer la suite.
+41;11;58;Olivier D.;24;
+42;11;58;;25;
+43;11;58;Luigi N.;24;
+44;11;58;Olivier D.;24;
+45;11;58;Luigi N.;24;
+46;11;58;Olivier D.;24;
+41;12;58;Olivier D.;28;
+43;12;58;Luigi N.;26;
+44;12;58;Olivier D.;28;
+45;12;58;Luigi N.;31;
+46;12;58;Olivier D.;31;
+45;13;58;Luigi N.;32;
+45;13;58;Luigi N.;35;
+45;13;58;Luigi N.;39;
+46;13;58;Olivier D.;32;
+46;13;58;Olivier D.;39;
+45;14;58;Luigi N.;;L’accompagnement agile pourrait être plus régulier et plus concret.
+46;14;58;Olivier D.;;Je suis globalement déçu par ce cours. Je n’ai pas eu l’impression de progresser malgré le temps passé dessus.
+45;15;58;Luigi N.;;L’accompagnement agile aide à structurer le projet et à mieux organiser le travail d’équipe.
+44;16;58;Olivier D.;;Notre projet de Semestre avec google cest très bien passé :)
+41;11;59;Thalita D.;24;
+42;11;59;;25;
+43;11;59;Xavier C.;24;
+44;11;59;Thalita D.;24;
+45;11;59;Xavier C.;24;
+46;11;59;Thalita D.;24;
+41;12;59;Thalita D.;27;
+43;12;59;Xavier C.;26;
+44;12;59;Thalita D.;28;
+45;12;59;Xavier C.;31;
+46;12;59;Thalita D.;31;
+45;13;59;Xavier C.;32;
+45;13;59;Xavier C.;38;
+45;13;59;Xavier C.;39;
+46;13;59;Thalita D.;35;
+46;13;59;Thalita D.;39;
+45;14;59;Xavier C.;;Le suivi technique est utile, mais il pourrait être plus approfondi.
+46;14;59;Thalita D.;;Les évaluations ne correspondent pas toujours à ce qui a été réellement travaillé en cours, ce qui donne un sentiment d’injustice.
+45;15;59;Xavier C.;;Le suivi technique a permis de sécuriser plusieurs choix d’architecture du projet.
+44;16;59;Thalita D.;;Notre projet de Semestre avec google cest très bien passé :)
+46;11;41;Théo B.;24;
+46;12;41;Théo B.;31;
+46;11;42;Xavier C.;24;
+46;12;42;Xavier C.;31;
+46;11;43;Xavier C.;24;
+46;12;43;Xavier C.;31;
+46;11;44;Thalita D.;24;
+46;12;44;Thalita D.;31;
+46;11;45;Maksim K.;24;
+46;12;45;Maksim K.;31;
+46;11;46;Enzo F.;24;
+46;12;46;Enzo F.;31;
+46;11;47;Cédrine M.;24;
+46;12;47;Cédrine M.;31;
+46;11;47;Daniel B.;24;
+46;12;47;Daniel B.;31;
+46;11;48;Florian L.;24;
+46;12;48;Florian L.;31;
+46;11;49;Issame B.;24;
+46;12;49;Issame B.;31;
+46;11;50;Ikram C.;24;
+46;12;50;Ikram C.;31;
+46;11;51;Hannah G.;24;
+46;12;51;Hannah G.;31;
+46;11;51;Joey B. F.;24;
+46;12;51;Joey B. F.;31;
+46;11;51;Robert R.;24;
+46;12;51;Robert R.;31;
+46;11;52;Sonia T.;24;
+46;12;52;Sonia T.;31;
+46;11;52;Sylvie M.;24;
+46;12;52;Sylvie M.;31;
+46;11;53;Valentin B.;24;
+46;12;53;Valentin B.;31;
+46;11;54;Abdoul Salam D.;24;
+46;12;54;Abdoul Salam D.;31;
+46;11;55;Guillaume D.;24;
+46;12;55;Guillaume D.;31;
+46;11;56;Domenico M.;24;
+46;12;56;Domenico M.;31;
+46;11;57;Abelle C.;24;
+46;12;57;Abelle C.;31;
+46;11;57;Antoine G.;24;
+46;12;57;Antoine G.;31;
+46;11;60;Louis G.;24;
+46;12;60;Louis G.;31;
+45;13;57;Antoine G.;37;
+45;14;57;Antoine G.;;Les explications et les retours auraient gagné à être plus réguliers et plus détaillés.
+41;17;;;;9
+42;17;;;;10
+43;17;;;;10
+44;17;;;;2
+45;17;;;;1
+46;17;;;;1
+47;1;;;2;
+47;5;;;;Les espaces communs sont agréables et favorisent les échanges.
+47;6;;;15;
+47;10;;;;Les travaux en groupe développent efficacement l'autonomie et la communication.
+47;11;41;Théo B.;25;
+47;11;42;Xavier C.;24;
+47;12;42;Xavier C.;31;
+47;13;42;Xavier C.;33;
+47;13;42;Xavier C.;36;
+47;13;42;Xavier C.;39;
+47;14;42;Xavier C.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+47;15;42;Xavier C.;;Le projet permet de comprendre concrètement l'utilité des concepts abordés.
+47;11;43;Xavier C.;24;
+47;12;43;Xavier C.;30;
+47;13;43;Xavier C.;36;
+47;13;43;Xavier C.;39;
+47;14;43;Xavier C.;;Certains prérequis auraient mérité un rappel avant d'aborder les notions avancées.
+47;15;43;Xavier C.;;Les exemples professionnels donnent du sens aux notions étudiées.
+47;11;44;Thalita D.;24;
+47;12;44;Thalita D.;29;
+47;13;44;Thalita D.;39;
+47;14;44;Thalita D.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+47;11;45;Maksim K.;25;
+47;11;46;Enzo F.;24;
+47;12;46;Enzo F.;27;
+47;11;47;Cédrine M.;24;
+47;12;47;Cédrine M.;26;
+47;16;47;Cédrine M.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+47;11;47;Daniel B.;25;
+47;11;48;Florian L.;24;
+47;12;48;Florian L.;31;
+47;13;48;Florian L.;35;
+47;13;48;Florian L.;38;
+47;13;48;Florian L.;33;
+47;14;48;Florian L.;;La préparation de l'évaluation pourrait être davantage structurée.
+47;15;48;Florian L.;;Les ressources complémentaires permettent de progresser après les séances.
+47;11;49;Issame B.;25;
+47;11;50;Ikram C.;24;
+47;12;50;Ikram C.;29;
+47;13;50;Ikram C.;33;
+47;14;50;Ikram C.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+47;11;51;Joey B. F.;24;
+47;12;51;Joey B. F.;28;
+47;16;51;Joey B. F.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+47;11;51;Robert R.;25;
+47;11;51;Hannah G.;24;
+47;12;51;Hannah G.;30;
+47;13;51;Hannah G.;38;
+47;13;51;Hannah G.;33;
+47;14;51;Hannah G.;;Certains prérequis auraient mérité un rappel avant d'aborder les notions avancées.
+47;15;51;Hannah G.;;Les exemples professionnels donnent du sens aux notions étudiées.
+47;11;52;Sonia T.;24;
+47;12;52;Sonia T.;27;
+47;11;52;Sylvie M.;24;
+47;12;52;Sylvie M.;28;
+47;16;52;Sylvie M.;;Le projet du module est concret et donne du sens aux notions théoriques.
+47;11;53;Valentin B.;25;
+47;11;54;Abdoul Salam D.;24;
+47;12;54;Abdoul Salam D.;31;
+47;13;54;Abdoul Salam D.;37;
+47;13;54;Abdoul Salam D.;32;
+47;13;54;Abdoul Salam D.;35;
+47;14;54;Abdoul Salam D.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+47;15;54;Abdoul Salam D.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+47;11;55;Guillaume D.;24;
+47;12;55;Guillaume D.;30;
+47;13;55;Guillaume D.;32;
+47;13;55;Guillaume D.;35;
+47;14;55;Guillaume D.;;La progression entre les séances manque parfois de continuité.
+47;15;55;Guillaume D.;;Le contenu apporte des compétences pertinentes pour les futurs projets.
+47;11;56;Domenico M.;24;
+47;12;56;Domenico M.;29;
+47;13;56;Domenico M.;35;
+47;14;56;Domenico M.;;Le volume de contenu est important par rapport au temps disponible en cours.
+47;11;57;Abelle C.;25;
+47;11;57;Antoine G.;24;
+47;12;57;Antoine G.;29;
+47;13;57;Antoine G.;39;
+47;14;57;Antoine G.;;La préparation de l'évaluation pourrait être davantage structurée.
+47;11;58;;25;
+47;11;59;Thalita D.;24;
+47;12;59;Thalita D.;26;
+47;16;59;Thalita D.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+47;11;60;Louis G.;24;
+47;12;60;Louis G.;31;
+47;13;60;Louis G.;39;
+47;13;60;Louis G.;34;
+47;13;60;Louis G.;37;
+47;14;60;Louis G.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+47;15;60;Louis G.;;Le sujet du module reste intéressant et utile pour la suite du cursus.
+47;17;;;;8
+48;1;;;3;
+48;5;;;;Le personnel reste accueillant et disponible lorsque nous avons besoin d'aide.
+48;6;;;16;
+48;10;;;;Les intervenants partagent des exemples professionnels utiles et motivants.
+48;11;41;Théo B.;24;
+48;12;41;Théo B.;27;
+48;11;42;Xavier C.;24;
+48;12;42;Xavier C.;26;
+48;16;42;Xavier C.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+48;11;43;Xavier C.;24;
+48;12;43;Xavier C.;31;
+48;13;43;Xavier C.;33;
+48;13;43;Xavier C.;36;
+48;13;43;Xavier C.;39;
+48;14;43;Xavier C.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+48;15;43;Xavier C.;;Le sujet du module reste intéressant et utile pour la suite du cursus.
+48;11;44;Thalita D.;25;
+48;11;45;Maksim K.;24;
+48;12;45;Maksim K.;29;
+48;13;45;Maksim K.;39;
+48;14;45;Maksim K.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+48;11;46;Enzo F.;24;
+48;12;46;Enzo F.;28;
+48;16;46;Enzo F.;;Le projet du module est concret et donne du sens aux notions théoriques.
+48;11;47;Cédrine M.;24;
+48;12;47;Cédrine M.;27;
+48;11;47;Daniel B.;24;
+48;12;47;Daniel B.;28;
+48;16;47;Daniel B.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+48;11;48;Florian L.;25;
+48;11;49;Issame B.;24;
+48;12;49;Issame B.;31;
+48;13;49;Issame B.;35;
+48;13;49;Issame B.;38;
+48;13;49;Issame B.;33;
+48;14;49;Issame B.;;Le volume de contenu est important par rapport au temps disponible en cours.
+48;15;49;Issame B.;;Les échanges en classe permettent de confronter plusieurs méthodes de résolution.
+48;11;50;Ikram C.;24;
+48;12;50;Ikram C.;30;
+48;13;50;Ikram C.;38;
+48;13;50;Ikram C.;33;
+48;14;50;Ikram C.;;Des exemples supplémentaires aideraient à mieux comprendre les concepts difficiles.
+48;15;50;Ikram C.;;La partie appliquée du module est motivante et enrichissante.
+48;11;51;Joey B. F.;24;
+48;12;51;Joey B. F.;29;
+48;13;51;Joey B. F.;33;
+48;14;51;Joey B. F.;;La préparation de l'évaluation pourrait être davantage structurée.
+48;11;51;Robert R.;24;
+48;12;51;Robert R.;30;
+48;13;51;Robert R.;34;
+48;13;51;Robert R.;37;
+48;14;51;Robert R.;;Certaines séances gagneraient à alterner davantage théorie et mise en pratique.
+48;15;51;Robert R.;;Les exercices proposés permettent malgré tout de mettre en pratique les notions essentielles.
+48;11;51;Hannah G.;24;
+48;12;51;Hannah G.;31;
+48;13;51;Hannah G.;35;
+48;13;51;Hannah G.;38;
+48;13;51;Hannah G.;33;
+48;14;51;Hannah G.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+48;15;51;Hannah G.;;Le sujet du module reste intéressant et utile pour la suite du cursus.
+48;11;52;Sonia T.;25;
+48;11;52;Sylvie M.;24;
+48;12;52;Sylvie M.;29;
+48;13;52;Sylvie M.;37;
+48;14;52;Sylvie M.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+48;11;53;Valentin B.;24;
+48;12;53;Valentin B.;27;
+48;11;54;Abdoul Salam D.;24;
+48;12;54;Abdoul Salam D.;26;
+48;16;54;Abdoul Salam D.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+48;11;55;Guillaume D.;24;
+48;12;55;Guillaume D.;31;
+48;13;55;Guillaume D.;37;
+48;13;55;Guillaume D.;32;
+48;13;55;Guillaume D.;35;
+48;14;55;Guillaume D.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+48;15;55;Guillaume D.;;Le projet permet de comprendre concrètement l'utilité des concepts abordés.
+48;11;56;Domenico M.;25;
+48;11;57;Abelle C.;24;
+48;12;57;Abelle C.;29;
+48;13;57;Abelle C.;35;
+48;14;57;Abelle C.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+48;11;57;Antoine G.;24;
+48;12;57;Antoine G.;30;
+48;13;57;Antoine G.;36;
+48;13;57;Antoine G.;39;
+48;14;57;Antoine G.;;La progression entre les séances manque parfois de continuité.
+48;15;57;Antoine G.;;Le contenu apporte des compétences pertinentes pour les futurs projets.
+48;11;58;Olivier D.;24;
+48;12;58;Olivier D.;28;
+48;16;58;Olivier D.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+48;11;59;Xavier C.;24;
+48;12;59;Xavier C.;28;
+48;16;59;Xavier C.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+48;11;60;Louis G.;25;
+48;17;;;;9
+49;1;;;4;
+49;2;;;9;
+49;3;;;;L'organisation de quelques services du campus pourrait être simplifiée.
+49;4;;;;L'ambiance entre les étudiants est conviviale et facilite l'intégration.
+49;6;;;17;
+49;7;;;21;
+49;7;;;22;
+49;8;;;;Quelques consignes arrivent tardivement et compliquent l'organisation personnelle.
+49;9;;;;La diversité des modules donne une vision complète des métiers du numérique.
+49;11;41;Théo B.;24;
+49;12;41;Théo B.;28;
+49;16;41;Théo B.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+49;11;42;Xavier C.;24;
+49;12;42;Xavier C.;27;
+49;11;43;Xavier C.;25;
+49;11;44;Thalita D.;24;
+49;12;44;Thalita D.;31;
+49;13;44;Thalita D.;33;
+49;13;44;Thalita D.;36;
+49;13;44;Thalita D.;39;
+49;14;44;Thalita D.;;La préparation de l'évaluation pourrait être davantage structurée.
+49;15;44;Thalita D.;;Les ressources complémentaires permettent de progresser après les séances.
+49;11;45;Maksim K.;24;
+49;12;45;Maksim K.;30;
+49;13;45;Maksim K.;36;
+49;13;45;Maksim K.;39;
+49;14;45;Maksim K.;;Certaines séances gagneraient à alterner davantage théorie et mise en pratique.
+49;15;45;Maksim K.;;Les exercices proposés permettent malgré tout de mettre en pratique les notions essentielles.
+49;11;46;Enzo F.;24;
+49;12;46;Enzo F.;29;
+49;13;46;Enzo F.;39;
+49;14;46;Enzo F.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+49;11;47;Cédrine M.;25;
+49;11;47;Daniel B.;24;
+49;12;47;Daniel B.;29;
+49;13;47;Daniel B.;35;
+49;14;47;Daniel B.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+49;11;48;Florian L.;24;
+49;12;48;Florian L.;27;
+49;11;49;Issame B.;24;
+49;12;49;Issame B.;26;
+49;16;49;Issame B.;;Le projet du module est concret et donne du sens aux notions théoriques.
+49;11;50;Ikram C.;24;
+49;12;50;Ikram C.;31;
+49;13;50;Ikram C.;35;
+49;13;50;Ikram C.;38;
+49;13;50;Ikram C.;33;
+49;14;50;Ikram C.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+49;15;50;Ikram C.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+49;11;51;Joey B. F.;25;
+49;11;51;Robert R.;24;
+49;12;51;Robert R.;31;
+49;13;51;Robert R.;39;
+49;13;51;Robert R.;34;
+49;13;51;Robert R.;37;
+49;14;51;Robert R.;;Le volume de contenu est important par rapport au temps disponible en cours.
+49;15;51;Robert R.;;Les échanges en classe permettent de confronter plusieurs méthodes de résolution.
+49;11;51;Hannah G.;25;
+49;11;52;Sonia T.;24;
+49;12;52;Sonia T.;29;
+49;13;52;Sonia T.;33;
+49;14;52;Sonia T.;;Le volume de contenu est important par rapport au temps disponible en cours.
+49;11;52;Sylvie M.;24;
+49;12;52;Sylvie M.;30;
+49;13;52;Sylvie M.;34;
+49;13;52;Sylvie M.;37;
+49;14;52;Sylvie M.;;Des exemples supplémentaires aideraient à mieux comprendre les concepts difficiles.
+49;15;52;Sylvie M.;;La partie appliquée du module est motivante et enrichissante.
+49;11;53;Valentin B.;24;
+49;12;53;Valentin B.;28;
+49;16;53;Valentin B.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+49;11;54;Abdoul Salam D.;24;
+49;12;54;Abdoul Salam D.;27;
+49;11;55;Guillaume D.;25;
+49;11;56;Domenico M.;24;
+49;12;56;Domenico M.;31;
+49;13;56;Domenico M.;37;
+49;13;56;Domenico M.;32;
+49;13;56;Domenico M.;35;
+49;14;56;Domenico M.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+49;15;56;Domenico M.;;Le sujet du module reste intéressant et utile pour la suite du cursus.
+49;11;57;Abelle C.;24;
+49;12;57;Abelle C.;30;
+49;13;57;Abelle C.;32;
+49;13;57;Abelle C.;35;
+49;14;57;Abelle C.;;Le rythme est parfois trop rapide pour assimiler correctement toutes les notions.
+49;15;57;Abelle C.;;Les supports fournissent une bonne base pour approfondir le cours en autonomie.
+49;11;57;Antoine G.;25;
+49;11;58;Luigi N.;24;
+49;12;58;Luigi N.;30;
+49;13;58;Luigi N.;36;
+49;13;58;Luigi N.;39;
+49;14;58;Luigi N.;;Certains prérequis auraient mérité un rappel avant d'aborder les notions avancées.
+49;15;58;Luigi N.;;Les exemples professionnels donnent du sens aux notions étudiées.
+49;11;59;Thalita D.;24;
+49;12;59;Thalita D.;28;
+49;16;59;Thalita D.;;Le projet du module est concret et donne du sens aux notions théoriques.
+49;11;60;Louis G.;24;
+49;12;60;Louis G.;27;
+49;17;;;;6
+50;1;;;1;
+50;5;;;;L'ambiance entre les étudiants est conviviale et facilite l'intégration.
+50;6;;;14;
+50;10;;;;La formation propose des projets concrets qui permettent d'appliquer les notions étudiées.
+50;11;41;Théo B.;24;
+50;12;41;Théo B.;29;
+50;13;41;Théo B.;37;
+50;14;41;Théo B.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+50;11;42;Xavier C.;25;
+50;11;43;Xavier C.;24;
+50;12;43;Xavier C.;27;
+50;11;44;Thalita D.;24;
+50;12;44;Thalita D.;26;
+50;16;44;Thalita D.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+50;11;45;Maksim K.;24;
+50;12;45;Maksim K.;31;
+50;13;45;Maksim K.;33;
+50;13;45;Maksim K.;36;
+50;13;45;Maksim K.;39;
+50;14;45;Maksim K.;;Le volume de contenu est important par rapport au temps disponible en cours.
+50;15;45;Maksim K.;;Les échanges en classe permettent de confronter plusieurs méthodes de résolution.
+50;11;46;Enzo F.;25;
+50;11;47;Cédrine M.;24;
+50;12;47;Cédrine M.;29;
+50;13;47;Cédrine M.;39;
+50;14;47;Cédrine M.;;La préparation de l'évaluation pourrait être davantage structurée.
+50;11;47;Daniel B.;24;
+50;12;47;Daniel B.;30;
+50;13;47;Daniel B.;32;
+50;13;47;Daniel B.;35;
+50;14;47;Daniel B.;;Certaines séances gagneraient à alterner davantage théorie et mise en pratique.
+50;15;47;Daniel B.;;Les exercices proposés permettent malgré tout de mettre en pratique les notions essentielles.
+50;11;48;Florian L.;24;
+50;12;48;Florian L.;28;
+50;16;48;Florian L.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+50;11;49;Issame B.;24;
+50;12;49;Issame B.;27;
+50;11;50;Ikram C.;25;
+50;11;51;Joey B. F.;24;
+50;12;51;Joey B. F.;31;
+50;13;51;Joey B. F.;35;
+50;13;51;Joey B. F.;38;
+50;13;51;Joey B. F.;33;
+50;14;51;Joey B. F.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+50;15;51;Joey B. F.;;Le projet permet de comprendre concrètement l'utilité des concepts abordés.
+50;11;51;Robert R.;24;
+50;12;51;Robert R.;26;
+50;16;51;Robert R.;;Le projet du module est concret et donne du sens aux notions théoriques.
+50;11;51;Hannah G.;24;
+50;12;51;Hannah G.;27;
+50;11;52;Sonia T.;24;
+50;12;52;Sonia T.;30;
+50;13;52;Sonia T.;38;
+50;13;52;Sonia T.;33;
+50;14;52;Sonia T.;;Certains prérequis auraient mérité un rappel avant d'aborder les notions avancées.
+50;15;52;Sonia T.;;Les exemples professionnels donnent du sens aux notions étudiées.
+50;11;52;Sylvie M.;25;
+50;11;53;Valentin B.;24;
+50;12;53;Valentin B.;29;
+50;13;53;Valentin B.;33;
+50;14;53;Valentin B.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+50;11;54;Abdoul Salam D.;25;
+50;11;55;Guillaume D.;24;
+50;12;55;Guillaume D.;27;
+50;11;56;Domenico M.;24;
+50;12;56;Domenico M.;26;
+50;16;56;Domenico M.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+50;11;57;Abelle C.;24;
+50;12;57;Abelle C.;31;
+50;13;57;Abelle C.;37;
+50;13;57;Abelle C.;32;
+50;13;57;Abelle C.;35;
+50;14;57;Abelle C.;;La préparation de l'évaluation pourrait être davantage structurée.
+50;15;57;Abelle C.;;Les ressources complémentaires permettent de progresser après les séances.
+50;11;57;Antoine G.;24;
+50;12;57;Antoine G.;26;
+50;16;57;Antoine G.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+50;11;58;Olivier D.;24;
+50;12;58;Olivier D.;30;
+50;13;58;Olivier D.;32;
+50;13;58;Olivier D.;35;
+50;14;58;Olivier D.;;Certaines séances gagneraient à alterner davantage théorie et mise en pratique.
+50;15;58;Olivier D.;;Les exercices proposés permettent malgré tout de mettre en pratique les notions essentielles.
+50;11;59;Xavier C.;24;
+50;12;59;Xavier C.;30;
+50;13;59;Xavier C.;36;
+50;13;59;Xavier C.;39;
+50;14;59;Xavier C.;;Le rythme est parfois trop rapide pour assimiler correctement toutes les notions.
+50;15;59;Xavier C.;;Les supports fournissent une bonne base pour approfondir le cours en autonomie.
+50;11;60;Louis G.;24;
+50;12;60;Louis G.;28;
+50;16;60;Louis G.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+50;17;;;;10
+51;1;;;5;
+51;2;;;11;
+51;2;;;13;
+51;2;;;8;
+51;3;;;;Certaines démarches administratives pourraient être plus rapides et plus claires.
+51;4;;;;Les espaces communs sont agréables et favorisent les échanges.
+51;6;;;18;
+51;7;;;23;
+51;8;;;;Certains objectifs pédagogiques mériteraient d'être présentés plus clairement.
+51;9;;;;Les intervenants partagent des exemples professionnels utiles et motivants.
+51;11;41;Théo B.;25;
+51;11;42;Xavier C.;24;
+51;12;42;Xavier C.;29;
+51;13;42;Xavier C.;37;
+51;14;42;Xavier C.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+51;11;43;Xavier C.;24;
+51;12;43;Xavier C.;28;
+51;16;43;Xavier C.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+51;11;44;Thalita D.;24;
+51;12;44;Thalita D.;27;
+51;11;45;Maksim K.;25;
+51;11;46;Enzo F.;24;
+51;12;46;Enzo F.;31;
+51;13;46;Enzo F.;33;
+51;13;46;Enzo F.;36;
+51;13;46;Enzo F.;39;
+51;14;46;Enzo F.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+51;15;46;Enzo F.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+51;11;47;Cédrine M.;24;
+51;12;47;Cédrine M.;30;
+51;13;47;Cédrine M.;36;
+51;13;47;Cédrine M.;39;
+51;14;47;Cédrine M.;;La progression entre les séances manque parfois de continuité.
+51;15;47;Cédrine M.;;Le contenu apporte des compétences pertinentes pour les futurs projets.
+51;11;47;Daniel B.;25;
+51;11;48;Florian L.;24;
+51;12;48;Florian L.;29;
+51;13;48;Florian L.;39;
+51;14;48;Florian L.;;Le volume de contenu est important par rapport au temps disponible en cours.
+51;11;49;Issame B.;25;
+51;11;50;Ikram C.;24;
+51;12;50;Ikram C.;27;
+51;11;51;Joey B. F.;24;
+51;12;51;Joey B. F.;26;
+51;16;51;Joey B. F.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+51;11;51;Robert R.;25;
+51;11;51;Hannah G.;24;
+51;12;51;Hannah G.;28;
+51;16;51;Hannah G.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+51;11;52;Sonia T.;24;
+51;12;52;Sonia T.;31;
+51;13;52;Sonia T.;35;
+51;13;52;Sonia T.;38;
+51;13;52;Sonia T.;33;
+51;14;52;Sonia T.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+51;15;52;Sonia T.;;Le sujet du module reste intéressant et utile pour la suite du cursus.
+51;11;52;Sylvie M.;24;
+51;12;52;Sylvie M.;26;
+51;16;52;Sylvie M.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+51;11;53;Valentin B.;25;
+51;11;54;Abdoul Salam D.;24;
+51;12;54;Abdoul Salam D.;29;
+51;13;54;Abdoul Salam D.;33;
+51;14;54;Abdoul Salam D.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+51;11;55;Guillaume D.;24;
+51;12;55;Guillaume D.;28;
+51;16;55;Guillaume D.;;Le projet du module est concret et donne du sens aux notions théoriques.
+51;11;56;Domenico M.;24;
+51;12;56;Domenico M.;27;
+51;11;57;Abelle C.;25;
+51;11;57;Antoine G.;24;
+51;12;57;Antoine G.;27;
+51;11;58;Luigi N.;24;
+51;12;58;Luigi N.;26;
+51;16;58;Luigi N.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+51;11;59;;25;
+51;11;60;Louis G.;24;
+51;12;60;Louis G.;29;
+51;13;60;Louis G.;35;
+51;14;60;Louis G.;;La préparation de l'évaluation pourrait être davantage structurée.
+51;17;;;;4
+52;1;;;3;
+52;5;;;;Les espaces communs sont agréables et favorisent les échanges.
+52;6;;;16;
+52;10;;;;Les travaux en groupe développent efficacement l'autonomie et la communication.
+52;11;41;Théo B.;24;
+52;12;41;Théo B.;31;
+52;13;41;Théo B.;39;
+52;13;41;Théo B.;34;
+52;13;41;Théo B.;37;
+52;14;41;Théo B.;;Le volume de contenu est important par rapport au temps disponible en cours.
+52;15;41;Théo B.;;Les échanges en classe permettent de confronter plusieurs méthodes de résolution.
+52;11;42;Xavier C.;24;
+52;12;42;Xavier C.;30;
+52;13;42;Xavier C.;34;
+52;13;42;Xavier C.;37;
+52;14;42;Xavier C.;;Des exemples supplémentaires aideraient à mieux comprendre les concepts difficiles.
+52;15;42;Xavier C.;;La partie appliquée du module est motivante et enrichissante.
+52;11;43;Xavier C.;24;
+52;12;43;Xavier C.;29;
+52;13;43;Xavier C.;37;
+52;14;43;Xavier C.;;La préparation de l'évaluation pourrait être davantage structurée.
+52;11;44;Thalita D.;25;
+52;11;45;Maksim K.;24;
+52;12;45;Maksim K.;27;
+52;11;46;Enzo F.;24;
+52;12;46;Enzo F.;26;
+52;16;46;Enzo F.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+52;11;47;Cédrine M.;24;
+52;12;47;Cédrine M.;31;
+52;13;47;Cédrine M.;33;
+52;13;47;Cédrine M.;36;
+52;13;47;Cédrine M.;39;
+52;14;47;Cédrine M.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+52;15;47;Cédrine M.;;Le projet permet de comprendre concrètement l'utilité des concepts abordés.
+52;11;47;Daniel B.;24;
+52;12;47;Daniel B.;26;
+52;16;47;Daniel B.;;Le projet du module est concret et donne du sens aux notions théoriques.
+52;11;48;Florian L.;25;
+52;11;49;Issame B.;24;
+52;12;49;Issame B.;29;
+52;13;49;Issame B.;39;
+52;14;49;Issame B.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+52;11;50;Ikram C.;24;
+52;12;50;Ikram C.;28;
+52;16;50;Ikram C.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+52;11;51;Joey B. F.;24;
+52;12;51;Joey B. F.;27;
+52;11;51;Robert R.;24;
+52;12;51;Robert R.;28;
+52;16;51;Robert R.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+52;11;51;Hannah G.;24;
+52;12;51;Hannah G.;29;
+52;13;51;Hannah G.;39;
+52;14;51;Hannah G.;;La préparation de l'évaluation pourrait être davantage structurée.
+52;11;52;Sonia T.;25;
+52;11;52;Sylvie M.;24;
+52;12;52;Sylvie M.;27;
+52;11;53;Valentin B.;24;
+52;12;53;Valentin B.;31;
+52;13;53;Valentin B.;35;
+52;13;53;Valentin B.;38;
+52;13;53;Valentin B.;33;
+52;14;53;Valentin B.;;La préparation de l'évaluation pourrait être davantage structurée.
+52;15;53;Valentin B.;;Les ressources complémentaires permettent de progresser après les séances.
+52;11;54;Abdoul Salam D.;24;
+52;12;54;Abdoul Salam D.;30;
+52;13;54;Abdoul Salam D.;38;
+52;13;54;Abdoul Salam D.;33;
+52;14;54;Abdoul Salam D.;;Certaines séances gagneraient à alterner davantage théorie et mise en pratique.
+52;15;54;Abdoul Salam D.;;Les exercices proposés permettent malgré tout de mettre en pratique les notions essentielles.
+52;11;55;Guillaume D.;24;
+52;12;55;Guillaume D.;29;
+52;13;55;Guillaume D.;33;
+52;14;55;Guillaume D.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+52;11;56;Domenico M.;25;
+52;11;57;Abelle C.;24;
+52;12;57;Abelle C.;27;
+52;11;57;Antoine G.;24;
+52;12;57;Antoine G.;28;
+52;16;57;Antoine G.;;Le projet du module est concret et donne du sens aux notions théoriques.
+52;11;58;;25;
+52;11;59;Xavier C.;24;
+52;12;59;Xavier C.;26;
+52;16;59;Xavier C.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+52;11;60;Louis G.;25;
+52;17;;;;8
+53;1;;;2;
+53;5;;;;Le personnel reste accueillant et disponible lorsque nous avons besoin d'aide.
+53;6;;;15;
+53;10;;;;Les intervenants partagent des exemples professionnels utiles et motivants.
+53;11;41;Théo B.;24;
+53;12;41;Théo B.;26;
+53;16;41;Théo B.;;Le projet du module est concret et donne du sens aux notions théoriques.
+53;11;42;Xavier C.;24;
+53;12;42;Xavier C.;31;
+53;13;42;Xavier C.;39;
+53;13;42;Xavier C.;34;
+53;13;42;Xavier C.;37;
+53;14;42;Xavier C.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+53;15;42;Xavier C.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+53;11;43;Xavier C.;25;
+53;11;44;Thalita D.;24;
+53;12;44;Thalita D.;29;
+53;13;44;Thalita D.;37;
+53;14;44;Thalita D.;;Le volume de contenu est important par rapport au temps disponible en cours.
+53;11;45;Maksim K.;24;
+53;12;45;Maksim K.;28;
+53;16;45;Maksim K.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+53;11;46;Enzo F.;24;
+53;12;46;Enzo F.;27;
+53;11;47;Cédrine M.;25;
+53;11;47;Daniel B.;24;
+53;12;47;Daniel B.;27;
+53;11;48;Florian L.;24;
+53;12;48;Florian L.;31;
+53;13;48;Florian L.;33;
+53;13;48;Florian L.;36;
+53;13;48;Florian L.;39;
+53;14;48;Florian L.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+53;15;48;Florian L.;;Le sujet du module reste intéressant et utile pour la suite du cursus.
+53;11;49;Issame B.;24;
+53;12;49;Issame B.;30;
+53;13;49;Issame B.;36;
+53;13;49;Issame B.;39;
+53;14;49;Issame B.;;Le rythme est parfois trop rapide pour assimiler correctement toutes les notions.
+53;15;49;Issame B.;;Les supports fournissent une bonne base pour approfondir le cours en autonomie.
+53;11;50;Ikram C.;24;
+53;12;50;Ikram C.;29;
+53;13;50;Ikram C.;39;
+53;14;50;Ikram C.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+53;11;51;Joey B. F.;25;
+53;11;51;Robert R.;24;
+53;12;51;Robert R.;29;
+53;13;51;Robert R.;35;
+53;14;51;Robert R.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+53;11;51;Hannah G.;25;
+53;11;52;Sonia T.;24;
+53;12;52;Sonia T.;27;
+53;11;52;Sylvie M.;24;
+53;12;52;Sylvie M.;28;
+53;16;52;Sylvie M.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+53;11;53;Valentin B.;24;
+53;12;53;Valentin B.;26;
+53;16;53;Valentin B.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+53;11;54;Abdoul Salam D.;24;
+53;12;54;Abdoul Salam D.;31;
+53;13;54;Abdoul Salam D.;35;
+53;13;54;Abdoul Salam D.;38;
+53;13;54;Abdoul Salam D.;33;
+53;14;54;Abdoul Salam D.;;Le volume de contenu est important par rapport au temps disponible en cours.
+53;15;54;Abdoul Salam D.;;Les échanges en classe permettent de confronter plusieurs méthodes de résolution.
+53;11;55;Guillaume D.;25;
+53;11;56;Domenico M.;24;
+53;12;56;Domenico M.;29;
+53;13;56;Domenico M.;33;
+53;14;56;Domenico M.;;La préparation de l'évaluation pourrait être davantage structurée.
+53;11;57;Abelle C.;24;
+53;12;57;Abelle C.;28;
+53;16;57;Abelle C.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+53;11;57;Antoine G.;25;
+53;11;58;Luigi N.;24;
+53;12;58;Luigi N.;28;
+53;16;58;Luigi N.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+53;11;59;Thalita D.;24;
+53;12;59;Thalita D.;26;
+53;16;59;Thalita D.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+53;11;60;Louis G.;24;
+53;12;60;Louis G.;31;
+53;13;60;Louis G.;37;
+53;13;60;Louis G.;32;
+53;13;60;Louis G.;35;
+53;14;60;Louis G.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+53;15;60;Louis G.;;Le projet permet de comprendre concrètement l'utilité des concepts abordés.
+53;17;;;;9
+54;1;;;6;
+54;2;;;7;
+54;2;;;9;
+54;2;;;11;
+54;3;;;;L'organisation de quelques services du campus pourrait être simplifiée.
+54;4;;;;L'ambiance entre les étudiants est conviviale et facilite l'intégration.
+54;6;;;19;
+54;7;;;22;
+54;8;;;;Quelques consignes arrivent tardivement et compliquent l'organisation personnelle.
+54;9;;;;La diversité des modules donne une vision complète des métiers du numérique.
+54;11;41;Théo B.;24;
+54;12;41;Théo B.;27;
+54;11;42;Xavier C.;25;
+54;11;43;Xavier C.;24;
+54;12;43;Xavier C.;31;
+54;13;43;Xavier C.;39;
+54;13;43;Xavier C.;34;
+54;13;43;Xavier C.;37;
+54;14;43;Xavier C.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+54;15;43;Xavier C.;;Le projet permet de comprendre concrètement l'utilité des concepts abordés.
+54;11;44;Thalita D.;24;
+54;12;44;Thalita D.;30;
+54;13;44;Thalita D.;34;
+54;13;44;Thalita D.;37;
+54;14;44;Thalita D.;;Certains prérequis auraient mérité un rappel avant d'aborder les notions avancées.
+54;15;44;Thalita D.;;Les exemples professionnels donnent du sens aux notions étudiées.
+54;11;45;Maksim K.;24;
+54;12;45;Maksim K.;29;
+54;13;45;Maksim K.;37;
+54;14;45;Maksim K.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+54;11;46;Enzo F.;25;
+54;11;47;Cédrine M.;24;
+54;12;47;Cédrine M.;27;
+54;11;47;Daniel B.;24;
+54;12;47;Daniel B.;28;
+54;16;47;Daniel B.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+54;11;48;Florian L.;24;
+54;12;48;Florian L.;26;
+54;16;48;Florian L.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+54;11;49;Issame B.;24;
+54;12;49;Issame B.;31;
+54;13;49;Issame B.;33;
+54;13;49;Issame B.;36;
+54;13;49;Issame B.;39;
+54;14;49;Issame B.;;La préparation de l'évaluation pourrait être davantage structurée.
+54;15;49;Issame B.;;Les ressources complémentaires permettent de progresser après les séances.
+54;11;50;Ikram C.;25;
+54;11;51;Joey B. F.;24;
+54;12;51;Joey B. F.;29;
+54;13;51;Joey B. F.;39;
+54;14;51;Joey B. F.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+54;11;51;Robert R.;24;
+54;12;51;Robert R.;30;
+54;13;51;Robert R.;32;
+54;13;51;Robert R.;35;
+54;14;51;Robert R.;;Le rythme est parfois trop rapide pour assimiler correctement toutes les notions.
+54;15;51;Robert R.;;Les supports fournissent une bonne base pour approfondir le cours en autonomie.
+54;11;51;Hannah G.;24;
+54;12;51;Hannah G.;31;
+54;13;51;Hannah G.;33;
+54;13;51;Hannah G.;36;
+54;13;51;Hannah G.;39;
+54;14;51;Hannah G.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+54;15;51;Hannah G.;;Le projet permet de comprendre concrètement l'utilité des concepts abordés.
+54;11;52;Sonia T.;24;
+54;12;52;Sonia T.;28;
+54;16;52;Sonia T.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+54;11;52;Sylvie M.;25;
+54;11;53;Valentin B.;24;
+54;12;53;Valentin B.;27;
+54;11;54;Abdoul Salam D.;25;
+54;11;55;Guillaume D.;24;
+54;12;55;Guillaume D.;31;
+54;13;55;Guillaume D.;35;
+54;13;55;Guillaume D.;38;
+54;13;55;Guillaume D.;33;
+54;14;55;Guillaume D.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+54;15;55;Guillaume D.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+54;11;56;Domenico M.;24;
+54;12;56;Domenico M.;30;
+54;13;56;Domenico M.;38;
+54;13;56;Domenico M.;33;
+54;14;56;Domenico M.;;La progression entre les séances manque parfois de continuité.
+54;15;56;Domenico M.;;Le contenu apporte des compétences pertinentes pour les futurs projets.
+54;11;57;Abelle C.;24;
+54;12;57;Abelle C.;29;
+54;13;57;Abelle C.;33;
+54;14;57;Abelle C.;;Le volume de contenu est important par rapport au temps disponible en cours.
+54;11;57;Antoine G.;24;
+54;12;57;Antoine G.;30;
+54;13;57;Antoine G.;34;
+54;13;57;Antoine G.;37;
+54;14;57;Antoine G.;;Des exemples supplémentaires aideraient à mieux comprendre les concepts difficiles.
+54;15;57;Antoine G.;;La partie appliquée du module est motivante et enrichissante.
+54;11;58;Olivier D.;24;
+54;12;58;Olivier D.;28;
+54;16;58;Olivier D.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+54;11;59;Xavier C.;24;
+54;12;59;Xavier C.;28;
+54;16;59;Xavier C.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+54;11;60;Louis G.;24;
+54;12;60;Louis G.;26;
+54;16;60;Louis G.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+54;17;;;;3
+55;1;;;1;
+55;5;;;;L'ambiance entre les étudiants est conviviale et facilite l'intégration.
+55;6;;;14;
+55;10;;;;La formation propose des projets concrets qui permettent d'appliquer les notions étudiées.
+55;11;41;Théo B.;25;
+55;11;42;Xavier C.;24;
+55;12;42;Xavier C.;27;
+55;11;43;Xavier C.;24;
+55;12;43;Xavier C.;26;
+55;16;43;Xavier C.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+55;11;44;Thalita D.;24;
+55;12;44;Thalita D.;31;
+55;13;44;Thalita D.;39;
+55;13;44;Thalita D.;34;
+55;13;44;Thalita D.;37;
+55;14;44;Thalita D.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+55;15;44;Thalita D.;;Le sujet du module reste intéressant et utile pour la suite du cursus.
+55;11;45;Maksim K.;25;
+55;11;46;Enzo F.;24;
+55;12;46;Enzo F.;29;
+55;13;46;Enzo F.;37;
+55;14;46;Enzo F.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+55;11;47;Cédrine M.;24;
+55;12;47;Cédrine M.;28;
+55;16;47;Cédrine M.;;Le projet du module est concret et donne du sens aux notions théoriques.
+55;11;47;Daniel B.;25;
+55;11;48;Florian L.;24;
+55;12;48;Florian L.;27;
+55;11;49;Issame B.;25;
+55;11;50;Ikram C.;24;
+55;12;50;Ikram C.;31;
+55;13;50;Ikram C.;33;
+55;13;50;Ikram C.;36;
+55;13;50;Ikram C.;39;
+55;14;50;Ikram C.;;Le volume de contenu est important par rapport au temps disponible en cours.
+55;15;50;Ikram C.;;Les échanges en classe permettent de confronter plusieurs méthodes de résolution.
+55;11;51;Joey B. F.;24;
+55;12;51;Joey B. F.;30;
+55;13;51;Joey B. F.;36;
+55;13;51;Joey B. F.;39;
+55;14;51;Joey B. F.;;Des exemples supplémentaires aideraient à mieux comprendre les concepts difficiles.
+55;15;51;Joey B. F.;;La partie appliquée du module est motivante et enrichissante.
+55;11;51;Robert R.;25;
+55;11;51;Hannah G.;24;
+55;12;51;Hannah G.;26;
+55;16;51;Hannah G.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+55;11;52;Sonia T.;24;
+55;12;52;Sonia T.;29;
+55;13;52;Sonia T.;39;
+55;14;52;Sonia T.;;La préparation de l'évaluation pourrait être davantage structurée.
+55;11;52;Sylvie M.;24;
+55;12;52;Sylvie M.;30;
+55;13;52;Sylvie M.;32;
+55;13;52;Sylvie M.;35;
+55;14;52;Sylvie M.;;Certaines séances gagneraient à alterner davantage théorie et mise en pratique.
+55;15;52;Sylvie M.;;Les exercices proposés permettent malgré tout de mettre en pratique les notions essentielles.
+55;11;53;Valentin B.;25;
+55;11;54;Abdoul Salam D.;24;
+55;12;54;Abdoul Salam D.;27;
+55;11;55;Guillaume D.;24;
+55;12;55;Guillaume D.;26;
+55;16;55;Guillaume D.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+55;11;56;Domenico M.;24;
+55;12;56;Domenico M.;31;
+55;13;56;Domenico M.;35;
+55;13;56;Domenico M.;38;
+55;13;56;Domenico M.;33;
+55;14;56;Domenico M.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+55;15;56;Domenico M.;;Le projet permet de comprendre concrètement l'utilité des concepts abordés.
+55;11;57;Abelle C.;25;
+55;11;57;Antoine G.;24;
+55;12;57;Antoine G.;31;
+55;13;57;Antoine G.;39;
+55;13;57;Antoine G.;34;
+55;13;57;Antoine G.;37;
+55;14;57;Antoine G.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+55;15;57;Antoine G.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+55;11;58;Luigi N.;24;
+55;12;58;Luigi N.;30;
+55;13;58;Luigi N.;34;
+55;13;58;Luigi N.;37;
+55;14;58;Luigi N.;;La progression entre les séances manque parfois de continuité.
+55;15;58;Luigi N.;;Le contenu apporte des compétences pertinentes pour les futurs projets.
+55;11;59;Thalita D.;24;
+55;12;59;Thalita D.;28;
+55;16;59;Thalita D.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+55;11;60;Louis G.;24;
+55;12;60;Louis G.;27;
+55;17;;;;10
+56;1;;;4;
+56;2;;;9;
+56;2;;;11;
+56;3;;;;Certaines démarches administratives pourraient être plus rapides et plus claires.
+56;4;;;;Les espaces communs sont agréables et favorisent les échanges.
+56;6;;;17;
+56;7;;;20;
+56;7;;;21;
+56;7;;;22;
+56;8;;;;Certains objectifs pédagogiques mériteraient d'être présentés plus clairement.
+56;9;;;;Les intervenants partagent des exemples professionnels utiles et motivants.
+56;11;41;Théo B.;24;
+56;12;41;Théo B.;29;
+56;13;41;Théo B.;35;
+56;14;41;Théo B.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+56;11;42;Xavier C.;24;
+56;12;42;Xavier C.;28;
+56;16;42;Xavier C.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+56;11;43;Xavier C.;24;
+56;12;43;Xavier C.;27;
+56;11;44;Thalita D.;25;
+56;11;45;Maksim K.;24;
+56;12;45;Maksim K.;31;
+56;13;45;Maksim K.;39;
+56;13;45;Maksim K.;34;
+56;13;45;Maksim K.;37;
+56;14;45;Maksim K.;;La préparation de l'évaluation pourrait être davantage structurée.
+56;15;45;Maksim K.;;Les ressources complémentaires permettent de progresser après les séances.
+56;11;46;Enzo F.;24;
+56;12;46;Enzo F.;30;
+56;13;46;Enzo F.;34;
+56;13;46;Enzo F.;37;
+56;14;46;Enzo F.;;Certaines séances gagneraient à alterner davantage théorie et mise en pratique.
+56;15;46;Enzo F.;;Les exercices proposés permettent malgré tout de mettre en pratique les notions essentielles.
+56;11;47;Cédrine M.;24;
+56;12;47;Cédrine M.;29;
+56;13;47;Cédrine M.;37;
+56;14;47;Cédrine M.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+56;11;47;Daniel B.;24;
+56;12;47;Daniel B.;30;
+56;13;47;Daniel B.;38;
+56;13;47;Daniel B.;33;
+56;14;47;Daniel B.;;Le rythme est parfois trop rapide pour assimiler correctement toutes les notions.
+56;15;47;Daniel B.;;Les supports fournissent une bonne base pour approfondir le cours en autonomie.
+56;11;48;Florian L.;25;
+56;11;49;Issame B.;24;
+56;12;49;Issame B.;27;
+56;11;50;Ikram C.;24;
+56;12;50;Ikram C.;26;
+56;16;50;Ikram C.;;Le projet du module est concret et donne du sens aux notions théoriques.
+56;11;51;Joey B. F.;24;
+56;12;51;Joey B. F.;31;
+56;13;51;Joey B. F.;33;
+56;13;51;Joey B. F.;36;
+56;13;51;Joey B. F.;39;
+56;14;51;Joey B. F.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+56;15;51;Joey B. F.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+56;11;51;Robert R.;24;
+56;12;51;Robert R.;26;
+56;16;51;Robert R.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+56;11;51;Hannah G.;24;
+56;12;51;Hannah G.;27;
+56;11;52;Sonia T.;25;
+56;11;52;Sylvie M.;24;
+56;12;52;Sylvie M.;31;
+56;13;52;Sylvie M.;37;
+56;13;52;Sylvie M.;32;
+56;13;52;Sylvie M.;35;
+56;14;52;Sylvie M.;;Le volume de contenu est important par rapport au temps disponible en cours.
+56;15;52;Sylvie M.;;Les échanges en classe permettent de confronter plusieurs méthodes de résolution.
+56;11;53;Valentin B.;24;
+56;12;53;Valentin B.;29;
+56;13;53;Valentin B.;39;
+56;14;53;Valentin B.;;Le volume de contenu est important par rapport au temps disponible en cours.
+56;11;54;Abdoul Salam D.;24;
+56;12;54;Abdoul Salam D.;28;
+56;16;54;Abdoul Salam D.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+56;11;55;Guillaume D.;24;
+56;12;55;Guillaume D.;27;
+56;11;56;Domenico M.;25;
+56;11;57;Abelle C.;24;
+56;12;57;Abelle C.;31;
+56;13;57;Abelle C.;35;
+56;13;57;Abelle C.;38;
+56;13;57;Abelle C.;33;
+56;14;57;Abelle C.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+56;15;57;Abelle C.;;Le sujet du module reste intéressant et utile pour la suite du cursus.
+56;11;57;Antoine G.;24;
+56;12;57;Antoine G.;26;
+56;16;57;Antoine G.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+56;11;58;Olivier D.;24;
+56;12;58;Olivier D.;30;
+56;13;58;Olivier D.;38;
+56;13;58;Olivier D.;33;
+56;14;58;Olivier D.;;Le rythme est parfois trop rapide pour assimiler correctement toutes les notions.
+56;15;58;Olivier D.;;Les supports fournissent une bonne base pour approfondir le cours en autonomie.
+56;11;59;;25;
+56;11;60;Louis G.;25;
+56;17;;;;6
+57;1;;;3;
+57;5;;;;Les espaces communs sont agréables et favorisent les échanges.
+57;6;;;16;
+57;10;;;;Les travaux en groupe développent efficacement l'autonomie et la communication.
+57;11;41;Théo B.;24;
+57;12;41;Théo B.;30;
+57;13;41;Théo B.;32;
+57;13;41;Théo B.;35;
+57;14;41;Théo B.;;Le rythme est parfois trop rapide pour assimiler correctement toutes les notions.
+57;15;41;Théo B.;;Les supports fournissent une bonne base pour approfondir le cours en autonomie.
+57;11;42;Xavier C.;24;
+57;12;42;Xavier C.;29;
+57;13;42;Xavier C.;35;
+57;14;42;Xavier C.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+57;11;43;Xavier C.;25;
+57;11;44;Thalita D.;24;
+57;12;44;Thalita D.;27;
+57;11;45;Maksim K.;24;
+57;12;45;Maksim K.;26;
+57;16;45;Maksim K.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+57;11;46;Enzo F.;24;
+57;12;46;Enzo F.;31;
+57;13;46;Enzo F.;39;
+57;13;46;Enzo F.;34;
+57;13;46;Enzo F.;37;
+57;14;46;Enzo F.;;Le volume de contenu est important par rapport au temps disponible en cours.
+57;15;46;Enzo F.;;Les échanges en classe permettent de confronter plusieurs méthodes de résolution.
+57;11;47;Cédrine M.;25;
+57;11;47;Daniel B.;24;
+57;12;47;Daniel B.;31;
+57;13;47;Daniel B.;35;
+57;13;47;Daniel B.;38;
+57;13;47;Daniel B.;33;
+57;14;47;Daniel B.;;La préparation de l'évaluation pourrait être davantage structurée.
+57;15;47;Daniel B.;;Les ressources complémentaires permettent de progresser après les séances.
+57;11;48;Florian L.;24;
+57;12;48;Florian L.;29;
+57;13;48;Florian L.;37;
+57;14;48;Florian L.;;La préparation de l'évaluation pourrait être davantage structurée.
+57;11;49;Issame B.;24;
+57;12;49;Issame B.;28;
+57;16;49;Issame B.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+57;11;50;Ikram C.;24;
+57;12;50;Ikram C.;27;
+57;11;51;Joey B. F.;25;
+57;11;51;Robert R.;24;
+57;12;51;Robert R.;27;
+57;11;51;Hannah G.;25;
+57;11;52;Sonia T.;24;
+57;12;52;Sonia T.;31;
+57;13;52;Sonia T.;33;
+57;13;52;Sonia T.;36;
+57;13;52;Sonia T.;39;
+57;14;52;Sonia T.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+57;15;52;Sonia T.;;Le projet permet de comprendre concrètement l'utilité des concepts abordés.
+57;11;52;Sylvie M.;24;
+57;12;52;Sylvie M.;26;
+57;16;52;Sylvie M.;;Le projet du module est concret et donne du sens aux notions théoriques.
+57;11;53;Valentin B.;24;
+57;12;53;Valentin B.;30;
+57;13;53;Valentin B.;36;
+57;13;53;Valentin B.;39;
+57;14;53;Valentin B.;;Certains prérequis auraient mérité un rappel avant d'aborder les notions avancées.
+57;15;53;Valentin B.;;Les exemples professionnels donnent du sens aux notions étudiées.
+57;11;54;Abdoul Salam D.;24;
+57;12;54;Abdoul Salam D.;29;
+57;13;54;Abdoul Salam D.;39;
+57;14;54;Abdoul Salam D.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+57;11;55;Guillaume D.;25;
+57;11;56;Domenico M.;24;
+57;12;56;Domenico M.;27;
+57;11;57;Abelle C.;24;
+57;12;57;Abelle C.;26;
+57;16;57;Abelle C.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+57;11;57;Antoine G.;25;
+57;11;58;;25;
+57;11;59;Thalita D.;24;
+57;12;59;Thalita D.;30;
+57;13;59;Thalita D.;38;
+57;13;59;Thalita D.;33;
+57;14;59;Thalita D.;;Certaines séances gagneraient à alterner davantage théorie et mise en pratique.
+57;15;59;Thalita D.;;Les exercices proposés permettent malgré tout de mettre en pratique les notions essentielles.
+57;11;60;Louis G.;24;
+57;12;60;Louis G.;29;
+57;13;60;Louis G.;33;
+57;14;60;Louis G.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+57;17;;;;8
+58;1;;;2;
+58;5;;;;Le personnel reste accueillant et disponible lorsque nous avons besoin d'aide.
+58;6;;;15;
+58;10;;;;Les intervenants partagent des exemples professionnels utiles et motivants.
+58;11;41;Théo B.;24;
+58;12;41;Théo B.;31;
+58;13;41;Théo B.;37;
+58;13;41;Théo B.;32;
+58;13;41;Théo B.;35;
+58;14;41;Théo B.;;La préparation de l'évaluation pourrait être davantage structurée.
+58;15;41;Théo B.;;Les ressources complémentaires permettent de progresser après les séances.
+58;11;42;Xavier C.;25;
+58;11;43;Xavier C.;24;
+58;12;43;Xavier C.;29;
+58;13;43;Xavier C.;35;
+58;14;43;Xavier C.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+58;11;44;Thalita D.;24;
+58;12;44;Thalita D.;28;
+58;16;44;Thalita D.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+58;11;45;Maksim K.;24;
+58;12;45;Maksim K.;27;
+58;11;46;Enzo F.;25;
+58;11;47;Cédrine M.;24;
+58;12;47;Cédrine M.;31;
+58;13;47;Cédrine M.;39;
+58;13;47;Cédrine M.;34;
+58;13;47;Cédrine M.;37;
+58;14;47;Cédrine M.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+58;15;47;Cédrine M.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+58;11;47;Daniel B.;24;
+58;12;47;Daniel B.;26;
+58;16;47;Daniel B.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+58;11;48;Florian L.;24;
+58;12;48;Florian L.;30;
+58;13;48;Florian L.;34;
+58;13;48;Florian L.;37;
+58;14;48;Florian L.;;La progression entre les séances manque parfois de continuité.
+58;15;48;Florian L.;;Le contenu apporte des compétences pertinentes pour les futurs projets.
+58;11;49;Issame B.;24;
+58;12;49;Issame B.;29;
+58;13;49;Issame B.;37;
+58;14;49;Issame B.;;Le volume de contenu est important par rapport au temps disponible en cours.
+58;11;50;Ikram C.;25;
+58;11;51;Joey B. F.;24;
+58;12;51;Joey B. F.;27;
+58;11;51;Robert R.;24;
+58;12;51;Robert R.;28;
+58;16;51;Robert R.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+58;11;51;Hannah G.;24;
+58;12;51;Hannah G.;29;
+58;13;51;Hannah G.;37;
+58;14;51;Hannah G.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+58;11;52;Sonia T.;24;
+58;12;52;Sonia T.;26;
+58;16;52;Sonia T.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+58;11;52;Sylvie M.;25;
+58;11;53;Valentin B.;24;
+58;12;53;Valentin B.;31;
+58;13;53;Valentin B.;33;
+58;13;53;Valentin B.;36;
+58;13;53;Valentin B.;39;
+58;14;53;Valentin B.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+58;15;53;Valentin B.;;Le sujet du module reste intéressant et utile pour la suite du cursus.
+58;11;54;Abdoul Salam D.;25;
+58;11;55;Guillaume D.;24;
+58;12;55;Guillaume D.;29;
+58;13;55;Guillaume D.;39;
+58;14;55;Guillaume D.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+58;11;56;Domenico M.;24;
+58;12;56;Domenico M.;28;
+58;16;56;Domenico M.;;Le projet du module est concret et donne du sens aux notions théoriques.
+58;11;57;Abelle C.;24;
+58;12;57;Abelle C.;27;
+58;11;57;Antoine G.;24;
+58;12;57;Antoine G.;28;
+58;16;57;Antoine G.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+58;11;58;Olivier D.;24;
+58;12;58;Olivier D.;26;
+58;16;58;Olivier D.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+58;11;59;Xavier C.;24;
+58;12;59;Xavier C.;26;
+58;16;59;Xavier C.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+58;11;60;Louis G.;24;
+58;12;60;Louis G.;30;
+58;13;60;Louis G.;38;
+58;13;60;Louis G.;33;
+58;14;60;Louis G.;;Des exemples supplémentaires aideraient à mieux comprendre les concepts difficiles.
+58;15;60;Louis G.;;La partie appliquée du module est motivante et enrichissante.
+58;17;;;;9
+59;1;;;5;
+59;2;;;12;
+59;2;;;7;
+59;3;;;;L'organisation de quelques services du campus pourrait être simplifiée.
+59;4;;;;L'ambiance entre les étudiants est conviviale et facilite l'intégration.
+59;6;;;18;
+59;7;;;23;
+59;7;;;20;
+59;7;;;21;
+59;8;;;;Quelques consignes arrivent tardivement et compliquent l'organisation personnelle.
+59;9;;;;La diversité des modules donne une vision complète des métiers du numérique.
+59;11;41;Théo B.;25;
+59;11;42;Xavier C.;24;
+59;12;42;Xavier C.;31;
+59;13;42;Xavier C.;37;
+59;13;42;Xavier C.;32;
+59;13;42;Xavier C.;35;
+59;14;42;Xavier C.;;Le volume de contenu est important par rapport au temps disponible en cours.
+59;15;42;Xavier C.;;Les échanges en classe permettent de confronter plusieurs méthodes de résolution.
+59;11;43;Xavier C.;24;
+59;12;43;Xavier C.;30;
+59;13;43;Xavier C.;32;
+59;13;43;Xavier C.;35;
+59;14;43;Xavier C.;;Des exemples supplémentaires aideraient à mieux comprendre les concepts difficiles.
+59;15;43;Xavier C.;;La partie appliquée du module est motivante et enrichissante.
+59;11;44;Thalita D.;24;
+59;12;44;Thalita D.;29;
+59;13;44;Thalita D.;35;
+59;14;44;Thalita D.;;La préparation de l'évaluation pourrait être davantage structurée.
+59;11;45;Maksim K.;25;
+59;11;46;Enzo F.;24;
+59;12;46;Enzo F.;27;
+59;11;47;Cédrine M.;24;
+59;12;47;Cédrine M.;26;
+59;16;47;Cédrine M.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+59;11;47;Daniel B.;25;
+59;11;48;Florian L.;24;
+59;12;48;Florian L.;31;
+59;13;48;Florian L.;39;
+59;13;48;Florian L.;34;
+59;13;48;Florian L.;37;
+59;14;48;Florian L.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+59;15;48;Florian L.;;Le projet permet de comprendre concrètement l'utilité des concepts abordés.
+59;11;49;Issame B.;25;
+59;11;50;Ikram C.;24;
+59;12;50;Ikram C.;29;
+59;13;50;Ikram C.;37;
+59;14;50;Ikram C.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+59;11;51;Joey B. F.;24;
+59;12;51;Joey B. F.;28;
+59;16;51;Joey B. F.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+59;11;51;Robert R.;25;
+59;11;51;Hannah G.;24;
+59;12;51;Hannah G.;30;
+59;13;51;Hannah G.;34;
+59;13;51;Hannah G.;37;
+59;14;51;Hannah G.;;Des exemples supplémentaires aideraient à mieux comprendre les concepts difficiles.
+59;15;51;Hannah G.;;La partie appliquée du module est motivante et enrichissante.
+59;11;52;Sonia T.;24;
+59;12;52;Sonia T.;27;
+59;11;52;Sylvie M.;24;
+59;12;52;Sylvie M.;28;
+59;16;52;Sylvie M.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+59;11;53;Valentin B.;25;
+59;11;54;Abdoul Salam D.;24;
+59;12;54;Abdoul Salam D.;31;
+59;13;54;Abdoul Salam D.;33;
+59;13;54;Abdoul Salam D.;36;
+59;13;54;Abdoul Salam D.;39;
+59;14;54;Abdoul Salam D.;;La préparation de l'évaluation pourrait être davantage structurée.
+59;15;54;Abdoul Salam D.;;Les ressources complémentaires permettent de progresser après les séances.
+59;11;55;Guillaume D.;24;
+59;12;55;Guillaume D.;30;
+59;13;55;Guillaume D.;36;
+59;13;55;Guillaume D.;39;
+59;14;55;Guillaume D.;;Certaines séances gagneraient à alterner davantage théorie et mise en pratique.
+59;15;55;Guillaume D.;;Les exercices proposés permettent malgré tout de mettre en pratique les notions essentielles.
+59;11;56;Domenico M.;24;
+59;12;56;Domenico M.;29;
+59;13;56;Domenico M.;39;
+59;14;56;Domenico M.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+59;11;57;Abelle C.;25;
+59;11;57;Antoine G.;24;
+59;12;57;Antoine G.;29;
+59;13;57;Antoine G.;35;
+59;14;57;Antoine G.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+59;11;58;Luigi N.;24;
+59;12;58;Luigi N.;28;
+59;16;58;Luigi N.;;Le projet du module est concret et donne du sens aux notions théoriques.
+59;11;59;Thalita D.;24;
+59;12;59;Thalita D.;26;
+59;16;59;Thalita D.;;Le projet du module est concret et donne du sens aux notions théoriques.
+59;11;60;Louis G.;24;
+59;12;60;Louis G.;31;
+59;13;60;Louis G.;35;
+59;13;60;Louis G.;38;
+59;13;60;Louis G.;33;
+59;14;60;Louis G.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+59;15;60;Louis G.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+59;17;;;;5
+60;1;;;1;
+60;5;;;;L'ambiance entre les étudiants est conviviale et facilite l'intégration.
+60;6;;;14;
+60;10;;;;La formation propose des projets concrets qui permettent d'appliquer les notions étudiées.
+60;11;41;Théo B.;24;
+60;12;41;Théo B.;27;
+60;11;42;Xavier C.;24;
+60;12;42;Xavier C.;26;
+60;16;42;Xavier C.;;Le projet du module est concret et donne du sens aux notions théoriques.
+60;11;43;Xavier C.;24;
+60;12;43;Xavier C.;31;
+60;13;43;Xavier C.;37;
+60;13;43;Xavier C.;32;
+60;13;43;Xavier C.;35;
+60;14;43;Xavier C.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+60;15;43;Xavier C.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+60;11;44;Thalita D.;25;
+60;11;45;Maksim K.;24;
+60;12;45;Maksim K.;29;
+60;13;45;Maksim K.;35;
+60;14;45;Maksim K.;;Le volume de contenu est important par rapport au temps disponible en cours.
+60;11;46;Enzo F.;24;
+60;12;46;Enzo F.;28;
+60;16;46;Enzo F.;;Les objectifs sont clairement annoncés et la progression est cohérente.
+60;11;47;Cédrine M.;24;
+60;12;47;Cédrine M.;27;
+60;11;47;Daniel B.;24;
+60;12;47;Daniel B.;28;
+60;16;47;Daniel B.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+60;11;48;Florian L.;25;
+60;11;49;Issame B.;24;
+60;12;49;Issame B.;31;
+60;13;49;Issame B.;39;
+60;13;49;Issame B.;34;
+60;13;49;Issame B.;37;
+60;14;49;Issame B.;;Les objectifs attendus ne sont pas toujours assez explicites au début des activités.
+60;15;49;Issame B.;;Le sujet du module reste intéressant et utile pour la suite du cursus.
+60;11;50;Ikram C.;24;
+60;12;50;Ikram C.;30;
+60;13;50;Ikram C.;34;
+60;13;50;Ikram C.;37;
+60;14;50;Ikram C.;;Le rythme est parfois trop rapide pour assimiler correctement toutes les notions.
+60;15;50;Ikram C.;;Les supports fournissent une bonne base pour approfondir le cours en autonomie.
+60;11;51;Joey B. F.;24;
+60;12;51;Joey B. F.;29;
+60;13;51;Joey B. F.;37;
+60;14;51;Joey B. F.;;Les consignes des exercices pourraient être plus détaillées et mieux illustrées.
+60;11;51;Robert R.;24;
+60;12;51;Robert R.;30;
+60;13;51;Robert R.;38;
+60;13;51;Robert R.;33;
+60;14;51;Robert R.;;Certains prérequis auraient mérité un rappel avant d'aborder les notions avancées.
+60;15;51;Robert R.;;Les exemples professionnels donnent du sens aux notions étudiées.
+60;11;51;Hannah G.;24;
+60;12;51;Hannah G.;31;
+60;13;51;Hannah G.;39;
+60;13;51;Hannah G.;34;
+60;13;51;Hannah G.;37;
+60;14;51;Hannah G.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+60;15;51;Hannah G.;;Les séances pratiques favorisent l'apprentissage par l'expérimentation.
+60;11;52;Sonia T.;25;
+60;11;52;Sylvie M.;24;
+60;12;52;Sylvie M.;29;
+60;13;52;Sylvie M.;33;
+60;14;52;Sylvie M.;;Les retours sur les travaux pourraient être plus réguliers et plus précis.
+60;11;53;Valentin B.;24;
+60;12;53;Valentin B.;27;
+60;11;54;Abdoul Salam D.;24;
+60;12;54;Abdoul Salam D.;26;
+60;16;54;Abdoul Salam D.;;Les supports sont complets et restent utiles pour travailler en autonomie.
+60;11;55;Guillaume D.;24;
+60;12;55;Guillaume D.;31;
+60;13;55;Guillaume D.;33;
+60;13;55;Guillaume D.;36;
+60;13;55;Guillaume D.;39;
+60;14;55;Guillaume D.;;Le volume de contenu est important par rapport au temps disponible en cours.
+60;15;55;Guillaume D.;;Les échanges en classe permettent de confronter plusieurs méthodes de résolution.
+60;11;56;Domenico M.;25;
+60;11;57;Abelle C.;24;
+60;12;57;Abelle C.;29;
+60;13;57;Abelle C.;39;
+60;14;57;Abelle C.;;La préparation de l'évaluation pourrait être davantage structurée.
+60;11;57;Antoine G.;24;
+60;12;57;Antoine G.;30;
+60;13;57;Antoine G.;32;
+60;13;57;Antoine G.;35;
+60;14;57;Antoine G.;;Certaines séances gagneraient à alterner davantage théorie et mise en pratique.
+60;15;57;Antoine G.;;Les exercices proposés permettent malgré tout de mettre en pratique les notions essentielles.
+60;11;58;Olivier D.;24;
+60;12;58;Olivier D.;28;
+60;16;58;Olivier D.;;Le module encourage la réflexion et permet d'explorer plusieurs solutions.
+60;11;59;Xavier C.;24;
+60;12;59;Xavier C.;28;
+60;16;59;Xavier C.;;Le cours est bien structuré et les exemples facilitent la compréhension.
+60;11;60;Louis G.;25;
+60;17;;;;10

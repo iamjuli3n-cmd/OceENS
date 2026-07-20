@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OceEns — Tableau de bord</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Playfair+Display:wght@600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/program_manager.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard_navigation.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}" />
+</head>
+
+<body class="page-program-manager">
+  {% set header_title_fr = "Tableau de bord — Direction de campus" %}
+  {% include 'template_parts/part_site_header.html' %}
+
+  <div class="banner">
+    <div>
+      <div class="banner-badge">Direction de campus</div>
+      <div class="banner-greeting">Bonjour, {{ user.name }} !</div>
+    </div>
+  </div>
+
+  <div class="questionnaires-card">
+    <div class="program-container">
+      {% if allowed_campuses | length > 0 %}
+      <p class="program-intro">Vous êtes associé(e) aux campus suivants :</p>
+      <ul class="program-list">
+        {% for campus in allowed_campuses %}
+        <li>{{ campus }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      ⚠️ Aucun campus ne vous est associé.
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="questionnaires-card">
+    <div class="questionnaires-header">
+      <div class="questionnaires-title">Questionnaires de mes campus</div>
+    </div>
+
+    {% set msg_no_survey = 'Aucun questionnaire n’est associé à vos campus.' %}
+    {% include 'template_parts/part_show_surveys.html' %}
+  </div>
+</body>
+
+</html>

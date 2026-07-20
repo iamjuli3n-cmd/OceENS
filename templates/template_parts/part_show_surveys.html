@@ -191,12 +191,15 @@
     {% endif %}
 
 
+    {% if can_view_visualisation | default(true) %}
     <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
       onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
       <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     </a>
+    {% endif %}
+    {% if can_export_survey | default(true) %}
     <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon" title="Export CSV"
       onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
       <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
@@ -205,6 +208,7 @@
         <line x1="12" y1="15" x2="12" y2="3"></line>
       </svg>
     </a>
+    {% endif %}
     {% if can_delete_survey %}
     <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/delete" class="delete-survey-form"
       onsubmit="return confirm('Supprimer définitivement ce sondage et toutes ses réponses ? Cette action est irréversible.');">

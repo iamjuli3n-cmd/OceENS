@@ -20,6 +20,7 @@
     <button class="filter-tab" data-filter="admin" onclick="filter('admin')">Admins</button>
     <button class="filter-tab" data-filter="program_manager" onclick="filter('program_manager')">RP-RM</button>
     <button class="filter-tab" data-filter="facilitator" onclick="filter('facilitator')">Animateur</button>
+    <button class="filter-tab" data-filter="campus_manager" onclick="filter('campus_manager')">Direction de campus</button>
 
 </div>
 
@@ -38,7 +39,7 @@
             %}
 
             {% set ROLE_TITLE = { 'admin': 'Administrateur', 'student': 'Étudiant', 'program_manager': 'RPRM',
-            'facilitator': 'Animateur' } %}
+            'facilitator': 'Animateur', 'campus_manager': 'Direction de campus' } %}
 
 
             {% for user in users %}
