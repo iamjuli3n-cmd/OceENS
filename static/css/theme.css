@@ -273,6 +273,26 @@ html[data-theme="dark"] .page-survey .option-checkbox:has(input:checked) .option
     color: #e3b8f5;
 }
 
+html[data-theme="dark"] .page-survey .validation-errors {
+    background: linear-gradient(135deg, #2d1d23, #25191e);
+    border-color: #ff6b65;
+    box-shadow: 0 4px 18px rgba(255, 74, 68, .16);
+}
+
+html[data-theme="dark"] .page-survey .validation-errors-text,
+html[data-theme="dark"] .page-survey .question-block.missing-answer .question-label {
+    color: #ffb4af;
+}
+
+html[data-theme="dark"] .page-survey .validation-errors-count {
+    color: #ff8a84;
+}
+
+html[data-theme="dark"] .page-survey .question-block.missing-answer {
+    background: #2a1c22;
+    border-left-color: #ff6b65;
+}
+
 /* Survey creation */
 html[data-theme="dark"] .page-survey-create .card h2,
 html[data-theme="dark"] .page-survey-create .param-ue-name,
