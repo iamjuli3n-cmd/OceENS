@@ -227,32 +227,22 @@ if __name__ == "__main__":
         # Section Module/Enseignant
         for module_name in modules:
             module=modules[module_name]
-            if module.is_optional or module.one_teacher_in_list:
-                continue
-            print(module)
-            for teacher in module.teacher.split(","):
-                mask = df.columns.str.contains(module.name,case=False) & df.columns.str.contains(teacher,case=False)
+            if module.one_teacher_in_list:
+                print(module)
+                mask = df.columns.str.contains(module.name,case=False)
                 target_cols = df.columns[mask].tolist()
-                if len(target_cols)==0:
-                    print(f"ERROR: No question found for {module.name} / {teacher}. Please check the syllabus or the forms.")
-                    exit(1)
                 print(target_cols)
-                process_section(session,df,target_cols[0],12, module.module_id, teacher)
-                #exit(1)
-
-
-        # for column_name in df.columns:
-        #     if "expérience étudiante" in column_name and "campus" in column_name:
-        #         process_section(session,df,column_name,1)
-        #     elif "formation" in column_name and "campus" in column_name:
-        #         process_section(session,df,column_name,6)
-        #     elif "enseignant" in column_name and "quel" in column_name.casefold():
-        #         pass
-        #     elif "enseignant" in column_name:
-        #         #print(column_name.split("/")[0])
-        #         module_name,teacher_name = extract_module_and_teacher(column_name.split("/")[0])
-        #         #print(f"Module {module_name} / Teacher {teacher_name}")
-        #         
+                exit(1)
+            else:
+                for teacher in module.teacher.split(","):
+                    mask = df.columns.str.contains(module.name,case=False) & df.columns.str.contains(teacher,case=False)
+                    target_cols = df.columns[mask].tolist()
+                    if len(target_cols)==0:
+                        print(f"ERROR: No question found for {module.name} / {teacher}. Please check the syllabus or the forms.")
+                        exit(1)
+                    print(target_cols)
+                    process_section(session,df,target_cols[0],12, module.module_id, teacher)
+                    #exit(1)
 
                 
                 
