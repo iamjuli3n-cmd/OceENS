@@ -18,7 +18,7 @@ else
 	screen -d -m bash -c "source venv/bin/activate && python app.py"
 fi
 
-if [ $(ps -aux | grep "app.py" | wc -l) -gt 1 ]; then
+if [ $(ps -aux | grep "summaries_generator_daemon.py" | wc -l) -gt 1 ]; then
 	echo "Summaries generator already launched"
 else
 
