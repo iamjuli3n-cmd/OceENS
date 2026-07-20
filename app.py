@@ -56,8 +56,14 @@ from services.visualisation_data import get_visualisation_context2
 
 load_dotenv()
 # ┌─ Configuration ────────────────────────────────────────────────────────┐
-# Les trois slugs de dashboard reconnus par l'application
-VALID_ROLES = {"admin", "student", "program_manager"}
+# Rôles reconnus par l'application, avec ou sans périmètre associé.
+VALID_ROLES = {
+    "admin",
+    "student",
+    "program_manager",
+    "facilitator",
+    "campus_manager",
+}
 
 DASHBOARD_NAVIGATION = (
     {
@@ -1961,7 +1967,7 @@ def create_app():
 
     # ┌─ API : Gestion des rôles utilisateurs (accès restreint Admin) ────┐
     def _is_valid_role(roles: List[str]) -> bool:
-        return check_role(roles, ["student", "program_manager", "admin", "facilitator"])
+        return check_role(roles, list(VALID_ROLES))
 
     @api_router.put("/users/{user_id}/role")
     def update_user_role(
