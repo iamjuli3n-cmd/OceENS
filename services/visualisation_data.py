@@ -26,12 +26,43 @@ def bilingual_text(text_fr: Optional[str], text_en: Optional[str]) -> str:
     )
 
 
-def _to_score_1_10(value: Any) -> Optional[float]:
+def _to_nps_score(value: Any) -> Optional[int]:
+    """Return a valid NPS answer (an integer from 0 to 10)."""
     try:
         score = float(str(value).replace(",", ".").strip())
     except (TypeError, ValueError):
         return None
-    return score if 1 <= score <= 10 else None
+
+    if not score.is_integer() or not 0 <= score <= 10:
+        return None
+    return int(score)
+
+
+def _add_nps_response(container: Dict[str, Any], value: Any) -> None:
+    """Add one valid answer to the NPS category counters."""
+    score = _to_nps_score(value)
+    if score is None:
+        return
+
+    container["nps_response_count"] = container.get("nps_response_count", 0) + 1
+    if score >= 9:
+        category = "nps_promoter_count"
+    elif score >= 7:
+        category = "nps_passive_count"
+    else:
+        category = "nps_detractor_count"
+    container[category] = container.get(category, 0) + 1
+
+
+def _calculate_nps(container: Dict[str, Any]) -> Optional[float]:
+    """Calculate % promoters - % detractors from accumulated answers."""
+    response_count = container.get("nps_response_count", 0)
+    if not response_count:
+        return None
+
+    promoters = container.get("nps_promoter_count", 0)
+    detractors = container.get("nps_detractor_count", 0)
+    return 100 * (promoters - detractors) / response_count
 
 
 def _build_question(dic, data_row, options, options_value, submissions_sets):
@@ -77,12 +108,7 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
         if options_value[data_row["option_id"]]["is_positive"]:  # Count the positive
             dic["satisfaction_count"] += 1
     if data_row["question_type"] == "NPS":
-        recommendation_score = _to_score_1_10(data_row["answer_value"])
-        if recommendation_score is not None:
-            dic["recommendation_sum"] = (
-                dic.get("recommendation_sum", 0) + recommendation_score
-            )
-            dic["recommendation_count"] = dic.get("recommendation_count", 0) + 1
+        _add_nps_response(dic, data_row["answer_value"])
     if data_row["question_type"] == "QCU_Attendance":  # ATTENDANCE COUNT
         if "attendance_count" not in dic.keys():
             dic["attendance_count"] = 0
@@ -279,14 +305,10 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                         submissions_sets,
                     )
             elif data_row["section_type"] == "R":
-
-                if "recommendation_sum" not in data[data_row["section_name"]]:
-                    data[data_row["section_name"]]["recommendation_sum"] = 0
-                    data[data_row["section_name"]]["submission_count"] = 0
-                data[data_row["section_name"]]["recommendation_sum"] += float(
-                    data_row["answer_value"]
-                )
-                data[data_row["section_name"]]["submission_count"] += 1
+                if data_row["question_type"] == "NPS":
+                    _add_nps_response(
+                        data[data_row["section_name"]], data_row["answer_value"]
+                    )
 
             else:  # section_type = S --> Simple
                 if "questions" not in data[data_row["section_name"]]:
@@ -317,6 +339,21 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
             q["summary"]={"text":summary.summary_text,"metadata":summary.metadata_text}
 
     context["sections"] = data
+    recommendation_section = next(
+        (
+            section
+            for section in data.values()
+            if section.get("section_type") == "R"
+        ),
+        {},
+    )
+    context["recommendation"] = {
+        "score": _calculate_nps(recommendation_section),
+        "count": recommendation_section.get("nps_response_count", 0),
+        "promoters": recommendation_section.get("nps_promoter_count", 0),
+        "passives": recommendation_section.get("nps_passive_count", 0),
+        "detractors": recommendation_section.get("nps_detractor_count", 0),
+    }
     # END ANSWERS
 
     return context
