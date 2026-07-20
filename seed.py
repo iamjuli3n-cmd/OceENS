@@ -157,6 +157,7 @@ def seed_questions(session: Session):
             "FR_EN",
             "Dans l'ensemble, par rapport à votre expérience étudiante à l'EPF sur le campus de [CAMPUS], vous êtes :",
             "Overall, compared to your student experience at EPF on the [CAMPUS] campus, you are:",
+            False,
         ),
         (
             1,
@@ -164,6 +165,7 @@ def seed_questions(session: Session):
             "FR_EN",
             "Votre insatisfaction est liée à un ou plusieurs des éléments suivants :",
             "Your dissatisfaction is related to one or more of the following factors:",
+            False,
         ),
         (
             1,
@@ -171,20 +173,23 @@ def seed_questions(session: Session):
             "FR_EN",
             "Expliquez précisément en quoi vous n'êtes pas satisfait de votre expérience étudiante à l'EPF. N'hésitez pas à illustrer votre avis par des exemples et à proposer des pistes d'amélioration.",
             "Explain precisely why you might feel dissatisfied by your student experience at EPF. Don't hesitate to illustrate your opinion with examples and to suggest ways for improvement.",
+            False,
         ),
         (
             1,
             "Question_ouverte",
             "FR_EN",
-            "(Facultatif) Malgré votre réponse précédente, quels éléments positifs pouvez-vous quand même retenir ?",
-            "(Optional) Despite your previous answer, what positive aspects can you still take away from this?",
+            "Malgré votre réponse précédente, quels éléments positifs pouvez-vous quand même retenir ?",
+            "Despite your previous answer, what positive aspects can you still take away from this?",
+            True,
         ),
         (
             1,
             "Question_ouverte",
             "FR_EN",
-            "(Facultatif) Expliquez précisément en quoi vous êtes satisfait de votre expérience étudiante à l'EPF. N'hésitez pas à illustrer votre avis par des exemples.",
+            "Expliquez précisément en quoi vous êtes satisfait de votre expérience étudiante à l'EPF. N'hésitez pas à illustrer votre avis par des exemples.",
             "Explain precisely why you might feel satisfied by your student experience at EPF. Don't hesitate to illustrate your opinion with examples.",
+            True,
         ),
         (
             2,
@@ -192,6 +197,7 @@ def seed_questions(session: Session):
             "FR_EN",
             "Dans l'ensemble, par rapport à votre expérience globale de la formation [FORMATION] sur le campus de [CAMPUS], vous êtes :",
             "Overall, compared to your overall experience of the [FORMATION] program on the [CAMPUS] campus, you are:",
+            False,
         ),
         (
             2,
@@ -199,6 +205,7 @@ def seed_questions(session: Session):
             "FR_EN",
             "Votre insatisfaction est liée à un ou plusieurs des éléments suivants :",
             "Your dissatisfaction is related to one or more of the following factors:",
+            False,
         ),
         (
             2,
@@ -206,20 +213,23 @@ def seed_questions(session: Session):
             "FR_EN",
             "Expliquez précisément en quoi vous n'êtes pas satisfait de votre expérience étudiante à l'EPF. N'hésitez par exemple à illustrer votre avis par des exemples.",
             "Explain precisely why you might feel dissatisfied by your student experience at EPF. Don't hesitate to illustrate your opinion with examples.",
+            False,
         ),
         (
             2,
             "Question_ouverte",
             "FR_EN",
-            "(Facultatif) Malgré votre réponse précédente, quels éléments positifs pouvez-vous quand même retenir ?",
-            "(Optional) Despite your previous answer, what positive aspects can you still take away from this?",
+            "Malgré votre réponse précédente, quels éléments positifs pouvez-vous quand même retenir ?",
+            "Despite your previous answer, what positive aspects can you still take away from this?",
+            True,
         ),
         (
             2,
             "Question_ouverte",
             "FR_EN",
-            "(Facultatif) Expliquez précisément en quoi vous êtes satisfait de votre expérience étudiante à l'EPF. N'hésitez pas à illustrer votre avis par des exemples.",
+            "Expliquez précisément en quoi vous êtes satisfait de votre expérience étudiante à l'EPF. N'hésitez pas à illustrer votre avis par des exemples.",
             "Explain precisely why you might feel satisfied by your student experience at EPF. Don't hesitate to illustrate your opinion with examples.",
+            True,
         ),
         (
             3,
@@ -227,6 +237,7 @@ def seed_questions(session: Session):
             "FR_EN",
             "Avez-vous suivi ce module ?",
             "Did you take this module?",
+            False,
         ),
         (
             3,
@@ -234,6 +245,7 @@ def seed_questions(session: Session):
             "FR_EN",
             "Dans l'ensemble, pour le module [MODULE] avec l'enseignant [ENSEIGNANT], en tenant compte de l'organisation, des ressources et de la pédagogie, vous êtes :",
             "Overall, for the module [MODULE] with the teacher [ENSEIGNANT], taking into account the organization, resources and pedagogy, you are:",
+            False,
         ),
         (
             3,
@@ -241,6 +253,7 @@ def seed_questions(session: Session):
             "FR_EN",
             "Votre insatisfaction est liée à un ou plusieurs des éléments suivants :",
             "Your dissatisfaction is related to one or more of the following factors:",
+            False,
         ),
         (
             3,
@@ -248,20 +261,23 @@ def seed_questions(session: Session):
             "FR_EN",
             "Expliquez précisément en quoi vous n'êtes pas satisfait du ou des points choisis ci-dessus. N'hésitez pas à illustrer votre avis par des exemples.",
             "Explain specifically why you are not satisfied with the point(s) chosen above. Please feel free to illustrate your opinion with examples.",
+            False,
         ),
         (
             3,
             "Question_ouverte",
             "FR_EN",
-            "(Facultatif) Malgré votre réponse précédente, quels éléments positifs pouvez-vous quand même retenir ?",
-            "(Optional) Despite your previous answer, what positive aspects can you still take away from this?",
+            "Malgré votre réponse précédente, quels éléments positifs pouvez-vous quand même retenir ?",
+            "Despite your previous answer, what positive aspects can you still take away from this?",
+            True,
         ),
         (
             3,
             "Question_ouverte",
             "FR_EN",
-            "(Facultatif) Expliquez précisément en quoi vous êtes satisfait par l'expérience de ce module avec cet enseignant(e). N'hésitez pas à illustrer votre avis par des exemples.",
+            "Expliquez précisément en quoi vous êtes satisfait par l'expérience de ce module avec cet enseignant(e). N'hésitez pas à illustrer votre avis par des exemples.",
             "Explain precisely why you might feel satisfied by your experience in this course with this teacher. Don't hesitate to illustrate your opinion with examples.",
+            True,
         ),
         (
             4,
@@ -269,6 +285,7 @@ def seed_questions(session: Session):
             "FR_EN",
             "Seriez-vous prêts à recommander la formation à un ami ?",
             "Would you recommend the program to a friend?",
+            False,
         ),
     ]
 
@@ -280,6 +297,7 @@ def seed_questions(session: Session):
             language=q_data[2],
             text_fr=q_data[3],
             text_en=q_data[4],
+            is_optional=q_data[5],
         )
         session.merge(question)
     session.commit()
