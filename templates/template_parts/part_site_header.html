@@ -58,3 +58,16 @@
     {% endif %}
   </nav>
 </header>
+
+{% if request.query_params.get("error") == "survey_access" %}
+{% include 'template_parts/part_show_notification.html' %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    showNotification("Vous n'avez pas accès à ce sondage.", 'error');
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('error');
+    window.history.replaceState({}, '', url);
+  });
+</script>
+{% endif %}

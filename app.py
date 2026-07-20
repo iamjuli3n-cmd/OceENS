@@ -476,7 +476,10 @@ def create_app():
             else:
                 roles = ["student"]
             slug = role_to_dashboard_slug(roles)
-            return RedirectResponse(url=f"/dashboard/{slug}")
+            dashboard_url = f"/dashboard/{slug}"
+            if request.session.pop("survey_access_denied", False):
+                dashboard_url += "?error=survey_access"
+            return RedirectResponse(url=dashboard_url)
         return templates.TemplateResponse(request=request, name="index.html")
 
     # └────────────────────────────────────────────────────────────────┘
@@ -767,6 +770,23 @@ def create_app():
         if not survey:
             return HTMLResponse(content="Survey introuvable.", status_code=409)
 
+        user = get_current_user(request)
+        user_email = user.get("email") if user else None
+        if not user_email:
+            return RedirectResponse(url="/", status_code=303)
+
+        respondent = session.exec(
+            select(Respondent)
+            .join(User, User.user_id == Respondent.user_id)
+            .where(
+                Respondent.survey_id == survey_id,
+                func.lower(User.mail) == user_email.casefold(),
+            )
+        ).first()
+        if not respondent:
+            request.session["survey_access_denied"] = True
+            return RedirectResponse(url="/", status_code=303)
+
         program = session.exec(
             select(Program).where(Program.code == survey.program)
         ).first()
@@ -776,24 +796,7 @@ def create_app():
         survey_is_closed = (survey.status != 1)
 
         # ── Vérifier si l'utilisateur connecté a déjà répondu ───────────
-        user_has_answered = False
-        user = get_current_user(request)
-
-        if user and user.get("email"):
-            db_user = session.exec(
-                select(User).where(func.lower(User.mail) == user["email"].casefold())
-            ).first()
-
-            if db_user:
-                respondent = session.exec(
-                    select(Respondent).where(
-                        Respondent.survey_id == survey_id,
-                        Respondent.user_id == db_user.user_id,
-                    )
-                ).first()
-
-                if respondent:
-                    user_has_answered = respondent.submission_date is not None
+        user_has_answered = respondent.submission_date is not None
 
         # ── Chargement des données du questionnaire ─────────────────────
         sections = session.exec(
