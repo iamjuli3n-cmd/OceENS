@@ -102,6 +102,12 @@ class Question(SQLModel, table=True):
     language: Optional[str] = Field(default=None, sa_column=Column("language", String))
     text_fr: Optional[str] = Field(default=None, sa_column=Column("text_fr", Text))
     text_en: Optional[str] = Field(default=None, sa_column=Column("text_en", Text))
+    is_optional: bool = Field(
+        default=False,
+        sa_column=Column(
+            "is_optional", Integer, nullable=False, default=0, server_default="0"
+        ),
+    )
 
 
 class Option(SQLModel, table=True):

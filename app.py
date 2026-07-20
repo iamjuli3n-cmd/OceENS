@@ -879,6 +879,7 @@ def create_app():
                         "text_fr": q.text_fr or "",
                         "text_en": q.text_en or "",
                         "question_type": q.question_type,
+                        "is_optional": bool(q.is_optional),
                         "category": sec.name,
                         "options": option_items,
                     }
