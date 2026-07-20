@@ -309,10 +309,10 @@ def get_campus_manager_program_codes(
     return get_program_codes_for_campuses(session, get_allowed_campuses(roles))
 
 
-def get_visualisation_program_codes(
+def get_results_program_codes(
     session: Session, roles: list[str]
 ) -> list[str]:
-    """Resolve programs whose survey results can be viewed by the user."""
+    """Resolve programs whose survey results can be viewed or exported."""
     program_codes = get_role_scopes(roles, "program_manager")
     program_codes.extend(get_campus_manager_program_codes(session, roles))
     return list(dict.fromkeys(program_codes))
@@ -440,13 +440,14 @@ def require_roles(
         dict avec {"name", "email", "role"} si autorisé, None sinon
 
     Exemple :
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             return RedirectResponse(url="/")
+        user,roles = auth_result
     """
     user = get_current_user(request)
     if not user:
-        return None
+        return None,None
 
     # Get all roles (or student if None)
     roles_query = session.exec(
@@ -577,10 +578,11 @@ def create_app():
         duplicate_from: Optional[int] = None,
     ):
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             # Utilisateur non connecté ou rôle insuffisant → redirection
             return RedirectResponse(url="/")
+        user,roles = auth_result
 
         # Déterminer les formations autorisées pour un RP-RM
         allowed_programs = []
@@ -668,12 +670,13 @@ def create_app():
         Si l'import Excel échoue, le survey est annulé (ROLLBACK).
         """
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             return JSONResponse(
                 content={"error": "Accès refusé. Rôle Admin ou RP-RM requis."},
                 status_code=403,
             )
+        user,roles = auth_result
 
         # ── Sécurité : vérifier que la program est autorisée pour le RP-RM ──
         allowed_programs = []
@@ -1236,12 +1239,13 @@ def create_app():
         session: SessionDep,
         status: int = Form(...),
     ):
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             return JSONResponse(
                 content={"error": "Accès refusé."},
                 status_code=403,
             )
+        user,roles = auth_result
 
         if status not in (0, 1):
             return JSONResponse(
@@ -1289,11 +1293,12 @@ def create_app():
         session: Session,
     ):
         """Retourne le sondage si l'utilisateur peut gérer ses étudiants."""
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             return None, JSONResponse(
                 content={"error": "Accès refusé."}, status_code=403
             )
+        user,roles = auth_result
 
         survey = session.exec(
             select(Survey).where(Survey.survey_id == survey_id)
@@ -1512,12 +1517,13 @@ def create_app():
         request: Request,
         session: SessionDep,
     ):
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(request, session, ["admin", "program_manager"])
+        if auth_result is None:
             return JSONResponse(
                 content={"error": "Accès refusé."},
                 status_code=403,
             )
+        user,roles = auth_result
 
         survey = session.exec(
             select(Survey).where(Survey.survey_id == survey_id)
@@ -1837,7 +1843,7 @@ def create_app():
             "can_duplicate_survey": False,
             "can_generate_summaries": False,
             "can_view_visualisation": True,
-            "can_export_survey": False,
+            "can_export_survey": True,
             "dashboard_navigation": get_dashboard_navigation(
                 roles, "campus-manager"
             ),
@@ -2138,12 +2144,13 @@ def create_app():
         request: Request, user_id: int, body: RoleUpdate, session: SessionDep
     ):
         # ── Sécurité : seul un Admin peut modifier les rôles ──
-        admin,roles = require_roles(request, session, ["admin"])
-        if admin is None:
+        auth_result = require_roles(request, session, ["admin"])
+        if auth_result is None:
             return JSONResponse(
                 content={"error": "Accès refusé. Rôle Admin requis."},
                 status_code=403,
             )
+        admin,roles = auth_result
 
         for role in body.roles:
             if not _is_valid_role([role]):
@@ -2225,19 +2232,15 @@ def create_app():
     @api_router.get("/surveys/{survey_id}/export")
     def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
         auth_result = require_roles(
-            request, session, ["admin", "program_manager"]
+            request,
+            session,
+            ["admin", "program_manager", "campus_manager"],
         )
         if auth_result is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
         user,roles = auth_result
 
-        if not check_role(roles, ["program_manager", "admin"]):
-            return RedirectResponse(url="/")
-
-        allowed_programs = []
-        for role in roles:
-            if role.startswith("program_manager"):
-                allowed_programs.extend(parse_rprm_formations(role))
+        allowed_programs = get_results_program_codes(session, roles)
 
         survey, error_or_warning, _, _ = _check_sondage_access_and_status(
             session, survey_id, roles, allowed_programs
@@ -2268,7 +2271,7 @@ def create_app():
             return RedirectResponse(url="/")
         user,roles = auth_result
 
-        allowed_programs = get_visualisation_program_codes(session, roles)
+        allowed_programs = get_results_program_codes(session, roles)
 
         survey, error_or_warning, respondents_count, answers_count = (
             _check_sondage_access_and_status(
@@ -2296,9 +2299,12 @@ def create_app():
 
     @api_router.post("/surveys/{survey_id}/generate-summaries")
     def generate_summaries(request: Request, survey_id: int, request_data: SummaryRequest, session: SessionDep):
-        user,roles = require_roles(request, session, ["admin", "program_manager", "facilitator"])
-        if user is None:
+        auth_result = require_roles(
+            request, session, ["admin", "program_manager", "facilitator"]
+        )
+        if auth_result is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
+        user,roles = auth_result
 
         allowed_programs = []
         for role in roles:
@@ -2365,9 +2371,12 @@ def create_app():
     @api_router.post("/surveys/{survey_id}/destroy-summaries")
     def destroy_summaries(request: Request, survey_id: int, session: SessionDep):
         
-        user,roles = require_roles(request, session, ["admin", "program_manager", "facilitator"])
-        if user is None:
+        auth_result = require_roles(
+            request, session, ["admin", "program_manager", "facilitator"]
+        )
+        if auth_result is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
+        user,roles = auth_result
 
         allowed_programs = []
         for role in roles:
