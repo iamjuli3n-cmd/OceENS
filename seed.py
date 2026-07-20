@@ -118,6 +118,7 @@ def seed_roles(session: Session):
     role_data = [
         (1, "admin"),
         (1, "program_manager:MDAI5"),
+        (6, "admin"),
         (6, "campus_manager:Montpellier"),
         (7, "admin"),
         (8, "admin"),

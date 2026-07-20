@@ -2046,6 +2046,7 @@ def create_app():
         programs = [
             {"code": p.code, "name": p.name, "campus": p.campus} for p in db_programs
         ]
+        campuses = sorted({p.campus for p in db_programs if p.campus})
 
         program_name_by_code = {p.code: {"name":p.name,"campus":p.campus}  for p in db_programs}
 
@@ -2117,6 +2118,7 @@ def create_app():
             "user": user,
             "surveys": surveys,
             "programs": programs,
+            "campuses": campuses,
             "users": users,
             "can_view_survey_students": True,
             "can_delete_survey": True,
@@ -2139,6 +2141,15 @@ def create_app():
     def _is_valid_role(roles: List[str]) -> bool:
         return check_role(roles, list(VALID_ROLES))
 
+    def _has_valid_campus_scope(
+        role: str, valid_campuses: set[str]
+    ) -> bool:
+        if role.split(":", 1)[0] != "campus_manager":
+            return True
+
+        role_campuses = parse_role_scopes(role)
+        return bool(role_campuses) and set(role_campuses) <= valid_campuses
+
     @api_router.put("/users/{user_id}/role")
     def update_user_role(
         request: Request, user_id: int, body: RoleUpdate, session: SessionDep
@@ -2152,8 +2163,13 @@ def create_app():
             )
         admin,roles = auth_result
 
+        valid_campuses = set(
+            session.exec(select(Program.campus).distinct()).all()
+        )
         for role in body.roles:
-            if not _is_valid_role([role]):
+            if not _is_valid_role([role]) or not _has_valid_campus_scope(
+                role, valid_campuses
+            ):
                 return JSONResponse(
                     content={"detail": f"Rôle invalide : '{role}'"},
                     status_code=422,

@@ -311,6 +311,11 @@ main {
     color: #1565c0;
 }
 
+.role-badge.campus_manager {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
 .role-dot {
     width: 6px;
     height: 6px;
