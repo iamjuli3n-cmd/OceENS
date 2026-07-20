@@ -247,6 +247,63 @@ def role_to_dashboard_slug(roles: List[str]) -> str:
     return "student"
 
 
+def parse_role_scopes(role: str) -> list[str]:
+    """Extract the non-empty scopes stored after a role name."""
+    if not role or not isinstance(role, str) or ":" not in role:
+        return []
+
+    return [
+        scope.strip()
+        for scope in role.split(":", 1)[1].split(";")
+        if scope.strip()
+    ]
+
+
+def get_role_scopes(roles: list[str], role_name: str) -> list[str]:
+    """Return the distinct scopes associated with one role, in input order."""
+    scopes: list[str] = []
+    seen_scopes: set[str] = set()
+
+    for role in roles:
+        if not isinstance(role, str) or role.split(":", 1)[0] != role_name:
+            continue
+
+        for scope in parse_role_scopes(role):
+            if scope not in seen_scopes:
+                seen_scopes.add(scope)
+                scopes.append(scope)
+
+    return scopes
+
+
+def get_allowed_campuses(roles: list[str]) -> list[str]:
+    """Return the campuses assigned to a campus manager."""
+    return get_role_scopes(roles, "campus_manager")
+
+
+def get_program_codes_for_campuses(
+    session: Session, campuses: list[str]
+) -> list[str]:
+    """Resolve all program codes belonging to the provided campuses."""
+    if not campuses:
+        return []
+
+    return list(
+        session.exec(
+            select(Program.code)
+            .where(Program.campus.in_(campuses))
+            .order_by(Program.code)
+        ).all()
+    )
+
+
+def get_campus_manager_program_codes(
+    session: Session, roles: list[str]
+) -> list[str]:
+    """Resolve the programs accessible through campus manager roles."""
+    return get_program_codes_for_campuses(session, get_allowed_campuses(roles))
+
+
 def parse_rprm_formations(role: str) -> list[str]:
     """
     Extrait la liste des formations autorisées depuis une chaîne de rôle RP-RM.
@@ -258,9 +315,7 @@ def parse_rprm_formations(role: str) -> list[str]:
     "admin:PROGRAM1;PROGRAM2" → ["PROGRAM1", "PROGRAM2"]
     "admin:PROGRAM1"            → ["PROGRAM1"]
     """
-    if not role or not isinstance(role, str) or ":" not in role:
-        return []
-    return [f.strip() for f in role.split(":")[1].split(";")]
+    return parse_role_scopes(role)
 
 
 # └────────────────────────────────────────────────────────────────────────┘
