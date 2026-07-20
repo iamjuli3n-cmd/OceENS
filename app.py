@@ -208,10 +208,11 @@ def delete_survey_with_relations(session: Session, survey_id: int) -> None:
     try:
         session.exec(delete(Answer).where(Answer.submission_id.in_(submission_ids)))
         session.exec(delete(Respondent).where(Respondent.survey_id == survey_id))
+        session.exec(delete(Summary).where(Summary.survey_id == survey_id))
         session.exec(delete(Module).where(Module.survey_id == survey_id))
         session.exec(delete(Submission).where(Submission.survey_id == survey_id))
         session.exec(delete(Survey).where(Survey.survey_id == survey_id))
-        session.commit()
+
     except Exception as e:
             session.rollback()
             return JSONResponse(

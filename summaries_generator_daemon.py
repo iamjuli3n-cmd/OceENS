@@ -6,6 +6,11 @@ import json
 from datetime import datetime
 from markdown_it import MarkdownIt
 import time
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 import sys, signal
@@ -15,7 +20,8 @@ def signal_handler(signal, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-LLM_API_KEY="sk-42456ae9c68d42dba28a6b4b22d0e61b"
+
+LLM_API_KEY= os.getenv("LLM_API_KEY")  # fill the api_key in the .env 
 OLLAMA_URL="https://locallm.mde.epf.fr/ollama"
 OLLAMA_HEADERS={'Authorization':f"Bearer {LLM_API_KEY}", 'Content-type': 'application/json'}
 
