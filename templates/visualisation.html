@@ -111,13 +111,10 @@
                 </div>
             </div>
             <div class="kpi-right">
-                <h3>Score de recommandation</h3>
+                <h3>Score NPS</h3>
                 <div class="huge-pct">
-                    {% if sections and sections['Recommandation'] and sections['Recommandation']['recommendation_sum']
-                    is not none and sections['Recommandation']['submission_count'] > 0 %}
-                    {% set recommendation_score = sections['Recommandation']['recommendation_sum'] /
-                    sections['Recommandation']['submission_count'] %}
-                    {{ "%.1f"|format(recommendation_score)|replace(".", ",") }} / 10
+                    {% if recommendation.score is not none %}
+                    {{ "%+.1f"|format(recommendation.score)|replace(".", ",") }}
                     {% else %}Non disponible{% endif %}
                 </div>
             </div>
