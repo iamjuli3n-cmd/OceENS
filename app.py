@@ -309,6 +309,15 @@ def get_campus_manager_program_codes(
     return get_program_codes_for_campuses(session, get_allowed_campuses(roles))
 
 
+def get_visualisation_program_codes(
+    session: Session, roles: list[str]
+) -> list[str]:
+    """Resolve programs whose survey results can be viewed by the user."""
+    program_codes = get_role_scopes(roles, "program_manager")
+    program_codes.extend(get_campus_manager_program_codes(session, roles))
+    return list(dict.fromkeys(program_codes))
+
+
 def parse_rprm_formations(role: str) -> list[str]:
     """
     Extrait la liste des formations autorisées depuis une chaîne de rôle RP-RM.
@@ -1827,7 +1836,7 @@ def create_app():
             "can_update_survey_status": False,
             "can_duplicate_survey": False,
             "can_generate_summaries": False,
-            "can_view_visualisation": False,
+            "can_view_visualisation": True,
             "can_export_survey": False,
             "dashboard_navigation": get_dashboard_navigation(
                 roles, "campus-manager"
@@ -2215,9 +2224,12 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/export")
     def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(
+            request, session, ["admin", "program_manager"]
+        )
+        if auth_result is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
+        user,roles = auth_result
 
         if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
@@ -2247,17 +2259,16 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
     def visualisation_page(request: Request, survey_id: int, session: SessionDep):
-        user,roles = require_roles(request, session, ["admin", "program_manager"])
-        if user is None:
+        auth_result = require_roles(
+            request,
+            session,
+            ["admin", "program_manager", "campus_manager"],
+        )
+        if auth_result is None:
             return RedirectResponse(url="/")
+        user,roles = auth_result
 
-        if not check_role(roles, ["program_manager", "admin"]):
-            return RedirectResponse(url="/")
-
-        allowed_programs = []
-        for role in roles:
-            if role.startswith("program_manager"):
-                allowed_programs.extend(parse_rprm_formations(role))
+        allowed_programs = get_visualisation_program_codes(session, roles)
 
         survey, error_or_warning, respondents_count, answers_count = (
             _check_sondage_access_and_status(
