@@ -279,6 +279,9 @@ def get_role_scopes(roles: list[str], role_name: str) -> list[str]:
     """Return the distinct scopes associated with one role, in input order."""
     scopes: list[str] = []
     seen_scopes: set[str] = set()
+    
+    if not roles:
+        return scopes
 
     for role in roles:
         if not isinstance(role, str) or role.split(":", 1)[0] != role_name:
@@ -2258,14 +2261,13 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/export")
     def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
-        auth_result = require_roles(
+        user,roles = require_roles(
             request,
             session,
             ["admin", "program_manager", "campus_manager"],
         )
-        if auth_result is None:
+        if user is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
-        user,roles = auth_result
 
         allowed_programs = get_results_program_codes(session, roles)
 
@@ -2289,14 +2291,13 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
     def visualisation_page(request: Request, survey_id: int, session: SessionDep):
-        auth_result = require_roles(
+        user,roles = require_roles(
             request,
             session,
             ["admin", "program_manager", "campus_manager"],
         )
-        if auth_result is None:
+        if user is None:
             return RedirectResponse(url="/")
-        user,roles = auth_result
 
         allowed_programs = get_results_program_codes(session, roles)
 
