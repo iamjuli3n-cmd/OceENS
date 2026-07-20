@@ -119,7 +119,9 @@ const SurveyModule = {
         const allBlocks = document.querySelectorAll('.question-block');
         const visibleBlocks = [];
         allBlocks.forEach(b => {
-            if (!b.classList.contains('q-hidden') && !this.isInsideHiddenContainer(b)) {
+            if (!b.classList.contains('q-hidden')
+                && !this.isInsideHiddenContainer(b)
+                && b.dataset.optional !== 'true') {
                 visibleBlocks.push(b);
             }
         });
@@ -348,18 +350,8 @@ const SurveyModule = {
             if (block.classList.contains('q-hidden')) return;
             if (this.isInsideHiddenContainer(block)) return;
 
-            // Ignorer les questions facultatives (dernière question de chaque section pour le cas SATISFAIT)
+            // Le caractère facultatif vient explicitement des données de la question.
             if (block.dataset.optional === 'true') return;
-
-            // Détection dynamique de l'avant-dernière question (dernière question intermédiaire) pour le cas INSATISFAIT
-            const group = block.closest('[data-satisfaction-group]');
-            if (group) {
-                const middleBlocks = Array.from(group.querySelectorAll('.question-block[data-q-role="middle"]'));
-                // Si on est le dernier middle block, c'est la question facultative du cas INSATISFAIT
-                if (middleBlocks.length > 0 && block === middleBlocks[middleBlocks.length - 1]) {
-                    return;
-                }
-            }
 
             // Ignorer les blocs de sélection exclusive de prof (ce sont des sélecteurs, pas des questions de contenu)
             if (block.classList.contains('exclusive-prof-select')) return;
@@ -579,6 +571,12 @@ const SurveyModule = {
 };
 
 // ─── Init au chargement ─────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-    SurveyModule.init();
-});
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+        SurveyModule.init();
+    });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = SurveyModule;
+}

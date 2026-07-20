@@ -319,6 +319,18 @@ main {
     margin-right: 4px;
 }
 
+.question-badge-optional {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f2e9f7;
+    color: #6b278b;
+    font-size: 0.72rem;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
 .hint {
     font-size: 0.82rem;
     color: #8899a6;
