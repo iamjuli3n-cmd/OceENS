@@ -5,7 +5,7 @@ from database import engine
 from sqlmodel import Session, select, func
 from models import  Survey, Submission, Answer, Option,Module
 
-def process_section(session,df,column_name, initial_question_id):
+def process_section(session,df,column_name, initial_question_id, module_id=None, teacher=None):
     loc = df.columns.get_loc(column_name)
     question_id=initial_question_id
     print(df[column_name])
@@ -19,7 +19,9 @@ def process_section(session,df,column_name, initial_question_id):
         answer=Answer(
             submission_id=submission_ids[index],
             question_id=question_id,
-            option_id=option_id
+            option_id=option_id,
+            module_id=module_id,
+            teacher=teacher,
         )
         session.add(answer)
         session.flush()
@@ -43,7 +45,9 @@ def process_section(session,df,column_name, initial_question_id):
             answer=Answer(
                 submission_id=submission_ids[index],
                 question_id=question_id,
-                option_id=option_id
+                option_id=option_id,
+                module_id=module_id,
+                teacher=teacher,
             )
             session.add(answer)
             session.flush()
@@ -58,7 +62,9 @@ def process_section(session,df,column_name, initial_question_id):
         answer=Answer(
             submission_id=submission_ids[index],
             question_id=question_id,
-            value=answer_row
+            value=answer_row,
+            module_id=module_id,
+            teacher=teacher,
         )
         session.add(answer)
         session.flush()
@@ -73,17 +79,45 @@ def process_section(session,df,column_name, initial_question_id):
         answer=Answer(
             submission_id=submission_ids[index],
             question_id=question_id,
-            value=answer_row
+            value=answer_row,
+            module_id=module_id,
+            teacher=teacher,
         )
         session.add(answer)
         session.flush()
+    
+    # Process answers Attendance
+    if module_id:
+        if "avez-vous" not in df.columns[loc-1].casefold():
+            print(f"ERROR: Attendance question missing for {column_name}.\nCheck Syllabus or Forms xlsx.")
+            exit(1)
+        question_id=11
+        for index,answer_row in df[df.columns[loc-1]].items():
+            if pd.isna(answer_row):
+                continue
+            text_fr=answer_row.split("/")[0].strip()
+            
+            option_id = session.exec(select(Option.option_id).where(Option.question_id==question_id,Option.text_fr==text_fr)).first()
+            print(text_fr, option_id)
+            answer=Answer(
+                submission_id=submission_ids[index],
+                question_id=question_id,
+                option_id=option_id,
+                module_id=module_id,
+                teacher=teacher
+            
+            )
+            session.add(answer)
+            session.flush()
 
-def process_section_with_teacher(session,df,column_name, initial_question_id, module_name, teacher_name):
+def process_section_with_teacher(session,df,column_name, initial_question_id, module_id, teacher_name):
 
     # Process answers Attendance
     loc = df.columns.get_loc(column_name)
     question_id=11
     for index,answer_row in df[df.columns[loc-1]].items():
+        if pd.isna(answer_row):
+            continue
         text_fr=answer_row.split("/")[0].strip()
         
         option_id = session.exec(select(Option.option_id).where(Option.question_id==question_id,Option.text_fr==text_fr)).first()
@@ -91,7 +125,10 @@ def process_section_with_teacher(session,df,column_name, initial_question_id, mo
         answer=Answer(
             submission_id=submission_ids[index],
             question_id=question_id,
-            option_id=option_id
+            option_id=option_id,
+            module_id=module_id,
+            teacher=teacher
+        
         )
         session.add(answer)
         session.flush()
@@ -147,11 +184,11 @@ if __name__ == "__main__":
         modules={}
         for idx, row in df.iterrows():
             module=Module(
-                name=row["name"],
-                teacher=row["teachers"],
-                ue=row["ue"],
-                is_optional=row["is_optional"],
-                one_teacher_in_list=row["one_teacher_in_list"],
+                name=row["name"].strip(),
+                teacher=row["teachers"].strip(),
+                ue=row["ue"].strip(),
+                is_optional=int(row["is_optional"]),
+                one_teacher_in_list=int(row["one_teacher_in_list"]),
                 survey_id=survey_id
             )
             session.add(module)
@@ -190,13 +227,18 @@ if __name__ == "__main__":
         # Section Module/Enseignant
         for module_name in modules:
             module=modules[module_name]
+            if module.is_optional or module.one_teacher_in_list:
+                continue
             print(module)
             for teacher in module.teacher.split(","):
-                teacher = teacher.split()[0]
-                print(f'Module {module.name} / Teacher {teacher}')
                 mask = df.columns.str.contains(module.name,case=False) & df.columns.str.contains(teacher,case=False)
                 target_cols = df.columns[mask].tolist()
+                if len(target_cols)==0:
+                    print(f"ERROR: No question found for {module.name} / {teacher}. Please check the syllabus or the forms.")
+                    exit(1)
                 print(target_cols)
+                process_section(session,df,target_cols[0],12, module.module_id, teacher)
+                #exit(1)
 
 
         # for column_name in df.columns:
@@ -210,12 +252,12 @@ if __name__ == "__main__":
         #         #print(column_name.split("/")[0])
         #         module_name,teacher_name = extract_module_and_teacher(column_name.split("/")[0])
         #         #print(f"Module {module_name} / Teacher {teacher_name}")
-        #         process_section_with_teacher(session,df,column_name,12, module_name, teacher_name)
+        #         
 
                 
                 
                     
-        #session.commit()
+        session.commit()
         print(survey_id)
         
         
