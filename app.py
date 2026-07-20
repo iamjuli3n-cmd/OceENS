@@ -121,6 +121,8 @@ def get_student_dashboard_redirect(roles: list[str]) -> str | None:
     role_names = {role.split(":", 1)[0] for role in roles}
     if "admin" in role_names:
         return None
+    if "campus_manager" in role_names:
+        return "/dashboard/campus-manager"
     if "program_manager" in role_names:
         return "/dashboard/program-manager"
     if "facilitator" in role_names:
@@ -234,12 +236,15 @@ def role_to_dashboard_slug(roles: List[str]) -> str:
     "admin"              → "admin"
     "program_manager"              → "program-manager"
     "program_manager:MDE_P2027"    → "program-manager"
+    "campus_manager:Paris"         → "campus-manager"
     "facilitator:MDE_P2027"        → "facilitator"
     "student" (ou autre) → "student"
     """
     role_names = {role.split(":", 1)[0] for role in roles}
     if "admin" in role_names:
         return "admin"
+    if "campus_manager" in role_names:
+        return "campus-manager"
     if "program_manager" in role_names:
         return "program-manager"
     if "facilitator" in role_names:
@@ -1737,6 +1742,101 @@ def create_app():
         return templates.TemplateResponse(
             request=request,
             name="dashboard/program_manager.html",
+            context=context,
+        )
+
+    @dashboard_router.get("/campus-manager", response_class=HTMLResponse)
+    async def campus_manager_dashboard(request: Request, session: SessionDep):
+        user = get_current_user(request)
+        if not user:
+            return RedirectResponse(url="/")
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if not check_role(roles, ["campus_manager"]):
+            return RedirectResponse(url="/")
+
+        allowed_campuses = get_allowed_campuses(roles)
+        program_codes = get_campus_manager_program_codes(session, roles)
+        db_programs = session.exec(
+            select(Program).where(Program.code.in_(program_codes))
+        ).all()
+        program_name_by_code = {
+            program.code: program.name for program in db_programs
+        }
+
+        rows = session.exec(
+            select(
+                Survey.survey_id,
+                Survey.program,
+                Program.campus,
+                Survey.semester,
+                Survey.school_year,
+                Survey.status,
+                func.count(Respondent.user_id).label("respondents_count"),
+                func.count(Respondent.submission_date).label("answers_count"),
+            )
+            .join(Program, Program.code == Survey.program, isouter=True)
+            .join(Respondent, Survey.survey_id == Respondent.survey_id, isouter=True)
+            .where(Survey.program.in_(program_codes))
+            .group_by(Survey.survey_id)
+            .order_by(Survey.survey_id.desc())
+        ).all()
+
+        survey_ids = [row[0] for row in rows]
+        submissions_count = {}
+        if survey_ids:
+            submissions_rows = session.exec(
+                select(
+                    Submission.survey_id,
+                    func.count(Submission.submission_id).label("submissions_count"),
+                )
+                .where(Submission.survey_id.in_(survey_ids))
+                .group_by(Submission.survey_id)
+            ).all()
+            submissions_count = {row[0]: row[1] for row in submissions_rows}
+
+        surveys = [
+            {
+                "survey_id": row[0],
+                "program": row[1],
+                "program_name": program_name_by_code.get(row[1], row[1]),
+                "campus": row[2],
+                "semester": row[3],
+                "school_year": row[4],
+                "is_closed": (row[5] != 1),
+                "is_generating": (row[5] == 2),
+                "respondents_count": row[6],
+                "answers_count": row[7],
+                "submissions_count": submissions_count.get(row[0], 0),
+            }
+            for row in rows
+        ]
+
+        context = {
+            "user": user,
+            "surveys": surveys,
+            "allowed_campuses": allowed_campuses,
+            "can_view_survey_students": False,
+            "can_delete_survey": False,
+            "can_update_survey_status": False,
+            "can_duplicate_survey": False,
+            "can_generate_summaries": False,
+            "can_view_visualisation": False,
+            "can_export_survey": False,
+            "dashboard_navigation": get_dashboard_navigation(
+                roles, "campus-manager"
+            ),
+        }
+
+        return templates.TemplateResponse(
+            request=request,
+            name="dashboard/campus_manager.html",
             context=context,
         )
 
