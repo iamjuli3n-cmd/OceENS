@@ -59,11 +59,16 @@
   </nav>
 </header>
 
-{% if request.query_params.get("error") == "survey_access" %}
+{% set survey_error = request.query_params.get("error") %}
+{% if survey_error in ("survey_access", "survey_not_found") %}
 {% include 'template_parts/part_show_notification.html' %}
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    showNotification("Vous n'avez pas accès à ce sondage.", 'error');
+    const messages = {
+      survey_access: "Vous n'avez pas accès à ce sondage.",
+      survey_not_found: "Ce sondage n'existe pas ou n'est plus disponible."
+    };
+    showNotification(messages[{{ survey_error | tojson }}], 'error');
 
     const url = new URL(window.location.href);
     url.searchParams.delete('error');

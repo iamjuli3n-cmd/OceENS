@@ -477,8 +477,13 @@ def create_app():
                 roles = ["student"]
             slug = role_to_dashboard_slug(roles)
             dashboard_url = f"/dashboard/{slug}"
-            if request.session.pop("survey_access_denied", False):
-                dashboard_url += "?error=survey_access"
+            survey_error = request.session.pop("survey_redirect_error", None)
+            survey_error_query = {
+                "access_denied": "survey_access",
+                "not_found": "survey_not_found",
+            }.get(survey_error)
+            if survey_error_query:
+                dashboard_url += f"?error={survey_error_query}"
             return RedirectResponse(url=dashboard_url)
         return templates.TemplateResponse(request=request, name="index.html")
 
@@ -768,7 +773,8 @@ def create_app():
         ).first()
 
         if not survey:
-            return HTMLResponse(content="Survey introuvable.", status_code=409)
+            request.session["survey_redirect_error"] = "not_found"
+            return RedirectResponse(url="/", status_code=303)
 
         user = get_current_user(request)
         user_email = user.get("email") if user else None
@@ -784,7 +790,7 @@ def create_app():
             )
         ).first()
         if not respondent:
-            request.session["survey_access_denied"] = True
+            request.session["survey_redirect_error"] = "access_denied"
             return RedirectResponse(url="/", status_code=303)
 
         program = session.exec(
