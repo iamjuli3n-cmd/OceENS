@@ -77,6 +77,11 @@ DASHBOARD_NAVIGATION = (
         "label": "RP-RM",
     },
     {
+        "role": "campus_manager",
+        "slug": "campus-manager",
+        "label": "Direction de campus",
+    },
+    {
         "role": "admin",
         "slug": "admin",
         "label": "Administrateur",
@@ -102,8 +107,14 @@ def get_dashboard_navigation(
             "admin",
             "student",
         }
+        if "campus_manager" in role_names:
+            available_roles.add("campus_manager")
     else:
-        available_roles = role_names & {"facilitator", "program_manager"}
+        available_roles = role_names & {
+            "facilitator",
+            "program_manager",
+            "campus_manager",
+        }
 
     return [
         {
