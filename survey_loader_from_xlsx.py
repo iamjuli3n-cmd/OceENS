@@ -3,7 +3,7 @@ import sys
 import re
 from database import engine
 from sqlmodel import Session, select, func
-from models import  Survey, Submission, Answer, Option,Module
+from models import  Survey, Submission, Answer, Option,Module,Program
 
 def process_section(session,df,column_name, initial_question_id, module_id=None, teacher=None, rowsMask=None):
     if rowsMask is not None:
@@ -97,26 +97,39 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
                     session.add(answer)
                     session.flush()
         else:
-            if "avez-vous" not in df.columns[loc-1].casefold():
-                print(f"ERROR: Attendance question missing for {column_name}.\nCheck Syllabus or Forms xlsx.")
-                exit(1)
-            question_id=11
-            for index,answer_row in df[df.columns[loc-1]].items():
-                if pd.isna(answer_row):
-                    continue
-                text_fr=answer_row.split("/")[0].strip()
+            if "avez-vous" in df.columns[loc-1].casefold():
                 
-                option_id = session.exec(select(Option.option_id).where(Option.question_id==question_id,Option.text_fr==text_fr)).first()
-                answer=Answer(
-                    submission_id=submission_ids[index],
-                    question_id=question_id,
-                    option_id=option_id,
-                    module_id=module_id,
-                    teacher=teacher
-                
-                )
-                session.add(answer)
-                session.flush()
+                question_id=11
+                for index,answer_row in df[df.columns[loc-1]].items():
+                    if pd.isna(answer_row):
+                        continue
+                    text_fr=answer_row.split("/")[0].strip()
+                    
+                    option_id = session.exec(select(Option.option_id).where(Option.question_id==question_id,Option.text_fr==text_fr)).first()
+                    answer=Answer(
+                        submission_id=submission_ids[index],
+                        question_id=question_id,
+                        option_id=option_id,
+                        module_id=module_id,
+                        teacher=teacher
+                    
+                    )
+                    session.add(answer)
+                    session.flush()
+            else: # No "avez-vous" question --> Yes for everyone
+                question_id=11
+                option_id=24 # Oui
+                for submission_id in submission_ids:
+                    answer=Answer(
+                        submission_id=submission_id,
+                        question_id=question_id,
+                        option_id=option_id,
+                        module_id=module_id,
+                        teacher=teacher
+                    
+                    )
+                    session.add(answer)
+                    session.flush()
         
        
 if __name__ == "__main__":
@@ -125,6 +138,10 @@ if __name__ == "__main__":
         exit(0)
     syllabus_file,forms_file,program,semester,school_year=sys.argv[1:6]
     session=Session(engine)
+    program_row = session.exec(select(Program).where(Program.code==program)).first()
+    if not program_row:
+        print(f"Le code {program} n'existe pas dans la base Program. Merci de vérifier.")
+        exit(1)
     survey = session.exec(select(Survey).where(Survey.program==program,
                     Survey.semester==semester,
                     Survey.school_year==school_year)).first()
@@ -167,10 +184,13 @@ if __name__ == "__main__":
             submission_ids.append(submission.submission_id)
 
         #df.replace(r"\xa0", '*', regex=True)
-        df = df[df.columns.drop(list(df.filter(regex='Feedback -')))]
-        df = df[df.columns.drop(list(df.filter(regex='Points -')))]
-        df = df[df.columns.drop(list(df.filter(regex='Grade posted time')))]
-        df = df[df.columns.drop(['Id','Heure de début','Heure de fin','Adresse de messagerie','Nom','Total points','Quiz feedback'])]
+        try:
+            df = df[df.columns.drop(list(df.filter(regex='Feedback -')))]
+            df = df[df.columns.drop(list(df.filter(regex='Points -')))]
+            df = df[df.columns.drop(list(df.filter(regex='Grade posted time')))]
+            df = df[df.columns.drop(['Id','Heure de début','Heure de fin','Adresse de messagerie','Nom','Total points','Quiz feedback'])]
+        except KeyError as e:
+            print(f'{e}')
 
         # Section Campus        
         mask = df.columns.str.contains("expérience étudiante") & df.columns.str.contains("campus")
@@ -193,9 +213,10 @@ if __name__ == "__main__":
                 loc = df.columns.get_loc(target_cols[0])
                 for teacher in module.teacher.split(","):
                     teacher=teacher.strip()
-                    rowsMask = (df[target_cols[0]]==teacher)
+                    rowsMask = (df[target_cols[0]].str.casefold()==teacher.casefold())
                     if not rowsMask.any():
-                        print(f"ERROR : Teacher |{teacher}| not found in the answers of |{target_cols[0]}|")
+                        print(f"ERROR : Teacher |{teacher.casefold()}| not found in the answers of |{target_cols[0]}|")
+                        print(df[target_cols[0]].str.casefold().unique())
                         exit(1)
                     process_section(session,df,df.columns[loc+1],12, module.module_id, teacher, rowsMask)
             else:
