@@ -958,7 +958,7 @@ def create_app():
                             "value": str(score),
                             "is_positive": None,
                         }
-                        for score in range(1, 11)
+                        for score in range(0, 11)
                     ]
 
                 questions_data.append(
