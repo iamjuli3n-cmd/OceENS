@@ -24,7 +24,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from requests import session
-from sqlmodel import Session, SQLModel, create_engine, select, func, delete
+from sqlmodel import Session, SQLModel, create_engine, select, func, delete,insert,case
 import uvicorn
 from seed import seed_all_if_necessary
 from database import engine, SessionDep, create_db_and_tables
@@ -44,6 +44,8 @@ from models import (
     Role,
     Submission,
     Program,
+    Summary,
+    Prompt,
 )
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
@@ -203,12 +205,19 @@ def delete_survey_with_relations(session: Session, survey_id: int) -> None:
 
     # Les réponses référencent les soumissions et les modules : elles doivent
     # donc être supprimées avant ces deux tables.
-    session.exec(delete(Answer).where(Answer.submission_id.in_(submission_ids)))
-    session.exec(delete(Respondent).where(Respondent.survey_id == survey_id))
-    session.exec(delete(Module).where(Module.survey_id == survey_id))
-    session.exec(delete(Submission).where(Submission.survey_id == survey_id))
-    session.exec(delete(Survey).where(Survey.survey_id == survey_id))
-
+    try:
+        session.exec(delete(Answer).where(Answer.submission_id.in_(submission_ids)))
+        session.exec(delete(Respondent).where(Respondent.survey_id == survey_id))
+        session.exec(delete(Module).where(Module.survey_id == survey_id))
+        session.exec(delete(Submission).where(Submission.survey_id == survey_id))
+        session.exec(delete(Survey).where(Survey.survey_id == survey_id))
+        session.commit()
+    except Exception as e:
+            session.rollback()
+            return JSONResponse(
+                content={"error": "Impossible de retirer ce sondage. ({e})"},
+                status_code=500,
+            )
 
 def role_to_dashboard_slug(roles: List[str]) -> str:
     """
@@ -307,6 +316,9 @@ class RoleUpdate(BaseModel):
 class SurveyStudentsAdd(BaseModel):
     emails: List[str]
 
+class SummaryRequest(BaseModel):
+    prompt_id: int
+
 
 import json
 
@@ -351,9 +363,9 @@ def require_roles(
         dict avec {"name", "email", "role"} si autorisé, None sinon
 
     Exemple :
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
-            return RedirectResponse(url="/dashboard/student")
+            return RedirectResponse(url="/")
     """
     user = get_current_user(request)
     if not user:
@@ -371,7 +383,7 @@ def require_roles(
         roles = ["student"]
 
     if check_role(roles, allowed_roles):
-        return user
+        return user,roles
 
     # Aucun rôle autorisé ne correspond
     return None
@@ -423,12 +435,12 @@ def create_app():
     @app.middleware("http")
     async def redirect_errors(request: Request, call_next):
         """Renvoie toute erreur vers l'accueil, qui choisit le dashboard."""
-        try:
-            response = await call_next(request)
-        except Exception:
-            if request.url.path != "/":
-                return RedirectResponse(url="/", status_code=303)
-            raise
+        # try:
+        response = await call_next(request)
+        # except Exception:
+        #     if request.url.path != "/":
+        #         return RedirectResponse(url="/", status_code=303)
+        #     raise
 
         if response.status_code == 404 and request.url.path != "/":
              return RedirectResponse(url="/", status_code=303)
@@ -480,22 +492,12 @@ def create_app():
         duplicate_from: Optional[int] = None,
     ):
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             # Utilisateur non connecté ou rôle insuffisant → redirection
             return RedirectResponse(url="/")
 
         # Déterminer les formations autorisées pour un RP-RM
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        if roles_query:
-            roles = roles_query.split(",")
-        else:
-            roles = ["student"]
-
         allowed_programs = []
         for role in roles:
             if role.startswith("program_manager"):
@@ -581,7 +583,7 @@ def create_app():
         Si l'import Excel échoue, le survey est annulé (ROLLBACK).
         """
         # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(
                 content={"error": "Accès refusé. Rôle Admin ou RP-RM requis."},
@@ -589,17 +591,6 @@ def create_app():
             )
 
         # ── Sécurité : vérifier que la program est autorisée pour le RP-RM ──
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        session.flush()
-        if roles_query:
-            roles = roles_query.split(",")
-        else:
-            roles = ["student"]
-
         allowed_programs = []
         for role in roles:
             if role.startswith("program_manager"):
@@ -619,7 +610,6 @@ def create_app():
                         Survey.school_year==survey.school_year)).first()
         
         if equivalent_survey is not None:
-            print(f"TTTTTTTT {equivalent_survey}")
             return JSONResponse(
                 content={"error": "Un sondage existe déjà pour la même formation, même semestre, même année !"},
                 status_code=403,
@@ -782,7 +772,7 @@ def create_app():
         
 
         # ── État du sondage ─────────────────────────────────────────────
-        survey_is_closed = survey.status == 0
+        survey_is_closed = (survey.status != 1)
 
         # ── Vérifier si l'utilisateur connecté a déjà répondu ───────────
         user_has_answered = False
@@ -1159,7 +1149,7 @@ def create_app():
         session: SessionDep,
         status: int = Form(...),
     ):
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(
                 content={"error": "Accès refusé."},
@@ -1181,16 +1171,6 @@ def create_app():
                 content={"error": "Sondage introuvable."},
                 status_code=409,
             )
-
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        if roles_query:
-            roles = roles_query.split(",")
-        else:
-            roles = ["student"]
 
         allowed_programs = []
         for role in roles:
@@ -1222,7 +1202,7 @@ def create_app():
         session: Session,
     ):
         """Retourne le sondage si l'utilisateur peut gérer ses étudiants."""
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return None, JSONResponse(
                 content={"error": "Accès refusé."}, status_code=403
@@ -1235,13 +1215,6 @@ def create_app():
             return None, JSONResponse(
                 content={"error": "Sondage introuvable."}, status_code=404
             )
-
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        roles = roles_query.split(",") if roles_query else ["student"]
 
         if not can_manage_survey(roles, survey.program):
             return None, JSONResponse(
@@ -1434,10 +1407,10 @@ def create_app():
         try:
             session.delete(respondent)
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
             return JSONResponse(
-                content={"error": "Impossible de retirer cet étudiant du sondage."},
+                content={"error": "Impossible de retirer cet étudiant du sondage. ({e})"},
                 status_code=500,
             )
 
@@ -1452,7 +1425,7 @@ def create_app():
         request: Request,
         session: SessionDep,
     ):
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(
                 content={"error": "Accès refusé."},
@@ -1467,13 +1440,6 @@ def create_app():
                 content={"error": "Sondage introuvable."},
                 status_code=409,
             )
-
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        roles = roles_query.split(",") if roles_query else ["student"]
 
         if not can_manage_survey(roles, survey.program):
             return JSONResponse(
@@ -1545,7 +1511,7 @@ def create_app():
                     "campus": r[2],
                     "semester": r[3],
                     "school_year": r[4],
-                    "is_closed": (r[5] == 0),
+                    "is_closed": (r[5] != 1),
                     "is_answered": (r[6] != None),
                 }
             )
@@ -1642,7 +1608,8 @@ def create_app():
                 "campus": r[2],
                 "semester": r[3],
                 "school_year": r[4],
-                "is_closed": (r[5] == 0),
+                "is_closed": (r[5] != 1),
+                "is_generating": (r[5] == 2),
                 "respondents_count": r[6],
                 "answers_count": r[7],
                 "submissions_count": submissions_count[r[0]] if r[0] in submissions_count.keys() else 0,
@@ -1659,6 +1626,24 @@ def create_app():
             for p in db_programs
         ]
 
+        prompts = [
+            {"prompt_id": p.prompt_id, "description": p.description} for p in  session.exec(select(Prompt)).all()
+        ]
+
+        summary_rows = session.exec(select(Summary.survey_id,func.count(Summary.summary_id),func.count(Summary.summary_text),func.sum(case(
+       (
+           Summary.http_status == 0,0
+       ),
+       (
+           Summary.http_status == 200,0
+       ),
+       else_=1
+    ))).group_by(Summary.survey_id)).all()
+
+        summaries = { s[0]:
+             {"summaries_count": s[1], "summaries_done": s[2], "summaries_error": s[3]} for s in  summary_rows }
+        
+
         context = {
             "user": user,
             "surveys": surveys,
@@ -1668,6 +1653,9 @@ def create_app():
             "can_delete_survey": True,
             "can_update_survey_status": True,
             "can_duplicate_survey": True,
+            "can_generate_summaries":True,
+            "prompts":prompts,
+            "summaries":summaries,
             "dashboard_navigation": get_dashboard_navigation(
                 roles, "program-manager"
             ),
@@ -1758,7 +1746,8 @@ def create_app():
                 "campus": r[2],
                 "semester": r[3],
                 "school_year": r[4],
-                "is_closed": (r[5] == 0),
+                "is_closed": (r[5] != 1),
+                "is_generating": (r[5] == 2),
                 "respondents_count": r[6],
                 "answers_count": r[7],
                 "submissions_count": submissions_count[r[0]] if r[0] in submissions_count.keys() else 0,
@@ -1775,6 +1764,23 @@ def create_app():
             for p in db_programs
         ]
 
+        prompts = [
+            {"prompt_id": p.prompt_id, "description": p.description} for p in  session.exec(select(Prompt)).all()
+        ]
+
+        summary_rows = session.exec(select(Summary.survey_id,func.count(Summary.summary_id),func.count(Summary.summary_text),func.sum(case(
+       (
+           Summary.http_status == 0,0
+       ),
+       (
+           Summary.http_status == 200,0
+       ),
+       else_=1
+    ))).group_by(Summary.survey_id)).all()
+
+        summaries = { s[0]:
+             {"summaries_count": s[1], "summaries_done": s[2], "summaries_error": s[3]} for s in  summary_rows }
+
         context = {
             "user": user,
             "surveys": surveys,
@@ -1784,6 +1790,9 @@ def create_app():
             "can_delete_survey": False,
             "can_update_survey_status": False,
             "can_duplicate_survey": False,
+            "can_generate_summaries":True,
+            "prompts":prompts,
+            "summaries":summaries,
             "dashboard_navigation": get_dashboard_navigation(roles, "facilitator"),
         }
 
@@ -1845,7 +1854,13 @@ def create_app():
         ).all()
 
         db_programs = session.exec(select(Program)).all()
+
+        programs = [
+            {"code": p.code, "name": p.name, "campus": p.campus} for p in db_programs
+        ]
+
         program_name_by_code = {p.code: {"name":p.name,"campus":p.campus}  for p in db_programs}
+
 
         submissions_rows = session.exec(
             select(
@@ -1866,7 +1881,8 @@ def create_app():
                 "campus" : program_name_by_code[r[1]]["campus"] if r[1] in program_name_by_code.keys() else "Campus not found",
                 "semester": r[2],
                 "school_year": r[3],
-                "is_closed": (r[4] == 0),
+                "is_closed": (r[4] != 1),
+                "is_generating": (r[4] == 2),
                 "respondents_count": r[5],
                 "answers_count": r[6],
                 "submissions_count": submissions_count[r[0]] if r[0] in submissions_count.keys() else 0,
@@ -1890,9 +1906,24 @@ def create_app():
             for u in db_users
         ]
 
-        programs = [
-            {"code": p.code, "name": p.name, "campus": p.campus} for p in db_programs
+        
+
+        prompts = [
+            {"prompt_id": p.prompt_id, "description": p.description} for p in  session.exec(select(Prompt)).all()
         ]
+
+        summary_rows = session.exec(select(Summary.survey_id,func.count(Summary.summary_id),func.count(Summary.summary_text),func.sum(case(
+        (
+            Summary.http_status == 0,0
+        ),
+        (
+            Summary.http_status == 200,0
+        ),
+        else_=1
+        ))).group_by(Summary.survey_id)).all()
+
+        summaries = { s[0]:
+             {"summaries_count": s[1], "summaries_done": s[2], "summaries_error": s[3]} for s in  summary_rows }
 
         context = {
             "user": user,
@@ -1903,6 +1934,9 @@ def create_app():
             "can_delete_survey": True,
             "can_update_survey_status": True,
             "can_duplicate_survey": True,
+            "can_generate_summaries":True,
+            "prompts":prompts,
+            "summaries":summaries,
             "dashboard_navigation": get_dashboard_navigation(roles, "admin"),
         }
         return templates.TemplateResponse(
@@ -1922,7 +1956,7 @@ def create_app():
         request: Request, user_id: int, body: RoleUpdate, session: SessionDep
     ):
         # ── Sécurité : seul un Admin peut modifier les rôles ──
-        admin = require_roles(request, session, ["admin"])
+        admin,roles = require_roles(request, session, ["admin"])
         if admin is None:
             return JSONResponse(
                 content={"error": "Accès refusé. Rôle Admin requis."},
@@ -2008,19 +2042,9 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/export")
     def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
-
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        if roles_query:
-            roles = roles_query.split(",")
-        else:
-            roles = ["student"]
 
         if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
@@ -2050,19 +2074,9 @@ def create_app():
 
     @api_router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
     def visualisation_page(request: Request, survey_id: int, session: SessionDep):
-        user = require_roles(request, session, ["admin", "program_manager"])
+        user,roles = require_roles(request, session, ["admin", "program_manager"])
         if user is None:
             return RedirectResponse(url="/")
-
-        roles_query = session.exec(
-            select(func.group_concat(Role.role))
-            .join(User, Role.user_id == User.user_id, isouter=True)
-            .where(User.mail == user["email"].casefold())
-        ).first()
-        if roles_query:
-            roles = roles_query.split(",")
-        else:
-            roles = ["student"]
 
         if not check_role(roles, ["program_manager", "admin"]):
             return RedirectResponse(url="/")
@@ -2095,6 +2109,118 @@ def create_app():
         )
 
     # └───────────────────────────────────────────────────────────────────┘
+
+    @api_router.post("/surveys/{survey_id}/generate-summaries")
+    def generate_summaries(request: Request, survey_id: int, request_data: SummaryRequest, session: SessionDep):
+        user,roles = require_roles(request, session, ["admin", "program_manager", "facilitator"])
+        if user is None:
+            return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
+
+        allowed_programs = []
+        for role in roles:
+            if role.startswith("program_manager"):
+                allowed_programs.extend(parse_rprm_formations(role))
+
+        survey, error_or_warning, _, _ = _check_sondage_access_and_status(
+            session, survey_id, roles, allowed_programs
+        )
+        if not survey:
+            return JSONResponse(
+                content={"error": error_or_warning["error"]},
+                status_code=error_or_warning["status_code"],
+            )
+        if survey.status == 2:
+            return JSONResponse(
+                content={"error": "Le sondage est déjà en cours de génération."},
+                status_code=409,
+            )
+        if survey.status != 0:
+            return JSONResponse(
+                content={"error": "Le sondage n'est pas fermé."},
+                status_code=409,
+            )
+        
+        print("GENERATE")
+
+
+        try:
+            prompt_id = request_data.prompt_id
+
+            survey.status=2
+            session.add(survey)
+
+            answers = session.exec(select(Answer.module_id,Answer.teacher,Answer.question_id)
+                    .join(Submission,Submission.submission_id==Answer.submission_id)
+                    .join(Question,Question.question_id==Answer.question_id)
+                    .where(Submission.survey_id == survey_id, Question.question_type=="Question_ouverte")
+                    .group_by(Answer.question_id,Answer.module_id,Answer.teacher)
+                    ).all()
+            
+            if not answers:
+                session.rollback()
+                return JSONResponse(
+                    content={"error": "Aucune réponse dans ce sondage"},
+                    status_code=409,
+                )
+
+
+            rows_to_insert = [{"survey_id":survey_id, "module_id":a[0], "teacher":a[1], "question_id":a[2], "prompt_id":prompt_id, "http_status":0, "summary_text":None, "metadata_text":None} for a in answers]
+            print(rows_to_insert)
+
+            session.exec(insert(Summary),params=rows_to_insert)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            return JSONResponse(
+                content={"error": f"Impossible d'ajouter ces résumés. ({e})"},
+                status_code=409,
+            )
+        
+        return JSONResponse(content={"message":"everything's fine !"}, status_code=200)
+
+    @api_router.post("/surveys/{survey_id}/destroy-summaries")
+    def destroy_summaries(request: Request, survey_id: int, session: SessionDep):
+        
+        user,roles = require_roles(request, session, ["admin", "program_manager", "facilitator"])
+        if user is None:
+            return JSONResponse(content={"error": "Accès refusé."}, status_code=403)
+
+        allowed_programs = []
+        for role in roles:
+            if role.startswith("program_manager"):
+                allowed_programs.extend(parse_rprm_formations(role))
+
+        survey, error_or_warning, _, _ = _check_sondage_access_and_status(
+            session, survey_id, roles, allowed_programs
+        )
+        if not survey:
+            return JSONResponse(
+                content={"error": error_or_warning["error"]},
+                status_code=error_or_warning["status_code"],
+            )
+        
+        print("DESTROY")
+
+        try:
+            survey.status=0
+            session.add(survey)
+
+        
+            session.exec(delete(Summary)
+                    .where(Summary.survey_id == survey_id)
+                    )
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            return JSONResponse(
+                content={"error": f"Impossible de retirer ces résumés. ({e})"},
+                status_code=500,
+            )
+
+        return RedirectResponse(
+            url=request.headers.get("referer","/").split('?')[0], # Referer without eventual parameters
+            status_code=303,
+        )
 
     app.include_router(api_router)
     app.include_router(dashboard_router)

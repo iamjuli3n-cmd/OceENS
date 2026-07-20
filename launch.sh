@@ -11,11 +11,19 @@ if [ ! -d venv ]; then
 fi
 
 if [ $(ps -aux | grep "app.py" | wc -l) -gt 1 ]; then
-	echo "Already launched"
+	echo "Website already launched"
 else
 
-	echo "Launching app with screen"
+	echo "Launching Website with screen"
 	screen -d -m bash -c "source venv/bin/activate && python app.py"
+fi
+
+if [ $(ps -aux | grep "summaries_generator_daemon.py" | wc -l) -gt 1 ]; then
+	echo "Summaries generator already launched"
+else
+
+	echo "Launching Summaries generator with screen"
+	screen -d -m bash -c "source venv/bin/activate && python summaries_generator_daemon.py"
 fi
 
 

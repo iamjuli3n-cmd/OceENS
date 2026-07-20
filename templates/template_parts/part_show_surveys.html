@@ -1,134 +1,234 @@
-  {% include 'template_parts/part_modal_qrcode.html' %}
-  {% if can_view_survey_students %}
-  {% include 'template_parts/part_modal_survey_students.html' %}
-  {% endif %}
+{% include 'template_parts/part_modal_qrcode.html' %}
+{% if can_view_survey_students %}
+{% include 'template_parts/part_modal_survey_students.html' %}
+{% endif %}
 
-  {% for survey in surveys %}
+{% if can_generate_summaries %}
+{% include 'template_parts/part_modal_prompt_choice.html'%}
+{% endif %}
 
-  <div class="sondage-row">
-    <div class="sondage-main">
-      <div class="sondage-row-name">
-        {{ survey['program_name'] }} — {{ survey['semester'] }}
-      </div>
-      <div class="sondage-row-meta">{{ survey['campus'] }} · {{ survey['school_year'] }}</div>
+<style>
+  .row-icon-summaries {
+    color: #b42318;
+    padding: 0;
+    transition: background-color .2s, color .2s;
+  }
+
+  .row-icon-summaries:hover,
+  .row-icon-summaries:focus-visible {
+    color: #fff;
+    background: #1876b4;
+    outline: none;
+  }
+
+  @keyframes colorShift {
+    0% {
+      background: #fff;
+    }
+
+    50% {
+      background: #18b4ac;
+    }
+
+    100% {
+      background: #fff;
+    }
+  }
+
+  .row-icon-summaries-processing,
+  .row-icon-summaries-processing:hover,
+  .row-icon-summaries-processing:focus-visible {
+    color: #fff;
+    outline: none;
+    animation: colorShift 3s infinite;
+  }
+
+  .row-icon-summaries-done,
+  .row-icon-summaries-done:hover,
+  .row-icon-summaries-done:focus-visible {
+    color: #fff;
+    outline: none;
+    background: #18b4ac;
+
+  }
+
+  .row-icon-summaries:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+  }
+
+  .row-icon-summaries-destroy {
+    color: red;
+    text-decoration: line-through;
+    text-decoration-thickness: 0.3rem;
+  }
+
+  .row-icon-summaries-destroy:hover,
+  .row-icon-summaries-destroy:focus-visible {
+    color: #fff;
+    background: #b42318;
+    outline: none;
+  }
+</style>
+
+
+
+
+{% for survey in surveys %}
+
+<div class="sondage-row">
+  <div class="sondage-main">
+    <div class="sondage-row-name">
+      {{ survey['program_name'] }} — {{ survey['semester'] }}
     </div>
-
-    <a class="survey-link" onclick='openQRCodeModal(window.location.origin+"/api/surveys/{{ survey['survey_id'] }}","{{ survey['program_name'] }}","{{ survey['school_year'] }} - {{ survey['semester'] }}")'>
-      QRCode
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-        <polyline points="15 3 21 3 21 9" />
-        <line x1="10" y1="14" x2="21" y2="3" />
-      </svg>
-    </a>
-
-    <a href="/api/surveys/{{ survey['survey_id'] }}" class="survey-link">
-      Lien questionnaire
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-        <polyline points="15 3 21 3 21 9" />
-        <line x1="10" y1="14" x2="21" y2="3" />
-      </svg>
-    </a>
-
-    <div class="sondage-stats">
-      <div class="sondage-stats-value">{% if survey['submissions_count'] != survey['answers_count'] %}<a
-          style="font-size:11px; vertical-align: top; cursor: default;"
-          title="Attention le nombre de répondants ({{survey['answers_count']}}) et de soumissions ({{survey['submissions_count']}}) ne collent pas !">⚠️</a>{%
-        endif %}{{ survey['submissions_count'] }} /
-        <span data-survey-respondents-count="{{ survey['survey_id'] }}">{{ survey['respondents_count'] }}</span>
-      </div>
-      <div class="sondage-stats-label">ont répondu / inscrits</div>
-      <div class="sondage-progress">
-        <div class="sondage-progress-value" data-survey-progress="{{ survey['survey_id'] }}"
-          data-submissions-count="{{ survey['submissions_count'] }}"
-          style="width: {% if survey['respondents_count'] > 0 %}{{ (survey['submissions_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
-        </div>
-      </div>
-
-    </div>
-
-    {% if can_update_survey_status or can_duplicate_survey %}
-    <div class="row-actions survey-primary-actions">
-      {% if can_update_survey_status %}
-      <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
-        {% if survey['is_closed'] %}
-        <input type="hidden" name="status" value="1">
-        <button type="submit" class="row-icon" title="Ouvrir le sondage">
-          <img src="{{ url_for('static', path='img/locked_red.svg') }}" alt="Ouvrir le sondage">
-        </button>
-        {% else %}
-        <input type="hidden" name="status" value="0">
-        <button type="submit" class="row-icon" title="Fermer le sondage">
-          <img src="{{ url_for('static', path='img/unlocked_green.svg')}}" alt="Fermer le sondage">
-        </button>
-        {% endif %}
-      </form>
-      {% endif %}
-      {% if can_duplicate_survey %}
-      <a href="/dashboard/survey-create?duplicate_from={{ survey['survey_id'] }}" class="row-icon"
-        title="Dupliquer le sondage" aria-label="Dupliquer le sondage">
-        <svg width="15" height="15" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24"
-          aria-hidden="true">
-          <rect x="8" y="8" width="12" height="12" rx="2"></rect>
-          <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
-        </svg>
-      </a>
-      {% endif %}
-    </div>
-    {% endif %}
-    <div class="row-actions">
-      {% if can_view_survey_students %}
-      <button type="button" class="row-icon" title="Afficher les étudiants associés"
-        aria-label="Afficher les étudiants associés au sondage"
-        onclick='openSurveyStudentsModal({{ survey["survey_id"] }}, {{ survey["program_name"] | tojson }}, {{ survey["school_year"] | tojson }}, {{ survey["semester"] | tojson }}, this)'>
-        <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24"
-          aria-hidden="true">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-        </svg>
-      </button>
-      {% endif %}
-      <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
-        onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
-        <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-        </svg>
-      </a>
-      <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon" title="Export CSV"
-        onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
-        <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-      </a>
-      {% if can_delete_survey %}
-      <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/delete" class="delete-survey-form"
-        onsubmit="return confirm('Supprimer définitivement ce sondage et toutes ses réponses ? Cette action est irréversible.');">
-        <button type="submit" class="row-icon row-icon-delete" title="Supprimer le sondage"
-          aria-label="Supprimer le sondage"> 🗑️</button>
-      </form>
-      {% endif %}
-    </div>
+    <div class="sondage-row-meta">{{ survey['campus'] }} · {{ survey['school_year'] }}</div>
   </div>
 
-  {% else %}
-
-  <div style="text-align:center; padding: 48px 0;">
-    <svg viewBox="0 0 120 100" width="100" height="100" style="margin-bottom:16px;">
-      <rect x="25" y="10" width="55" height="70" rx="6" fill="#fdf0f0" stroke="#df231d" stroke-width="1.5" />
-      <rect x="15" y="18" width="55" height="70" rx="6" fill="white" stroke="#ddd" stroke-width="1.5" />
-      <circle cx="42" cy="48" r="14" fill="#fdf0f0" />
-      <text x="42" y="54" text-anchor="middle" font-size="18" fill="#df231d" font-weight="700">?</text>
-      <line x1="28" y1="68" x2="56" y2="68" stroke="#eee" stroke-width="2" />
-      <line x1="28" y1="74" x2="50" y2="74" stroke="#eee" stroke-width="2" />
+  <a class="survey-link" onclick='openQRCodeModal(window.location.origin+"/api/surveys/{{ survey[' survey_id'] }}","{{
+    survey['program_name'] }}","{{ survey['school_year'] }} - {{ survey['semester'] }}")'>
+    QRCode
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
     </svg>
-    <div style="font-size:15px; font-weight:600; color:#111; margin-bottom:8px;">Aucun questionnaire pour l'instant
+  </a>
+
+  <a href="/api/surveys/{{ survey['survey_id'] }}" class="survey-link">
+    Lien questionnaire
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+  </a>
+
+  <div class="sondage-stats">
+    <div class="sondage-stats-value">{% if survey['submissions_count'] != survey['answers_count'] %}<a
+        style="font-size:11px; vertical-align: top; cursor: default;"
+        title="Attention le nombre de répondants ({{survey['answers_count']}}) et de soumissions ({{survey['submissions_count']}}) ne collent pas !">⚠️</a>{%
+      endif %}{{ survey['submissions_count'] }} /
+      <span data-survey-respondents-count="{{ survey['survey_id'] }}">{{ survey['respondents_count'] }}</span>
     </div>
-    <div style="font-size:13px; color:#aaa; margin-bottom:20px;">{{ msg_no_survey | safe }}
+    <div class="sondage-stats-label">ont répondu / inscrits</div>
+    <div class="sondage-progress">
+      <div class="sondage-progress-value" data-survey-progress="{{ survey['survey_id'] }}"
+        data-submissions-count="{{ survey['submissions_count'] }}"
+        style="width: {% if survey['respondents_count'] > 0 %}{{ (survey['submissions_count'] / survey['respondents_count']) * 100 }}{% else %}0{% endif %}%;">
+      </div>
     </div>
 
-    {% endfor %}
+  </div>
+
+  {% if can_update_survey_status or can_duplicate_survey %}
+  <div class="row-actions survey-primary-actions">
+    {% if can_update_survey_status %}
+    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/status" class="status-toggle-form">
+      {% if survey['is_closed'] %}
+
+      <input type="hidden" name="status" value="1">
+      <button type="submit" class="row-icon" {% if survey['is_generating'] %} disabled
+        title="Vous ne pouvez pas réouvrir un sondage après avoir demandé la génération des résumés." {% else %}
+        title="Ouvrir le sondage" {% endif %}>
+        <img src="{{ url_for('static', path='img/locked_red.svg') }}" alt="Cadenas rouge fermé">
+      </button>
+
+      {% else %}
+      <input type="hidden" name="status" value="0">
+      <button type="submit" class="row-icon" title="Fermer le sondage">
+        <img src="{{ url_for('static', path='img/unlocked_green.svg')}}" alt="Cadenas vert ouvert">
+      </button>
+      {% endif %}
+    </form>
+    {% endif %}
+    {% if can_duplicate_survey %}
+    <a href="/dashboard/survey-create?duplicate_from={{ survey['survey_id'] }}" class="row-icon"
+      title="Dupliquer le sondage" aria-label="Dupliquer le sondage">
+      <svg width="15" height="15" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+        <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+      </svg>
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+  <div class="row-actions">
+    {% if can_view_survey_students %}
+    <button type="button" class="row-icon" title="Afficher les étudiants associés"
+      aria-label="Afficher les étudiants associés au sondage"
+      onclick='openSurveyStudentsModal({{ survey["survey_id"] }}, {{ survey["program_name"] | tojson }}, {{ survey["school_year"] | tojson }}, {{ survey["semester"] | tojson }}, this)'>
+      <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    </button>
+    {% endif %}
+
+    {% if can_generate_summaries and survey['submissions_count'] > 0 %}
+    {% if survey['is_generating'] %}
+    {% if summaries[survey["survey_id"]]["summaries_count"] ==
+    (summaries[survey["survey_id"]]["summaries_done"]+summaries[survey["survey_id"]]["summaries_error"]) %}
+    <button class="row-icon row-icon-summaries row-icon-summaries-done"
+      title="Génération des résumés terminés : {{summaries[survey["survey_id"]]["summaries_done"]}}/{{summaries[survey["survey_id"]]["summaries_count"]}} ({{summaries[survey["survey_id"]]["summaries_error"]}} erreur(s))"]}}">🤖</button>
+    {% else %}
+    <button class="row-icon row-icon-summaries row-icon-summaries-processing"
+      onclick="window.location.reload();"
+      title="Génération des résumés en cours : {{summaries[survey["survey_id"]]["summaries_done"]}}/{{summaries[survey["survey_id"]]["summaries_count"]}} ({{summaries[survey["survey_id"]]["summaries_error"]}} erreur(s))"]}}">🤖</button>
+    {% endif %}
+    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/destroy-summaries" class="destroy-summaries">
+      <button class="row-icon row-icon-summaries row-icon-summaries-destroy"
+        title="Stopper la génération et supprimer les résumés">🤖</button>
+    </form>
+    {% else %}
+
+    <button class="row-icon row-icon-summaries" {% if survey['is_closed'] %} title="Genérer les résumés"
+      aria-label="Genérer les résumés" onclick="openPromptModal({{survey['survey_id']}})" {% else %}
+      title="La génération nécessite de fermer le sondage" aria-label="La génération nécessite de fermer le sondage"
+      disabled {% endif %}>🤖</button>
+    {% endif %}
+    {% endif %}
+
+
+    <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
+      onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
+      <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+      </svg>
+    </a>
+    <a href="/api/surveys/{{ survey['survey_id'] }}/export" class="row-icon" title="Export CSV"
+      onclick="return checkParticipation(event, this.href, {{ survey['answers_count'] }}, {{ survey['respondents_count'] }})">
+      <svg width="14" height="14" fill="none" stroke="#555" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+    </a>
+    {% if can_delete_survey %}
+    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/delete" class="delete-survey-form"
+      onsubmit="return confirm('Supprimer définitivement ce sondage et toutes ses réponses ? Cette action est irréversible.');">
+      <button type="submit" class="row-icon row-icon-delete" title="Supprimer le sondage"
+        aria-label="Supprimer le sondage"> 🗑️</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% else %}
+
+<div style="text-align:center; padding: 48px 0;">
+  <svg viewBox="0 0 120 100" width="100" height="100" style="margin-bottom:16px;">
+    <rect x="25" y="10" width="55" height="70" rx="6" fill="#fdf0f0" stroke="#df231d" stroke-width="1.5" />
+    <rect x="15" y="18" width="55" height="70" rx="6" fill="white" stroke="#ddd" stroke-width="1.5" />
+    <circle cx="42" cy="48" r="14" fill="#fdf0f0" />
+    <text x="42" y="54" text-anchor="middle" font-size="18" fill="#df231d" font-weight="700">?</text>
+    <line x1="28" y1="68" x2="56" y2="68" stroke="#eee" stroke-width="2" />
+    <line x1="28" y1="74" x2="50" y2="74" stroke="#eee" stroke-width="2" />
+  </svg>
+  <div style="font-size:15px; font-weight:600; color:#111; margin-bottom:8px;">Aucun questionnaire pour l'instant
+  </div>
+  <div style="font-size:13px; color:#aaa; margin-bottom:20px;">{{ msg_no_survey | safe }}
+  </div>
+
+  {% endfor %}

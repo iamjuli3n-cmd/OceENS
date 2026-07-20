@@ -24,6 +24,37 @@
         }
 
     </script>
+    <style>
+        .btn-show-verbatim {
+            display: inline;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 8px;
+            background: white;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+            color: #666;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+            max-width: 200px;
+        }
+
+        .btn-show-verbatim:hover {
+            border-color: #470a68;
+            color: #470a68;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+        }
+
+        .verbatim-list li::marker {
+            content: "";
+        }
+    </style>
 </head>
 
 <body class="page-visualisation">
@@ -157,16 +188,11 @@
 
                             <article class="answer-question-card">
                                 <h3>
-                                    {% if question.question_type == 'Question_ouverte' %}
-                                    <a style="cursor:pointer;"
-                                        onclick="toggleElement('verbatim-list-{{ ns.verbatim_counter }}','grid')">
-                                        {% endif %}
-                                        {{ question.text | safe }}
-                                        {% if question.question_type == 'Question_ouverte' %}
-                                    </a>
-                                    {% endif %}
+                                    {{ question.text | safe }}
                                 </h3>
                                 <p class="answer-count">{{ question.question_submissions_count }} réponse(s)</p>
+
+
 
                                 {% if question.question_type == 'QCU_Satisfaction' %}
 
@@ -186,6 +212,22 @@
 
                                 {% elif question.question_type == 'Question_ouverte' %}
 
+                                {% if question["summary"] %}
+                                <div class="verbatim-list" style="display:grid;">{{question["summary"]["text"] | safe}}
+                                </div>
+                                {% endif %}
+                                <div class="summary-grid">
+                                    {% if question["summary"] %}
+                                    <p style="color: #666; margin-top: 15px;"><i>{{question["summary"]["metadata"]}}</i>
+                                    </p>
+                                    {% endif %}
+
+
+
+                                    <button class="btn-show-verbatim" style="cursor:pointer;"
+                                        onclick="toggleElement('verbatim-list-{{ ns.verbatim_counter }}','grid')">
+                                        Afficher les verbatims</button>
+                                </div>
 
                                 <ul class="verbatim-list" id="verbatim-list-{{ ns.verbatim_counter }}">
                                     {% for answer in question.histo %}<li>{{ answer }} {% if
@@ -263,14 +305,7 @@
 
                             <article class="answer-question-card">
                                 <h3>
-                                    {% if question.question_type == 'Question_ouverte' %}
-                                    <a style="cursor:pointer;"
-                                        onclick="toggleElement('verbatim-list-{{ ns.verbatim_counter }}','grid')">
-                                        {% endif %}
-                                        {{ question.text | safe }}
-                                        {% if question.question_type == 'Question_ouverte' %}
-                                    </a>
-                                    {% endif %}
+                                    {{ question.text | safe }}
                                 </h3>
                                 <p class="answer-count">{{ question.question_submissions_count }} réponse(s)</p>
 
@@ -291,6 +326,22 @@
                                 {% set ns.graph_counter = ns.graph_counter + 1 %}
 
                                 {% elif question.question_type == 'Question_ouverte' %}
+
+                                {% if question["summary"] %}
+                                <div class="verbatim-list" style="display:grid;">{{question["summary"]["text"] | safe}}</div>
+                                {% endif %}
+                                <div class="summary-grid">
+                                    {% if question["summary"] %}
+                                    <p style="color: #666; margin-top: 15px;"><i>{{question["summary"]["metadata"]}}</i>
+                                    </p>
+                                    {% endif %}
+
+
+
+                                    <button class="btn-show-verbatim" style="cursor:pointer;"
+                                        onclick="toggleElement('verbatim-list-{{ ns.verbatim_counter }}','grid')">
+                                        Afficher les verbatims</button>
+                                </div>
 
                                 <ul class="verbatim-list" id="verbatim-list-{{ ns.verbatim_counter }}">
                                     {% for answer in question.histo %}<li>{{ answer }} {% if

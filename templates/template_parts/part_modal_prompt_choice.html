@@ -1,0 +1,233 @@
+<style>
+    /* PARAM FIELD for survey_create.css */
+    .param-selectors {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .param-selectors .param-field {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .param-field label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #555;
+        margin-bottom: 5px;
+    }
+
+    .param-field select,
+    .param-field input[type="text"] {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        color: #333;
+        background: white;
+        transition: border-color 0.2s;
+    }
+
+    .param-field select:focus,
+    .param-field input[type="text"]:focus {
+        outline: none;
+        border-color: #470a68;
+        box-shadow: 0 0 0 2px rgba(71, 10, 104, 0.15);
+    }
+
+    .param-select-group {
+        display: flex;
+        gap: 5px;
+    }
+
+    .btn-generate {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #470a68, #5c1a7a);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 30px;
+        transition: all 0.25s;
+        letter-spacing: 0.3px;
+    }
+
+    .btn-generate:hover {
+        background: linear-gradient(135deg, #5c1a7a, #7b2fa0);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(71, 10, 104, 0.35);
+    }
+
+    .btn-generate:disabled {
+        background: #c5d0db;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* --- THE MODAL OVERLAY --- */
+    .modal-prompt {
+        display: none;
+        /* Hidden by default */
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        /* Dimmed background */
+
+        /* FLEXBOX: This is the magic that centers the content */
+        display: none;
+        /* JS will switch this to 'flex' */
+        justify-content: center;
+        align-items: center;
+
+        /* Animation for the background fade */
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    /* --- THE FLOATING CONTENT BOX --- */
+    .modal-prompt-content {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 15px;
+        min-width: 300px;
+        text-align: center;
+        position: relative;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        /* Stronger shadow for "floating" effect */
+
+        /* Animation for the box scaling up */
+        animation: popUp 0.3s ease-out;
+    }
+
+    /* Close Button */
+    .close-btn-prompt {
+        position: absolute;
+        right: 15px;
+        top: 10px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #aaa;
+    }
+
+    .close-btn-prompt:hover {
+        color: #333;
+    }
+
+    #prompt-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 15px;
+    }
+
+    /* --- ANIMATIONS --- */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes popUp {
+        from {
+            transform: scale(0.7);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+</style>
+
+
+<!-- The Modal -->
+<div id="promptModal" class="modal-prompt">
+    <div class="modal-prompt-content">
+        <span class="close-btn-prompt" onclick="closePromptModal()">&times;</span>
+        <h3 style="margin: 0 0 10px 0;" id="prompt-title"> Choisissez le prompt à utiliser</h3>
+        <input type="hidden" id="surveyId">
+        <div class="param-field">
+            {% if prompts %}
+
+            <select id="prompt-choice">
+                {% for prompt in prompts %}
+                <option value="{{prompt.prompt_id}}">{{prompt.description}}</option>
+                {% endfor %}
+            </select>
+            {% else %}
+            <p>Aucun prompts disponibles.</p>
+            <p style="color: #666; margin-top: 15px;"><i>Contactez un administrateur.</i></p>
+            {% endif %}
+        </div>
+        <button class="btn-generate" type="submit" onclick=generateSummaries() {% if prompts | length==0 %}disabled{%
+            endif %}>Générer les résumés</button>
+
+
+    </div>
+</div>
+
+<script type="text/javascript">
+    function generateSummaries() {
+        survey_id = document.getElementById("surveyId").value;
+        prompt_id = parseInt(document.getElementById("prompt-choice").value);
+        fetch(`/api/surveys/${survey_id}/generate-summaries`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ "prompt_id": prompt_id }),
+        }).then(response => {
+            console.log(response);
+            if (!response.ok) {
+                return response.json().then(data => {
+                    alert(data.error);
+                     closePromptModal();
+            });
+            } else {
+
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 500);
+            closePromptModal();
+        }
+         
+        })
+    }
+
+    function openPromptModal(survey_id) {
+        const modal = document.getElementById("promptModal");
+        document.getElementById("surveyId").value = survey_id;
+
+        // IMPORTANT: Set display to 'flex' instead of 'block' 
+        // This activates the centering logic in our CSS
+        modal.style.display = "flex";
+    }
+
+    function closePromptModal() {
+        document.getElementById("promptModal").style.display = "none";
+    }
+
+    // Close when clicking the dark overlay
+    window.onclick = function (event) {
+        const modal = document.getElementById("promptModal");
+        if (event.target == modal) {
+            closePromptModal();
+        }
+    }
+</script>
