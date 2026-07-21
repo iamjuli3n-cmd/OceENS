@@ -46,6 +46,7 @@ from models import (
     Program,
     Summary,
     Prompt,
+    Stat,
 )
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
@@ -239,6 +240,23 @@ def delete_survey_with_relations(session: Session, survey_id: int) -> None:
                 content={"error": "Impossible de retirer ce sondage. ({e})"},
                 status_code=500,
             )
+
+
+def get_stats_by_survey(session: Session, survey_ids: List[int]) -> Dict[int, Dict]:
+    if not survey_ids:
+        return {}
+
+    stats = session.exec(
+        select(Stat).where(Stat.survey_id.in_(survey_ids))
+    ).all()
+    stats_by_survey = {}
+    for stat in stats:
+        stats_by_survey.setdefault(stat.survey_id, {})[stat.stat_name] = {
+            "stat_value": stat.stat_value,
+            "stat_color_threshold": stat.stat_color_threshold,
+        }
+    return stats_by_survey
+
 
 def role_to_dashboard_slug(roles: List[str]) -> str:
     """
@@ -1723,6 +1741,9 @@ def create_app():
             }
             for r in rows
         ]
+        stats_by_survey = get_stats_by_survey(
+            session, [survey["survey_id"] for survey in surveys]
+        )
 
         programs = [
             {
@@ -1754,6 +1775,7 @@ def create_app():
         context = {
             "user": user,
             "surveys": surveys,
+            "stats_by_survey": stats_by_survey,
             "programs": programs,
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
@@ -1846,10 +1868,14 @@ def create_app():
             }
             for row in rows
         ]
+        stats_by_survey = get_stats_by_survey(
+            session, [survey["survey_id"] for survey in surveys]
+        )
 
         context = {
             "user": user,
             "surveys": surveys,
+            "stats_by_survey": stats_by_survey,
             "allowed_campuses": allowed_campuses,
             "can_view_survey_students": False,
             "can_delete_survey": False,
@@ -1956,6 +1982,9 @@ def create_app():
             }
             for r in rows
         ]
+        stats_by_survey = get_stats_by_survey(
+            session, [survey["survey_id"] for survey in surveys]
+        )
 
         programs = [
             {
@@ -1986,6 +2015,7 @@ def create_app():
         context = {
             "user": user,
             "surveys": surveys,
+            "stats_by_survey": stats_by_survey,
             "programs": programs,
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
@@ -2092,6 +2122,9 @@ def create_app():
             }
             for r in rows
         ]
+        stats_by_survey = get_stats_by_survey(
+            session, [survey["survey_id"] for survey in surveys]
+        )
 
         db_users = session.exec(
             select(User, func.group_concat(Role.role))
@@ -2131,6 +2164,7 @@ def create_app():
         context = {
             "user": user,
             "surveys": surveys,
+            "stats_by_survey": stats_by_survey,
             "programs": programs,
             "campuses": campuses,
             "users": users,
