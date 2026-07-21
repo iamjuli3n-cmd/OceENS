@@ -38,13 +38,16 @@ def _to_nps_score(value: Any) -> Optional[int]:
     return int(score)
 
 
-def _add_nps_response(container: Dict[str, Any], value: Any) -> None:
-    """Add one valid answer to the NPS category counters."""
+def _add_recommendation_response(container: Dict[str, Any], value: Any) -> None:
+    """Add one valid recommendation answer to the score and NPS counters."""
     score = _to_nps_score(value)
     if score is None:
         return
 
     container["nps_response_count"] = container.get("nps_response_count", 0) + 1
+    container["recommendation_score_sum"] = (
+        container.get("recommendation_score_sum", 0) + score
+    )
     if score >= 9:
         category = "nps_promoter_count"
     elif score >= 7:
@@ -63,6 +66,47 @@ def _calculate_nps(container: Dict[str, Any]) -> Optional[float]:
     promoters = container.get("nps_promoter_count", 0)
     detractors = container.get("nps_detractor_count", 0)
     return 100 * (promoters - detractors) / response_count
+
+
+def _calculate_satisfaction_score(
+    section: Dict[str, Any], submissions_count: int
+) -> Optional[float]:
+    if submissions_count <= 0 or "satisfaction_count" not in section:
+        return None
+    return 100 * section["satisfaction_count"] / submissions_count
+
+
+def _calculate_recommendation_score(
+    section: Dict[str, Any],
+) -> Optional[float]:
+    response_count = section.get("nps_response_count", 0)
+    if not response_count:
+        return None
+    return section.get("recommendation_score_sum", 0) / response_count
+
+
+def _calculate_survey_stats(
+    sections: Dict[str, Dict[str, Any]], submissions_count: int
+) -> Dict[str, float]:
+    stats = {}
+    for section in sections.values():
+        section_type = section.get("section_type")
+        if section_type == "C":
+            score = _calculate_satisfaction_score(section, submissions_count)
+            stat_name = "campus_satisfaction"
+        elif section_type == "P":
+            score = _calculate_satisfaction_score(section, submissions_count)
+            stat_name = "program_satisfaction"
+        elif section_type == "R":
+            score = _calculate_recommendation_score(section)
+            stat_name = "recommendation_score"
+        else:
+            continue
+
+        if score is not None:
+            stats[stat_name] = round(score, 1)
+
+    return stats
 
 
 def _build_question(dic, data_row, options, options_value, submissions_sets):
@@ -108,7 +152,7 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
         if options_value[data_row["option_id"]]["is_positive"]:  # Count the positive
             dic["satisfaction_count"] += 1
     if data_row["question_type"] == "NPS":
-        _add_nps_response(dic, data_row["answer_value"])
+        _add_recommendation_response(dic, data_row["answer_value"])
     if data_row["question_type"] == "QCU_Attendance":  # ATTENDANCE COUNT
         if "attendance_count" not in dic.keys():
             dic["attendance_count"] = 0
@@ -306,7 +350,7 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                     )
             elif data_row["section_type"] == "R":
                 if data_row["question_type"] == "NPS":
-                    _add_nps_response(
+                    _add_recommendation_response(
                         data[data_row["section_name"]], data_row["answer_value"]
                     )
 
@@ -354,6 +398,7 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
         "passives": recommendation_section.get("nps_passive_count", 0),
         "detractors": recommendation_section.get("nps_detractor_count", 0),
     }
+    context["stats"] = _calculate_survey_stats(data, context["submissions_count"])
     # END ANSWERS
 
     return context
