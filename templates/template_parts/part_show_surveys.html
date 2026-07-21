@@ -138,9 +138,9 @@
     {% set survey_stats = stats_by_survey.get(survey['survey_id'], {}) %}
     {% if survey_stats %}
     {% set score_definitions = [
-      {'name': 'campus_satisfaction', 'short': 'C', 'label': 'Satisfaction campus', 'suffix': ' %'},
-      {'name': 'program_satisfaction', 'short': 'P', 'label': 'Satisfaction formation', 'suffix': ' %'},
-      {'name': 'recommendation_score', 'short': 'R', 'label': 'Score de recommandation (NPS)', 'suffix': ''}
+    {'name': 'campus_satisfaction', 'short': 'C', 'label': 'Satisfaction campus', 'suffix': ' %'},
+    {'name': 'program_satisfaction', 'short': 'P', 'label': 'Satisfaction formation', 'suffix': ' %'},
+    {'name': 'recommendation_score', 'short': 'R', 'label': 'Score de recommandation (NPS)', 'suffix': ''}
     ] %}
     <div class="survey-score-list" role="group" aria-label="Scores du sondage">
       {% for definition in score_definitions %}
@@ -158,8 +158,8 @@
     {% endif %}
   </div>
 
-  <a class="survey-link" onclick='openQRCodeModal(window.location.origin+"/api/surveys/{{ survey[' survey_id'] }}","{{
-    survey['program_name'] }}","{{ survey['school_year'] }} - {{ survey['semester'] }}")'>
+  <a class="survey-link"
+    onclick='openQRCodeModal(window.location.origin + "/api/surveys/{{ survey["survey_id"] }}", {{ survey["program_name"] | tojson }}, {{ (survey["school_year"] ~ " - " ~ survey["semester"]) | tojson }})'>
     QRCode
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -242,21 +242,20 @@
 
     {% if can_generate_summaries and survey['submissions_count'] > 0 %}
     {% if survey['is_generating'] %}
-    {% if summaries[survey["survey_id"]]["summaries_count"] ==
-    (summaries[survey["survey_id"]]["summaries_done"]+summaries[survey["survey_id"]]["summaries_error"]) %}
+    {% set survey_summaries = summaries.get(survey['survey_id'], {}) %}
+    {% set summaries_count = survey_summaries.get('summaries_count', 0) %}
+    {% set summaries_done = survey_summaries.get('summaries_done', 0) %}
+    {% set summaries_error = survey_summaries.get('summaries_error', 0) %}
+    {% if summaries_count > 0 and summaries_count == summaries_done + summaries_error %}
     <button class="row-icon row-icon-summaries row-icon-summaries-done"
-      title="Génération des résumés terminés : {{summaries[survey["
-      survey_id"]]["summaries_done"]}}/{{summaries[survey["survey_id"]]["summaries_count"]}}
-      ({{summaries[survey["survey_id"]]["summaries_error"]}} erreur(s))"]}}">🤖</button>
+      title="Génération des résumés terminée : {{ summaries_done }}/{{ summaries_count }} ({{ summaries_error }} erreur(s))">🤖</button>
     {% else %}
     <button class="row-icon row-icon-summaries row-icon-summaries-processing" onclick="window.location.reload();"
-      title="Génération des résumés en cours : {{summaries[survey["
-      survey_id"]]["summaries_done"]}}/{{summaries[survey["survey_id"]]["summaries_count"]}}
-      ({{summaries[survey["survey_id"]]["summaries_error"]}} erreur(s))"]}}">🤖</button>
+      title="Génération des résumés en cours : {{ summaries_done }}/{{ summaries_count }} ({{ summaries_error }} erreur(s))">🤖</button>
     {% endif %}
-    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/destroy-summaries" class="destroy-summaries" onsubmit="return confirm('Supprimer définitivement les résumés déjà générés ? Cette action est irréversible.');">
+    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/destroy-summaries" class="destroy-summaries"
+      onsubmit="return confirm('Supprimer définitivement les résumés déjà générés ? Cette action est irréversible.');">
       <button type="submit" class="row-icon row-icon-summaries row-icon-summaries-destroy"
-        
         title="Stopper la génération et supprimer les résumés">🤖</button>
     </form>
     {% else %}
