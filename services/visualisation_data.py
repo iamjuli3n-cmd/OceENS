@@ -23,7 +23,7 @@ from models import (
 STAT_COLOR_THRESHOLDS = {
     "campus_satisfaction": {20: "red", 50: "orange", 100: "green"},
     "program_satisfaction": {20: "red", 50: "orange", 100: "green"},
-    "recommendation_score": {20: "red", 50: "orange", 100: "green"},
+    "recommendation_score": {-33: "red", 33: "orange", 100: "green"},
 }
 
 

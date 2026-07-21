@@ -54,7 +54,11 @@ from starlette.middleware.sessions import SessionMiddleware
 from auth import router as auth_router, get_current_user
 from sondage_loader import load_sondage_complet
 from services.export_csv import generate_csv_response
-from services.visualisation_data import get_visualisation_context2, refresh_survey_stats
+from services.visualisation_data import (
+    STAT_COLOR_THRESHOLDS,
+    get_visualisation_context2,
+    refresh_survey_stats,
+)
 
 load_dotenv()
 # ┌─ Configuration ────────────────────────────────────────────────────────┐
@@ -278,16 +282,32 @@ def get_stats_by_survey(session: Session, survey_ids: List[int]) -> Dict[int, Di
                 select(Stat).where(Stat.survey_id.in_(closed_survey_ids))
             ).all()
 
+    thresholds_updated = False
     stats_by_survey = {}
     for stat in stats:
         stat_color = "neutral"
         try:
+            expected_thresholds = STAT_COLOR_THRESHOLDS.get(stat.stat_name)
+            if expected_thresholds is not None:
+                serialized_thresholds = json.dumps(expected_thresholds)
+                if stat.stat_color_threshold != serialized_thresholds:
+                    stat.stat_color_threshold = serialized_thresholds
+                    session.add(stat)
+                    thresholds_updated = True
+
             thresholds = sorted(
                 (float(limit), color)
                 for limit, color in json.loads(stat.stat_color_threshold).items()
             )
-            for limit, color in thresholds:
-                if stat.stat_value <= limit and color in {"red", "orange", "green"}:
+            for index, (limit, color) in enumerate(thresholds):
+                if stat.stat_name == "recommendation_score":
+                    is_matching_range = stat.stat_value < limit or (
+                        index == len(thresholds) - 1 and stat.stat_value <= limit
+                    )
+                else:
+                    is_matching_range = stat.stat_value <= limit
+
+                if is_matching_range and color in {"red", "orange", "green"}:
                     stat_color = color
                     break
         except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
@@ -304,6 +324,10 @@ def get_stats_by_survey(session: Session, survey_ids: List[int]) -> Dict[int, Di
             "stat_display_value": stat_display_value,
             "stat_color": stat_color,
         }
+
+    if thresholds_updated:
+        session.commit()
+
     return stats_by_survey
 
 
