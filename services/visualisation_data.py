@@ -19,6 +19,17 @@ from models import (
 )
 
 
+STAT_COLOR_THRESHOLDS = {
+    "campus_satisfaction": {20: "red", 50: "orange", 100: "green"},
+    "program_satisfaction": {20: "red", 50: "orange", 100: "green"},
+    "recommendation_score": {2: "red", 5: "orange", 10: "green"},
+}
+
+
+def _serialize_color_thresholds(stat_name: str) -> str:
+    return json.dumps(STAT_COLOR_THRESHOLDS[stat_name])
+
+
 def bilingual_text(text_fr: Optional[str], text_en: Optional[str]) -> str:
     """Build the bilingual label displayed by the survey UI."""
     return (
