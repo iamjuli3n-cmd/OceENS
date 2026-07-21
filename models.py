@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, Float, ForeignKey, Integer, String, Text
 from sqlmodel import Field, SQLModel
 
 
@@ -58,6 +58,27 @@ class Survey(SQLModel, table=True):
         default=None, sa_column=Column("school_year", String)
     )
     password: Optional[str] = Field(default=None, sa_column=Column("password", String))
+
+
+class Stat(SQLModel, table=True):
+    __tablename__ = "stats"
+
+    survey_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            "survey_id",
+            Integer,
+            ForeignKey("surveys.survey_id"),
+            primary_key=True,
+        ),
+    )
+    stat_name: str = Field(
+        sa_column=Column("stat_name", String, primary_key=True)
+    )
+    stat_value: float = Field(sa_column=Column("stat_value", Float, nullable=False))
+    stat_color_threshold: str = Field(
+        sa_column=Column("stat_color_threshold", Text, nullable=False)
+    )
 
 
 class Section(SQLModel, table=True):
