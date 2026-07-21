@@ -1,6 +1,6 @@
 from database import engine
 from sqlmodel import Session, select, func
-from models import Summary, Answer, Prompt, Question,Module,Program, Survey
+from models import Summary, Answer, Prompt, Question,Module,Program, Survey, Submission
 import requests_cache
 import json
 from datetime import datetime
@@ -106,9 +106,9 @@ if __name__ == "__main__":
             #question = question.replace([])
 
             if summary_row.module_id:
-                summary_verbatim = session.exec(select(Answer.value).where(Answer.question_id==summary_row.question_id,Answer.module_id==summary_row.module_id,Answer.teacher==summary_row.teacher)).all()
+                summary_verbatim = session.exec(select(Answer.value).join(Submission,Submission.submission_id==Answer.submission_id).where(Submission.survey_id==summary_row.survey_id,Answer.question_id==summary_row.question_id,Answer.module_id==summary_row.module_id,Answer.teacher==summary_row.teacher)).all()
             else:
-                summary_verbatim = session.exec(select(Answer.value).where(Answer.question_id==summary_row.question_id)).all()
+                summary_verbatim = session.exec(select(Answer.value).join(Submission,Submission.submission_id==Answer.submission_id).where(Submission.survey_id==summary_row.survey_id,Answer.question_id==summary_row.question_id)).all()
 
             print(summary_verbatim)
 
