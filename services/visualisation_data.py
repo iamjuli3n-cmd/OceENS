@@ -13,10 +13,23 @@ from models import (
     Question,
     Respondent,
     Section,
+    Stat,
     Submission,
     Survey,
     Summary,
+    StatValue,
 )
+
+
+STAT_COLOR_THRESHOLDS = {
+    "campus_satisfaction": {20: "red", 50: "orange", 100: "green"},
+    "program_satisfaction": {20: "red", 50: "orange", 100: "green"},
+    "recommendation_score": {-33: "red", 33: "orange", 100: "green"},
+}
+
+
+def _serialize_color_thresholds(stat_name: str) -> str:
+    return json.dumps(STAT_COLOR_THRESHOLDS[stat_name])
 
 
 def bilingual_text(text_fr: Optional[str], text_en: Optional[str]) -> str:
@@ -38,8 +51,8 @@ def _to_nps_score(value: Any) -> Optional[int]:
     return int(score)
 
 
-def _add_nps_response(container: Dict[str, Any], value: Any) -> None:
-    """Add one valid answer to the NPS category counters."""
+def _add_recommendation_response(container: Dict[str, Any], value: Any) -> None:
+    """Add one valid recommendation answer to the NPS counters."""
     score = _to_nps_score(value)
     if score is None:
         return
@@ -63,6 +76,108 @@ def _calculate_nps(container: Dict[str, Any]) -> Optional[float]:
     promoters = container.get("nps_promoter_count", 0)
     detractors = container.get("nps_detractor_count", 0)
     return 100 * (promoters - detractors) / response_count
+
+
+def _calculate_satisfaction_score(
+    section: Dict[str, Any], submissions_count: int
+) -> Optional[float]:
+    if submissions_count <= 0 or "satisfaction_count" not in section:
+        return None
+    return 100 * section["satisfaction_count"] / submissions_count
+
+
+def _calculate_survey_stats(
+    sections: Dict[str, Dict[str, Any]], submissions_count: int, session:Session, sections_list:dict, survey_id:int
+) -> Dict[str, float]:
+    
+    
+    stats = session.exec(select(Stat)).all()
+
+    for stat in stats:
+        for section_name in sections_list[stat.section_type]:
+            if stat.section_type == "C" or stat.section_type == "P":
+                score = _calculate_satisfaction_score(sections[section_name], submissions_count)
+            elif stat.section_type == "R":
+                score = _calculate_nps(sections[section_name])
+            if score is not None:
+                sv = StatValue(survey_id=survey_id,
+                            name=stat.name,
+                            value=round(score, 1)
+                            )
+                session.merge(sv)
+    session.commit()
+    return
+
+
+def _sync_survey_stats(
+    session: Session, survey_id: int, stats: Dict[str, float]
+) -> None:
+    existing_stats = session.exec(
+        select(Stat).where(Stat.survey_id == survey_id)
+    ).all()
+    for stat in existing_stats:
+        if stat.stat_name in STAT_COLOR_THRESHOLDS and stat.stat_name not in stats:
+            session.delete(stat)
+
+    for stat_name, stat_value in stats.items():
+        session.merge(
+            Stat(
+                survey_id=survey_id,
+                stat_name=stat_name,
+                stat_value=stat_value,
+                stat_color_threshold=_serialize_color_thresholds(stat_name),
+            )
+        )
+
+
+def refresh_survey_stats(session: Session, survey_id: int) -> Dict[str, float]:
+    survey_status = session.exec(
+        select(Survey.status).where(Survey.survey_id == survey_id)
+    ).first()
+    if survey_status is None or survey_status == 1:
+        return {}
+
+    submissions_count = int(
+        session.exec(
+            select(func.count(Submission.submission_id)).where(
+                Submission.survey_id == survey_id
+            )
+        ).one()
+        or 0
+    )
+
+    sections = {}
+    rows = session.exec(
+        select(
+            Section.section_type,
+            Question.question_type,
+            Answer.value,
+            Option.is_positive,
+        )
+        .select_from(Answer)
+        .join(Submission, Submission.submission_id == Answer.submission_id)
+        .join(Question, Question.question_id == Answer.question_id)
+        .join(Section, Section.section_id == Question.section_id)
+        .join(Option, Option.option_id == Answer.option_id, isouter=True)
+        .where(
+            Submission.survey_id == survey_id,
+            Section.section_type.in_(["C", "P", "R"]),
+            Question.question_type.in_(["QCU_Satisfaction", "NPS"]),
+        )
+    ).all()
+
+    for section_type, question_type, answer_value, is_positive in rows:
+        section = sections.setdefault(section_type, {"section_type": section_type})
+        if question_type == "QCU_Satisfaction":
+            section.setdefault("satisfaction_count", 0)
+            if is_positive:
+                section["satisfaction_count"] += 1
+        elif question_type == "NPS":
+            _add_recommendation_response(section, answer_value)
+
+    _calculate_survey_stats(sections, submissions_count)
+    
+    return stats
 
 
 def _build_question(dic, data_row, options, options_value, submissions_sets):
@@ -108,7 +223,7 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
         if options_value[data_row["option_id"]]["is_positive"]:  # Count the positive
             dic["satisfaction_count"] += 1
     if data_row["question_type"] == "NPS":
-        _add_nps_response(dic, data_row["answer_value"])
+        _add_recommendation_response(dic, data_row["answer_value"])
     if data_row["question_type"] == "QCU_Attendance":  # ATTENDANCE COUNT
         if "attendance_count" not in dic.keys():
             dic["attendance_count"] = 0
@@ -253,6 +368,8 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
             )
         ).all()
 
+        sections_list={}
+
         for r in rows:
             data_row = {
                 "answer_id": r[0],
@@ -275,7 +392,12 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
             if data_row["section_name"] not in data.keys():
                 data[data_row["section_name"]] = {}
             data[data_row["section_name"]]["section_type"] = data_row["section_type"]
+            if data_row["section_type"] not in sections_list.keys():
+                sections_list[data_row["section_type"]]=[]
+            sections_list[data_row["section_type"]].append(data_row["section_name"])
             if data_row["section_type"] == "ME":
+                
+
                 if "modules" not in data[data_row["section_name"]].keys():
                     data[data_row["section_name"]]["modules"] = {}
                 if (
@@ -305,12 +427,15 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                         submissions_sets,
                     )
             elif data_row["section_type"] == "R":
+                
                 if data_row["question_type"] == "NPS":
-                    _add_nps_response(
+                    _add_recommendation_response(
                         data[data_row["section_name"]], data_row["answer_value"]
                     )
 
-            else:  # section_type = S --> Simple
+            else:  
+                
+                # section_type = S --> Simple
                 if "questions" not in data[data_row["section_name"]]:
                     data[data_row["section_name"]] = {"questions": {}}
                 _build_question(
@@ -338,22 +463,27 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                 q = data[section_name]["questions"][summary.question_id]
             q["summary"]={"text":summary.summary_text,"metadata":summary.metadata_text}
 
-    context["sections"] = data
-    recommendation_section = next(
-        (
-            section
-            for section in data.values()
-            if section.get("section_type") == "R"
-        ),
-        {},
-    )
-    context["recommendation"] = {
-        "score": _calculate_nps(recommendation_section),
-        "count": recommendation_section.get("nps_response_count", 0),
-        "promoters": recommendation_section.get("nps_promoter_count", 0),
-        "passives": recommendation_section.get("nps_passive_count", 0),
-        "detractors": recommendation_section.get("nps_detractor_count", 0),
-    }
-    # END ANSWERS
+        context["sections"] = data
+        recommendation_section = next(
+            (
+                section
+                for section in data.values()
+                if section.get("section_type") == "R"
+            ),
+            {},
+        )
+        context["recommendation"] = {
+            "score": _calculate_nps(recommendation_section),
+            "count": recommendation_section.get("nps_response_count", 0),
+            "promoters": recommendation_section.get("nps_promoter_count", 0),
+            "passives": recommendation_section.get("nps_passive_count", 0),
+            "detractors": recommendation_section.get("nps_detractor_count", 0),
+        }
+
+        if survey.status != 1: #Not open 
+            _calculate_survey_stats(
+                data, context["submissions_count"],session,sections_list,survey_id
+            )
+        # END ANSWERS
 
     return context

@@ -1,6 +1,7 @@
 from sqlmodel import Session, delete
 from pathlib import Path
 import csv
+import json
 from models import (
     Program,
     User,
@@ -15,6 +16,7 @@ from models import (
     Answer,
     Submission,
     Prompt,
+    Stat,
 )
 from database import engine
 
@@ -785,6 +787,31 @@ def seed_submissions(session: Session):
     session.commit()
 
 
+STAT_COLOR_THRESHOLDS = {
+    "campus_satisfaction": {"color_scale":{20: "red", 50: "orange", 100: "green"},"section_type":"C", "short":"C","label":"Satisfaction campus","suffix":"%","show_explicit_positive":False},
+    "program_satisfaction": {"color_scale":{20: "red", 50: "orange", 100: "green"},"section_type":"P", "short":"F","label":"Satisfaction formation","suffix":"%","show_explicit_positive":False},
+    "recommendation_score": {"color_scale":{-33: "red", 33: "orange", 100: "green"},"section_type":"R", "short":"NPS","label":"Score de recommandation","suffix":"","show_explicit_positive":True},
+}
+
+def seed_stats(session: Session):
+    """Remplit la table stats."""
+
+    for stat in STAT_COLOR_THRESHOLDS:
+        print(stat)
+        stats = Stat(
+            name=stat,
+            color_scale=json.dumps(STAT_COLOR_THRESHOLDS[stat]["color_scale"]),
+            section_type=STAT_COLOR_THRESHOLDS[stat]["section_type"],
+            short=STAT_COLOR_THRESHOLDS[stat]["short"],
+            label=STAT_COLOR_THRESHOLDS[stat]["label"],
+            suffix=STAT_COLOR_THRESHOLDS[stat]["suffix"],
+
+            show_explicit_positive=STAT_COLOR_THRESHOLDS[stat]["show_explicit_positive"],
+        )
+        session.add(stats)
+    session.commit()
+
+
 def seed_answers(session: Session):
     """Remplit la table answers."""
 
@@ -859,5 +886,7 @@ def seed_all_if_necessary():
         seed_answers(session)
 
         seed_prompts(session)
+
+        seed_stats(session)
 
         print("Database seeding completed successfully!")

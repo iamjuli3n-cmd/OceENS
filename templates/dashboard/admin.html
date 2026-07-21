@@ -33,14 +33,24 @@
   <main>
     <div class="tab-container">
       <div class="tabs">
-        <button class='tab {% if request.query_params["tab"]!="users" %} active {% endif %}' data-tab="surveys">Sondages</button>
-        <button class='tab {% if request.query_params["tab"]=="users" %} active {% endif %}' data-tab="users">Utilisateurs</button>
+        <button type="button" class='tab {% if request.query_params["tab"]!="users" %} active {% endif %}' data-tab="surveys">Sondages</button>
+        <button type="button" class='tab {% if request.query_params["tab"]=="users" %} active {% endif %}' data-tab="users">Utilisateurs</button>
       </div>
 
       <div class='tab-content {% if request.query_params["tab"]=="users" %} active {% endif %}' id="users">
-        <div class="card">
-          {% include 'template_parts/part_show_users.html' %}
-        </div>
+        <section class="card users-panel" id="users-mobile-dialog">
+          <header class="users-mobile-modal-header">
+            <div>
+              <h2 id="users-mobile-modal-title">Utilisateurs</h2>
+              <p id="users-mobile-count">{{ users | length }} affiché(s)</p>
+            </div>
+            <button type="button" class="users-mobile-modal-close" aria-label="Fermer la liste des utilisateurs"
+              onclick="closeUsersMobileModal()">&times;</button>
+          </header>
+          <div class="users-mobile-modal-body">
+            {% include 'template_parts/part_show_users.html' %}
+          </div>
+        </section>
       </div>
 
       <div class='tab-content {% if request.query_params["tab"]!="users" %} active {% endif %}' id="surveys">
@@ -69,17 +79,66 @@
     const tabs = document.querySelectorAll('.tab');
     const contents = document.querySelectorAll('.tab-content');
 
+    const usersMobileMedia = window.matchMedia('(max-width: 560px)');
+    const usersContent = document.getElementById('users');
+    const usersDialog = document.getElementById('users-mobile-dialog');
+    const usersTab = document.querySelector('[data-tab="users"]');
+
+    function activateAdminTab(target) {
+      tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.tab === target));
+      contents.forEach((content) => content.classList.toggle('active', content.id === target));
+      syncUsersMobileModal();
+    }
+
+    function syncUsersMobileModal() {
+      const isOpen = usersMobileMedia.matches && usersContent.classList.contains('active');
+      document.body.classList.toggle('users-mobile-modal-open', isOpen);
+
+      if (isOpen) {
+        usersDialog.setAttribute('role', 'dialog');
+        usersDialog.setAttribute('aria-modal', 'true');
+        usersDialog.setAttribute('aria-labelledby', 'users-mobile-modal-title');
+      } else {
+        usersDialog.removeAttribute('role');
+        usersDialog.removeAttribute('aria-modal');
+        usersDialog.removeAttribute('aria-labelledby');
+      }
+    }
+
+    function closeUsersMobileModal() {
+      activateAdminTab('surveys');
+      usersTab.focus();
+
+      const url = new URL(window.location.href);
+      url.searchParams.delete('tab');
+      window.history.replaceState({}, '', url);
+    }
+
     tabs.forEach((tab) => {
       tab.addEventListener('click', () => {
-        const target = tab.dataset.tab;
+        activateAdminTab(tab.dataset.tab);
 
-        tabs.forEach((t) => t.classList.remove('active'));
-        contents.forEach((c) => c.classList.remove('active'));
-
-        tab.classList.add('active');
-        document.getElementById(target).classList.add('active');
+        if (tab.dataset.tab === 'users' && usersMobileMedia.matches) {
+          document.querySelector('.users-mobile-modal-close').focus();
+        }
       });
     });
+
+    usersContent.addEventListener('click', (event) => {
+      if (usersMobileMedia.matches && event.target === usersContent) closeUsersMobileModal();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && usersMobileMedia.matches && usersContent.classList.contains('active')) {
+        closeUsersMobileModal();
+      }
+    });
+
+    usersMobileMedia.addEventListener('change', syncUsersMobileModal);
+    syncUsersMobileModal();
+    if (usersMobileMedia.matches && usersContent.classList.contains('active')) {
+      document.querySelector('.users-mobile-modal-close').focus();
+    }
   </script>
 
 </body>
