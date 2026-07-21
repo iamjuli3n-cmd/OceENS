@@ -54,7 +54,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from auth import router as auth_router, get_current_user
 from sondage_loader import load_sondage_complet
 from services.export_csv import generate_csv_response
-from services.visualisation_data import get_visualisation_context2
+from services.visualisation_data import get_visualisation_context2, refresh_survey_stats
 
 load_dotenv()
 # ┌─ Configuration ────────────────────────────────────────────────────────┐
@@ -247,9 +247,37 @@ def get_stats_by_survey(session: Session, survey_ids: List[int]) -> Dict[int, Di
     if not survey_ids:
         return {}
 
+    closed_survey_ids = set(
+        session.exec(
+            select(Survey.survey_id).where(
+                Survey.survey_id.in_(survey_ids), Survey.status != 1
+            )
+        ).all()
+    )
+    if not closed_survey_ids:
+        return {}
+
     stats = session.exec(
-        select(Stat).where(Stat.survey_id.in_(survey_ids))
+        select(Stat).where(Stat.survey_id.in_(closed_survey_ids))
     ).all()
+
+    missing_survey_ids = closed_survey_ids - {stat.survey_id for stat in stats}
+    if missing_survey_ids:
+        answered_survey_ids = set(
+            session.exec(
+                select(Submission.survey_id)
+                .where(Submission.survey_id.in_(missing_survey_ids))
+                .distinct()
+            ).all()
+        )
+        for survey_id in answered_survey_ids:
+            refresh_survey_stats(session, survey_id)
+        if answered_survey_ids:
+            session.commit()
+            stats = session.exec(
+                select(Stat).where(Stat.survey_id.in_(closed_survey_ids))
+            ).all()
+
     stats_by_survey = {}
     for stat in stats:
         stat_color = "neutral"
@@ -265,12 +293,15 @@ def get_stats_by_survey(session: Session, survey_ids: List[int]) -> Dict[int, Di
         except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
             pass
 
+        stat_display_value = (
+            f"{stat.stat_value:.1f}".rstrip("0").rstrip(".").replace(".", ",")
+        )
+        if stat.stat_name == "recommendation_score" and stat.stat_value > 0:
+            stat_display_value = f"+{stat_display_value}"
+
         stats_by_survey.setdefault(stat.survey_id, {})[stat.stat_name] = {
             "stat_value": stat.stat_value,
-            "stat_display_value": f"{stat.stat_value:.1f}"
-            .rstrip("0")
-            .rstrip(".")
-            .replace(".", ","),
+            "stat_display_value": stat_display_value,
             "stat_color": stat_color,
         }
     return stats_by_survey
@@ -1330,6 +1361,9 @@ def create_app():
 
         survey.status = status
         session.add(survey)
+        session.flush()
+        if status == 0:
+            refresh_survey_stats(session, survey_id)
         session.commit()
 
         return RedirectResponse(

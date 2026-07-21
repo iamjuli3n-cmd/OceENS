@@ -150,6 +150,23 @@ button {
 }
 
 /* Admin and program manager dashboards */
+@media (max-width: 1100px) {
+    .page-admin .sondage-row {
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 0;
+    }
+
+    .page-admin .sondage-main {
+        flex-basis: 100%;
+    }
+
+    .page-admin .sondage-stats {
+        margin-inline: auto 0;
+    }
+}
+
 @media (max-width: 768px) {
 
     .page-admin .header,
@@ -186,6 +203,17 @@ button {
     .page-admin main {
         margin: 20px auto;
         padding: 0 16px;
+    }
+
+    .page-admin .tabs {
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .page-admin .tab {
+        min-height: 44px;
+        padding: 10px 12px;
+        font-size: 14px;
     }
 
     .page-admin .card,
@@ -254,6 +282,10 @@ button {
     .page-admin main {
         margin-top: 16px;
         padding-inline: 12px;
+    }
+
+    .page-admin .tab {
+        padding-inline: 8px;
     }
 
     .page-admin .card,

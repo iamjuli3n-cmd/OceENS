@@ -33,8 +33,8 @@
   <main>
     <div class="tab-container">
       <div class="tabs">
-        <button class='tab {% if request.query_params["tab"]!="users" %} active {% endif %}' data-tab="surveys">Sondages</button>
-        <button class='tab {% if request.query_params["tab"]=="users" %} active {% endif %}' data-tab="users">Utilisateurs</button>
+        <button type="button" class='tab {% if request.query_params["tab"]!="users" %} active {% endif %}' data-tab="surveys">Sondages</button>
+        <button type="button" class='tab {% if request.query_params["tab"]=="users" %} active {% endif %}' data-tab="users">Utilisateurs</button>
       </div>
 
       <div class='tab-content {% if request.query_params["tab"]=="users" %} active {% endif %}' id="users">
