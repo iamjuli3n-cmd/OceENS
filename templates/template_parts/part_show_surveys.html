@@ -177,8 +177,9 @@
       onclick="window.location.reload();"
       title="Génération des résumés en cours : {{summaries[survey["survey_id"]]["summaries_done"]}}/{{summaries[survey["survey_id"]]["summaries_count"]}} ({{summaries[survey["survey_id"]]["summaries_error"]}} erreur(s))"]}}">🤖</button>
     {% endif %}
-    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/destroy-summaries" class="destroy-summaries">
-      <button class="row-icon row-icon-summaries row-icon-summaries-destroy"
+    <form method="post" action="/api/surveys/{{ survey['survey_id'] }}/destroy-summaries" class="destroy-summaries" onsubmit="return confirm('Supprimer définitivement les résumés déjà générés ? Cette action est irréversible.');">
+      <button type="submit" class="row-icon row-icon-summaries row-icon-summaries-destroy"
+        
         title="Stopper la génération et supprimer les résumés">🤖</button>
     </form>
     {% else %}
