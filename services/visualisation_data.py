@@ -94,17 +94,18 @@ def _calculate_survey_stats(
     stats = session.exec(select(Stat)).all()
 
     for stat in stats:
-        for section_name in sections_list[stat.section_type]:
-            if stat.section_type == "C" or stat.section_type == "P":
-                score = _calculate_satisfaction_score(sections[section_name], submissions_count)
-            elif stat.section_type == "R":
-                score = _calculate_nps(sections[section_name])
-            if score is not None:
-                sv = StatValue(survey_id=survey_id,
-                            name=stat.name,
-                            value=round(score, 1)
-                            )
-                session.merge(sv)
+        if stat.section_type in sections_list.keys():
+            for section_name in sections_list[stat.section_type]:
+                if stat.section_type == "C" or stat.section_type == "P":
+                    score = _calculate_satisfaction_score(sections[section_name], submissions_count)
+                elif stat.section_type == "R":
+                    score = _calculate_nps(sections[section_name])
+                if score is not None:
+                    sv = StatValue(survey_id=survey_id,
+                                name=stat.name,
+                                value=round(score, 1)
+                                )
+                    session.merge(sv)
     session.commit()
     return
 
