@@ -48,17 +48,14 @@ from models import (
     Summary,
     Prompt,
     Stat,
+    StatValue,
 )
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 from auth import router as auth_router, get_current_user
 from sondage_loader import load_sondage_complet
 from services.export_csv import generate_csv_response
-from services.visualisation_data import (
-    STAT_COLOR_THRESHOLDS,
-    get_visualisation_context2,
-    refresh_survey_stats,
-)
+from services.visualisation_data import get_visualisation_context2
 
 load_dotenv()
 # ┌─ Configuration ────────────────────────────────────────────────────────┐
@@ -246,88 +243,21 @@ def delete_survey_with_relations(session: Session, survey_id: int) -> None:
                 status_code=500,
             )
 
+def _get_color(color_scale:dict,score:float):
+    for threshold in color_scale:
+        if (score < float(threshold)):
+            return color_scale[threshold]
+    return None
 
-def get_stats_by_survey(session: Session, survey_ids: List[int]) -> Dict[int, Dict]:
-    if not survey_ids:
+def get_stats_by_survey(session: Session, surveys: List) -> Dict[int, Dict]:
+    if not surveys:
         return {}
-
-    closed_survey_ids = set(
-        session.exec(
-            select(Survey.survey_id).where(
-                Survey.survey_id.in_(survey_ids), Survey.status != 1
-            )
-        ).all()
-    )
-    if not closed_survey_ids:
-        return {}
-
-    stats = session.exec(
-        select(Stat).where(Stat.survey_id.in_(closed_survey_ids))
-    ).all()
-
-    missing_survey_ids = closed_survey_ids - {stat.survey_id for stat in stats}
-    if missing_survey_ids:
-        answered_survey_ids = set(
-            session.exec(
-                select(Submission.survey_id)
-                .where(Submission.survey_id.in_(missing_survey_ids))
-                .distinct()
-            ).all()
-        )
-        for survey_id in answered_survey_ids:
-            refresh_survey_stats(session, survey_id)
-        if answered_survey_ids:
-            session.commit()
-            stats = session.exec(
-                select(Stat).where(Stat.survey_id.in_(closed_survey_ids))
-            ).all()
-
-    thresholds_updated = False
-    stats_by_survey = {}
-    for stat in stats:
-        stat_color = "neutral"
-        try:
-            expected_thresholds = STAT_COLOR_THRESHOLDS.get(stat.stat_name)
-            if expected_thresholds is not None:
-                serialized_thresholds = json.dumps(expected_thresholds)
-                if stat.stat_color_threshold != serialized_thresholds:
-                    stat.stat_color_threshold = serialized_thresholds
-                    session.add(stat)
-                    thresholds_updated = True
-
-            thresholds = sorted(
-                (float(limit), color)
-                for limit, color in json.loads(stat.stat_color_threshold).items()
-            )
-            for index, (limit, color) in enumerate(thresholds):
-                if stat.stat_name == "recommendation_score":
-                    is_matching_range = stat.stat_value < limit or (
-                        index == len(thresholds) - 1 and stat.stat_value <= limit
-                    )
-                else:
-                    is_matching_range = stat.stat_value <= limit
-
-                if is_matching_range and color in {"red", "orange", "green"}:
-                    stat_color = color
-                    break
-        except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
-            pass
-
-        stat_display_value = (
-            f"{stat.stat_value:.1f}".rstrip("0").rstrip(".").replace(".", ",")
-        )
-        if stat.stat_name == "recommendation_score" and stat.stat_value > 0:
-            stat_display_value = f"+{stat_display_value}"
-
-        stats_by_survey.setdefault(stat.survey_id, {})[stat.stat_name] = {
-            "stat_value": stat.stat_value,
-            "stat_display_value": stat_display_value,
-            "stat_color": stat_color,
-        }
-
-    if thresholds_updated:
-        session.commit()
-
+    
+    stats_by_survey={}
+    
+    for survey in surveys:
+        if survey["is_closed"]: #Not open
+            stats_by_survey[survey["survey_id"]] = {sv[0].name:{'value':sv[0].value,'color':_get_color(json.loads(sv[1].color_scale),sv[0].value),'short':sv[1].short,'label':sv[1].label,'suffix':sv[1].suffix,'show_explicit_positive':sv[1].show_explicit_positive} for sv in session.exec(select(StatValue,Stat).join(Stat,Stat.name==StatValue.name).where(StatValue.survey_id==survey["survey_id"])).all()}
     return stats_by_survey
 
 
@@ -1386,8 +1316,6 @@ def create_app():
         survey.status = status
         session.add(survey)
         session.flush()
-        if status == 0:
-            refresh_survey_stats(session, survey_id)
         session.commit()
 
         return RedirectResponse(
@@ -1818,7 +1746,7 @@ def create_app():
             for r in rows
         ]
         stats_by_survey = get_stats_by_survey(
-            session, [survey["survey_id"] for survey in surveys]
+            session, surveys
         )
 
         programs = [
@@ -1945,7 +1873,7 @@ def create_app():
             for row in rows
         ]
         stats_by_survey = get_stats_by_survey(
-            session, [survey["survey_id"] for survey in surveys]
+            session, surveys
         )
 
         context = {
@@ -2059,7 +1987,7 @@ def create_app():
             for r in rows
         ]
         stats_by_survey = get_stats_by_survey(
-            session, [survey["survey_id"] for survey in surveys]
+            session, surveys
         )
 
         programs = [
@@ -2199,7 +2127,7 @@ def create_app():
             for r in rows
         ]
         stats_by_survey = get_stats_by_survey(
-            session, [survey["survey_id"] for survey in surveys]
+            session, surveys
         )
 
         db_users = session.exec(

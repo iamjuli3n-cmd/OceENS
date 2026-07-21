@@ -17,6 +17,7 @@ from models import (
     Submission,
     Survey,
     Summary,
+    StatValue,
 )
 
 
@@ -86,27 +87,26 @@ def _calculate_satisfaction_score(
 
 
 def _calculate_survey_stats(
-    sections: Dict[str, Dict[str, Any]], submissions_count: int
+    sections: Dict[str, Dict[str, Any]], submissions_count: int, session:Session, sections_list:dict, survey_id:int
 ) -> Dict[str, float]:
-    stats = {}
-    for section in sections.values():
-        section_type = section.get("section_type")
-        if section_type == "C":
-            score = _calculate_satisfaction_score(section, submissions_count)
-            stat_name = "campus_satisfaction"
-        elif section_type == "P":
-            score = _calculate_satisfaction_score(section, submissions_count)
-            stat_name = "program_satisfaction"
-        elif section_type == "R":
-            score = _calculate_nps(section)
-            stat_name = "recommendation_score"
-        else:
-            continue
+    
+    
+    stats = session.exec(select(Stat)).all()
 
-        if score is not None:
-            stats[stat_name] = round(score, 1)
-
-    return stats
+    for stat in stats:
+        for section_name in sections_list[stat.section_type]:
+            if stat.section_type == "C" or stat.section_type == "P":
+                score = _calculate_satisfaction_score(sections[section_name], submissions_count)
+            elif stat.section_type == "R":
+                score = _calculate_nps(sections[section_name])
+            if score is not None:
+                sv = StatValue(survey_id=survey_id,
+                            name=stat.name,
+                            value=round(score, 1)
+                            )
+                session.merge(sv)
+    session.commit()
+    return
 
 
 def _sync_survey_stats(
@@ -175,8 +175,8 @@ def refresh_survey_stats(session: Session, survey_id: int) -> Dict[str, float]:
         elif question_type == "NPS":
             _add_recommendation_response(section, answer_value)
 
-    stats = _calculate_survey_stats(sections, submissions_count)
-    _sync_survey_stats(session, survey_id, stats)
+    _calculate_survey_stats(sections, submissions_count)
+    
     return stats
 
 
@@ -368,6 +368,8 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
             )
         ).all()
 
+        sections_list={}
+
         for r in rows:
             data_row = {
                 "answer_id": r[0],
@@ -390,7 +392,12 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
             if data_row["section_name"] not in data.keys():
                 data[data_row["section_name"]] = {}
             data[data_row["section_name"]]["section_type"] = data_row["section_type"]
+            if data_row["section_type"] not in sections_list.keys():
+                sections_list[data_row["section_type"]]=[]
+            sections_list[data_row["section_type"]].append(data_row["section_name"])
             if data_row["section_type"] == "ME":
+                
+
                 if "modules" not in data[data_row["section_name"]].keys():
                     data[data_row["section_name"]]["modules"] = {}
                 if (
@@ -420,12 +427,15 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                         submissions_sets,
                     )
             elif data_row["section_type"] == "R":
+                
                 if data_row["question_type"] == "NPS":
                     _add_recommendation_response(
                         data[data_row["section_name"]], data_row["answer_value"]
                     )
 
-            else:  # section_type = S --> Simple
+            else:  
+                
+                # section_type = S --> Simple
                 if "questions" not in data[data_row["section_name"]]:
                     data[data_row["section_name"]] = {"questions": {}}
                 _build_question(
@@ -469,12 +479,11 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
             "passives": recommendation_section.get("nps_passive_count", 0),
             "detractors": recommendation_section.get("nps_detractor_count", 0),
         }
-        context["stats"] = _calculate_survey_stats(
-            data, context["submissions_count"]
-        )
-        if survey.status != 1:
-            _sync_survey_stats(session, survey_id, context["stats"])
-            session.commit()
+
+        if survey.status != 1: #Not open 
+            _calculate_survey_stats(
+                data, context["submissions_count"],session,sections_list,survey_id
+            )
         # END ANSWERS
 
     return context

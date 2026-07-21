@@ -123,9 +123,6 @@
   }
 </style>
 
-
-
-
 {% for survey in surveys %}
 
 <div class="sondage-row">
@@ -137,22 +134,15 @@
 
     {% set survey_stats = stats_by_survey.get(survey['survey_id'], {}) %}
     {% if survey_stats %}
-    {% set score_definitions = [
-    {'name': 'campus_satisfaction', 'short': 'C', 'label': 'Satisfaction campus', 'suffix': ' %'},
-    {'name': 'program_satisfaction', 'short': 'P', 'label': 'Satisfaction formation', 'suffix': ' %'},
-    {'name': 'recommendation_score', 'short': 'R', 'label': 'Score de recommandation (NPS)', 'suffix': ''}
-    ] %}
     <div class="survey-score-list" role="group" aria-label="Scores du sondage">
-      {% for definition in score_definitions %}
-      {% if definition.name in survey_stats %}
-      {% set stat = survey_stats[definition.name] %}
-      <span class="survey-score survey-score-{{ stat.stat_color }}"
-        title="{{ definition.label }} : {{ stat.stat_display_value }}{{ definition.suffix }}">
-        <span aria-hidden="true">{{ definition.short }}</span>
-        <span class="survey-score-full-label">{{ definition.label }} :</span>
-        <span>{{ stat.stat_display_value }}{{ definition.suffix }}</span>
+      {% for stat_name in survey_stats %}
+      {% set survey_stat=survey_stats[stat_name] %}
+      <span class="survey-score survey-score-{{ survey_stat.color }}"
+        title="{{ survey_stat.label }} : {% if survey_stat['show_explicit_positive'] and survey_stat.value > 0 %}+{%endif%}{{ survey_stat.value }}{{ survey_stat.suffix }}">
+        <span aria-hidden="true">{{ survey_stat.short }}</span>
+        <span class="survey-score-full-label">{{ survey_stat.label }} :</span>
+        <span>{% if survey_stat['show_explicit_positive'] and survey_stat.value > 0 %}+{%endif%}{{ survey_stat.value }}{{ survey_stat.suffix }}</span>
       </span>
-      {% endif %}
       {% endfor %}
     </div>
     {% endif %}

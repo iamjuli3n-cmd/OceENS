@@ -63,6 +63,31 @@ class Survey(SQLModel, table=True):
 class Stat(SQLModel, table=True):
     __tablename__ = "stats"
 
+    name: str = Field(
+        sa_column=Column("name", String, primary_key=True)
+    )
+    color_scale: str = Field(
+        sa_column=Column("color_scale", String, nullable=False)
+    )
+    section_type: str = Field(
+        sa_column=Column("section_type", String, nullable=False)
+    )
+    short: str = Field(
+        sa_column=Column("short", String, nullable=False)
+    )
+    label: str = Field(
+        sa_column=Column("label", String, nullable=False)
+    )
+    suffix: str = Field(
+        sa_column=Column("suffix", String, nullable=False)
+    )
+    show_explicit_positive: int = Field(
+        sa_column=Column("show_explicit_positive", Integer, nullable=False)
+    )
+
+class StatValue(SQLModel, table=True):
+    __tablename__ = "stat_values"
+
     survey_id: Optional[int] = Field(
         default=None,
         sa_column=Column(
@@ -72,13 +97,10 @@ class Stat(SQLModel, table=True):
             primary_key=True,
         ),
     )
-    stat_name: str = Field(
-        sa_column=Column("stat_name", String, primary_key=True)
+    name: str = Field(
+        sa_column=Column("name", String, primary_key=True)
     )
-    stat_value: float = Field(sa_column=Column("stat_value", Float, nullable=False))
-    stat_color_threshold: str = Field(
-        sa_column=Column("stat_color_threshold", Text, nullable=False)
-    )
+    value: float = Field(sa_column=Column("value", Float, nullable=False))
 
 
 class Section(SQLModel, table=True):
