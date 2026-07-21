@@ -23,7 +23,7 @@ from models import (
 STAT_COLOR_THRESHOLDS = {
     "campus_satisfaction": {20: "red", 50: "orange", 100: "green"},
     "program_satisfaction": {20: "red", 50: "orange", 100: "green"},
-    "recommendation_score": {2: "red", 5: "orange", 10: "green"},
+    "recommendation_score": {20: "red", 50: "orange", 100: "green"},
 }
 
 
@@ -51,15 +51,12 @@ def _to_nps_score(value: Any) -> Optional[int]:
 
 
 def _add_recommendation_response(container: Dict[str, Any], value: Any) -> None:
-    """Add one valid recommendation answer to the score and NPS counters."""
+    """Add one valid recommendation answer to the NPS counters."""
     score = _to_nps_score(value)
     if score is None:
         return
 
     container["nps_response_count"] = container.get("nps_response_count", 0) + 1
-    container["recommendation_score_sum"] = (
-        container.get("recommendation_score_sum", 0) + score
-    )
     if score >= 9:
         category = "nps_promoter_count"
     elif score >= 7:
@@ -88,15 +85,6 @@ def _calculate_satisfaction_score(
     return 100 * section["satisfaction_count"] / submissions_count
 
 
-def _calculate_recommendation_score(
-    section: Dict[str, Any],
-) -> Optional[float]:
-    response_count = section.get("nps_response_count", 0)
-    if not response_count:
-        return None
-    return section.get("recommendation_score_sum", 0) / response_count
-
-
 def _calculate_survey_stats(
     sections: Dict[str, Dict[str, Any]], submissions_count: int
 ) -> Dict[str, float]:
@@ -110,7 +98,7 @@ def _calculate_survey_stats(
             score = _calculate_satisfaction_score(section, submissions_count)
             stat_name = "program_satisfaction"
         elif section_type == "R":
-            score = _calculate_recommendation_score(section)
+            score = _calculate_nps(section)
             stat_name = "recommendation_score"
         else:
             continue
@@ -141,7 +129,55 @@ def _sync_survey_stats(
             )
         )
 
-    session.commit()
+
+def refresh_survey_stats(session: Session, survey_id: int) -> Dict[str, float]:
+    survey_status = session.exec(
+        select(Survey.status).where(Survey.survey_id == survey_id)
+    ).first()
+    if survey_status is None or survey_status == 1:
+        return {}
+
+    submissions_count = int(
+        session.exec(
+            select(func.count(Submission.submission_id)).where(
+                Submission.survey_id == survey_id
+            )
+        ).one()
+        or 0
+    )
+
+    sections = {}
+    rows = session.exec(
+        select(
+            Section.section_type,
+            Question.question_type,
+            Answer.value,
+            Option.is_positive,
+        )
+        .select_from(Answer)
+        .join(Submission, Submission.submission_id == Answer.submission_id)
+        .join(Question, Question.question_id == Answer.question_id)
+        .join(Section, Section.section_id == Question.section_id)
+        .join(Option, Option.option_id == Answer.option_id, isouter=True)
+        .where(
+            Submission.survey_id == survey_id,
+            Section.section_type.in_(["C", "P", "R"]),
+            Question.question_type.in_(["QCU_Satisfaction", "NPS"]),
+        )
+    ).all()
+
+    for section_type, question_type, answer_value, is_positive in rows:
+        section = sections.setdefault(section_type, {"section_type": section_type})
+        if question_type == "QCU_Satisfaction":
+            section.setdefault("satisfaction_count", 0)
+            if is_positive:
+                section["satisfaction_count"] += 1
+        elif question_type == "NPS":
+            _add_recommendation_response(section, answer_value)
+
+    stats = _calculate_survey_stats(sections, submissions_count)
+    _sync_survey_stats(session, survey_id, stats)
+    return stats
 
 
 def _build_question(dic, data_row, options, options_value, submissions_sets):
@@ -436,7 +472,9 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
         context["stats"] = _calculate_survey_stats(
             data, context["submissions_count"]
         )
-        _sync_survey_stats(session, survey_id, context["stats"])
+        if survey.status != 1:
+            _sync_survey_stats(session, survey_id, context["stats"])
+            session.commit()
         # END ANSWERS
 
     return context

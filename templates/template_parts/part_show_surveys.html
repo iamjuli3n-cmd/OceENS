@@ -138,9 +138,9 @@
     {% set survey_stats = stats_by_survey.get(survey['survey_id'], {}) %}
     {% if survey_stats %}
     {% set score_definitions = [
-    {'name': 'campus_satisfaction', 'short': 'C', 'label': 'Satisfaction campus', 'suffix': ' %'},
-    {'name': 'program_satisfaction', 'short': 'P', 'label': 'Satisfaction formation', 'suffix': ' %'},
-    {'name': 'recommendation_score', 'short': 'R', 'label': 'Score de recommandation', 'suffix': ' / 10'}
+      {'name': 'campus_satisfaction', 'short': 'C', 'label': 'Satisfaction campus', 'suffix': ' %'},
+      {'name': 'program_satisfaction', 'short': 'P', 'label': 'Satisfaction formation', 'suffix': ' %'},
+      {'name': 'recommendation_score', 'short': 'R', 'label': 'Score de recommandation (NPS)', 'suffix': ''}
     ] %}
     <div class="survey-score-list" role="group" aria-label="Scores du sondage">
       {% for definition in score_definitions %}
