@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 import os
 import io
+import json
 import re
 from typing import Annotated, Dict, List, Optional
 from datetime import datetime
@@ -251,9 +252,26 @@ def get_stats_by_survey(session: Session, survey_ids: List[int]) -> Dict[int, Di
     ).all()
     stats_by_survey = {}
     for stat in stats:
+        stat_color = "neutral"
+        try:
+            thresholds = sorted(
+                (float(limit), color)
+                for limit, color in json.loads(stat.stat_color_threshold).items()
+            )
+            for limit, color in thresholds:
+                if stat.stat_value <= limit and color in {"red", "orange", "green"}:
+                    stat_color = color
+                    break
+        except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
+            pass
+
         stats_by_survey.setdefault(stat.survey_id, {})[stat.stat_name] = {
             "stat_value": stat.stat_value,
-            "stat_color_threshold": stat.stat_color_threshold,
+            "stat_display_value": f"{stat.stat_value:.1f}"
+            .rstrip("0")
+            .rstrip(".")
+            .replace(".", ","),
+            "stat_color": stat_color,
         }
     return stats_by_survey
 
