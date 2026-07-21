@@ -13,6 +13,7 @@ from models import (
     Question,
     Respondent,
     Section,
+    Stat,
     Submission,
     Survey,
     Summary,
@@ -118,6 +119,29 @@ def _calculate_survey_stats(
             stats[stat_name] = round(score, 1)
 
     return stats
+
+
+def _sync_survey_stats(
+    session: Session, survey_id: int, stats: Dict[str, float]
+) -> None:
+    existing_stats = session.exec(
+        select(Stat).where(Stat.survey_id == survey_id)
+    ).all()
+    for stat in existing_stats:
+        if stat.stat_name in STAT_COLOR_THRESHOLDS and stat.stat_name not in stats:
+            session.delete(stat)
+
+    for stat_name, stat_value in stats.items():
+        session.merge(
+            Stat(
+                survey_id=survey_id,
+                stat_name=stat_name,
+                stat_value=stat_value,
+                stat_color_threshold=_serialize_color_thresholds(stat_name),
+            )
+        )
+
+    session.commit()
 
 
 def _build_question(dic, data_row, options, options_value, submissions_sets):
@@ -393,23 +417,26 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                 q = data[section_name]["questions"][summary.question_id]
             q["summary"]={"text":summary.summary_text,"metadata":summary.metadata_text}
 
-    context["sections"] = data
-    recommendation_section = next(
-        (
-            section
-            for section in data.values()
-            if section.get("section_type") == "R"
-        ),
-        {},
-    )
-    context["recommendation"] = {
-        "score": _calculate_nps(recommendation_section),
-        "count": recommendation_section.get("nps_response_count", 0),
-        "promoters": recommendation_section.get("nps_promoter_count", 0),
-        "passives": recommendation_section.get("nps_passive_count", 0),
-        "detractors": recommendation_section.get("nps_detractor_count", 0),
-    }
-    context["stats"] = _calculate_survey_stats(data, context["submissions_count"])
-    # END ANSWERS
+        context["sections"] = data
+        recommendation_section = next(
+            (
+                section
+                for section in data.values()
+                if section.get("section_type") == "R"
+            ),
+            {},
+        )
+        context["recommendation"] = {
+            "score": _calculate_nps(recommendation_section),
+            "count": recommendation_section.get("nps_response_count", 0),
+            "promoters": recommendation_section.get("nps_promoter_count", 0),
+            "passives": recommendation_section.get("nps_passive_count", 0),
+            "detractors": recommendation_section.get("nps_detractor_count", 0),
+        }
+        context["stats"] = _calculate_survey_stats(
+            data, context["submissions_count"]
+        )
+        _sync_survey_stats(session, survey_id, context["stats"])
+        # END ANSWERS
 
     return context
