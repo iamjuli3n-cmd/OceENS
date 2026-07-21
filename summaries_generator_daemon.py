@@ -106,9 +106,9 @@ if __name__ == "__main__":
             #question = question.replace([])
 
             if summary_row.module_id:
-                summary_verbatim = session.exec(select(Answer.value).where(Answer.question_id==summary_row.question_id,Answer.module_id==summary_row.module_id,Answer.teacher==summary_row.teacher)).all()
+                summary_verbatim = session.exec(select(Answer.value).where(Answer.survey_id==summary_row.survey_id,Answer.question_id==summary_row.question_id,Answer.module_id==summary_row.module_id,Answer.teacher==summary_row.teacher)).all()
             else:
-                summary_verbatim = session.exec(select(Answer.value).where(Answer.question_id==summary_row.question_id)).all()
+                summary_verbatim = session.exec(select(Answer.value).where(Answer.survey_id==summary_row.survey_id,Answer.question_id==summary_row.question_id)).all()
 
             print(summary_verbatim)
 
