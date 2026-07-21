@@ -15,12 +15,12 @@
 </div>-->
 
 <div class="filter-tabs">
-    <button class="filter-tab active" data-filter="all" onclick="filter('all')">Tous</button>
-    <button class="filter-tab" data-filter="student" onclick="filter('student')">Étudiants</button>
-    <button class="filter-tab" data-filter="admin" onclick="filter('admin')">Admins</button>
-    <button class="filter-tab" data-filter="program_manager" onclick="filter('program_manager')">RP-RM</button>
-    <button class="filter-tab" data-filter="facilitator" onclick="filter('facilitator')">Animateur</button>
-    <button class="filter-tab" data-filter="campus_manager" onclick="filter('campus_manager')">Direction de campus</button>
+    <button type="button" class="filter-tab active" data-filter="all" onclick="filter('all')">Tous</button>
+    <button type="button" class="filter-tab" data-filter="student" onclick="filter('student')">Étudiants</button>
+    <button type="button" class="filter-tab" data-filter="admin" onclick="filter('admin')">Admins</button>
+    <button type="button" class="filter-tab" data-filter="program_manager" onclick="filter('program_manager')">RP-RM</button>
+    <button type="button" class="filter-tab" data-filter="facilitator" onclick="filter('facilitator')">Animateur</button>
+    <button type="button" class="filter-tab" data-filter="campus_manager" onclick="filter('campus_manager')">Direction de campus</button>
 
 </div>
 
@@ -71,7 +71,7 @@
                 </td>
 
                 <td class="td-actions">
-                    <button class="btn-edit" data-id="{{ user.user_id }}"
+                    <button type="button" class="btn-edit" data-id="{{ user.user_id }}"
                         onclick="openUsrModal({{ user.user_id }})">Modifier</button>
                 </td>
             </tr>
@@ -94,9 +94,11 @@
 
     function filter(role) {
         const allUsers = document.querySelectorAll("#users-tbody tr");
+        let visibleUsers = 0;
         allUsers.forEach(user => {
             if (role === "all" || user.querySelector(`.role-badge.${role}`)) {
                 user.style.display = "";
+                visibleUsers += 1;
             } else {
                 user.style.display = "none";
             }
@@ -105,6 +107,8 @@
             tab.classList.remove("active");
         });
         document.querySelector(`[data-filter="${role}"]`).classList.add("active");
+        document.getElementById('count-label').textContent = `${visibleUsers} affiché(s)`;
+        document.getElementById('users-mobile-count').textContent = `${visibleUsers} affiché(s)`;
     }
 
 

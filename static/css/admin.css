@@ -139,6 +139,10 @@ body {
     font-weight: 500;
 }
 
+.users-mobile-modal-header {
+    display: none;
+}
+
 /* ── Search ── */
 .search-wrap {
     position: relative;
