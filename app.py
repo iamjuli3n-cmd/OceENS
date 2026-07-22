@@ -17,6 +17,7 @@ import io
 import json
 import re
 import logging
+import unicodedata
 from typing import Annotated, Dict, List, Optional
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -190,7 +191,6 @@ def build_survey_prefill(survey: Survey, modules: list[Module]) -> dict:
             ues_by_name[ue_name] = {
                 "id": len(ues_by_name) + 1,
                 "name": ue_name,
-                "is_optional": bool(module.is_optional),
                 "_open": True,
                 "modules": [],
             }
@@ -260,6 +260,52 @@ def get_stats_by_survey(session: Session, surveys: List) -> Dict[int, Dict]:
         if survey["is_closed"]: #Not open
             stats_by_survey[survey["survey_id"]] = {sv[0].name:{'value':sv[0].value,'color':_get_color(json.loads(sv[1].color_scale),sv[0].value),'short':sv[1].short,'label':sv[1].label,'suffix':sv[1].suffix,'show_explicit_positive':sv[1].show_explicit_positive} for sv in session.exec(select(StatValue,Stat).join(Stat,Stat.name==StatValue.name).where(StatValue.survey_id==survey["survey_id"])).all()}
     return stats_by_survey
+
+
+def get_avg_stats(session: Session, surveys: List) -> Dict[str, Dict]:
+    """Moyenne, pour chaque stat existante, sa valeur sur les sondages fermés
+    parmi ceux fournis (mêmes sondages que get_stats_by_survey : les sondages
+    ouverts n'ont pas encore de StatValue)."""
+    closed_survey_ids = [s["survey_id"] for s in surveys if s["is_closed"]]
+    if not closed_survey_ids:
+        return {}
+
+    rows = session.exec(
+        select(Stat, func.avg(StatValue.value), func.count(StatValue.value))
+        .join(StatValue, Stat.name == StatValue.name)
+        .where(StatValue.survey_id.in_(closed_survey_ids))
+        .group_by(Stat.name)
+    ).all()
+
+    avg_stats = {}
+    for stat, avg_value, count in rows:
+        if avg_value is None or not count:
+            continue
+        avg_stats[stat.name] = {
+            "value": avg_value,
+            "color": _get_color(json.loads(stat.color_scale), avg_value),
+            "short": stat.short,
+            "label": stat.label,
+            "suffix": stat.suffix,
+            "show_explicit_positive": stat.show_explicit_positive,
+            "surveys_count": count,
+        }
+    return avg_stats
+
+
+def filter_surveys(
+    surveys: List[dict],
+    school_year: Optional[str],
+    semester: Optional[str],
+) -> List[dict]:
+    """Filtre une liste de sondages déjà scopée par rôle, sur année scolaire
+    et/ou semestre (valeur vide = pas de filtre sur ce champ)."""
+    filtered = surveys
+    if school_year:
+        filtered = [s for s in filtered if s["school_year"] == school_year]
+    if semester:
+        filtered = [s for s in filtered if s["semester"] == semester]
+    return filtered
 
 
 def role_to_dashboard_slug(roles: List[str]) -> str:
@@ -395,7 +441,6 @@ class ModuleCreate(BaseModel):
 class UECreate(BaseModel):
     id: int
     name: str
-    is_optional: bool
     modules: List[ModuleCreate]
 
 
@@ -518,6 +563,12 @@ def parse_name(full_name: Optional[str], fallback_id: int) -> Dict[str, Optional
 
 logger = logging.getLogger("uvicorn")
 logger.level=logging.DEBUG
+def teacher_sort_key(name: str) -> str:
+    normalized = unicodedata.normalize("NFD", name.casefold())
+    without_accents = "".join(
+        char for char in normalized if unicodedata.category(char) != "Mn"
+    )
+    return re.sub(r"\s+", " ", without_accents).strip()
 
 
 # ┌─ Gestion du cycle de vie (lifespan) ──────────────────────────────────┐
@@ -662,8 +713,18 @@ def create_app():
         # Extract all distinct school years
         school_years = session.exec(select(Survey.school_year).distinct()).all()
 
-        # Extract all distinct teachers
-        associated_teachers = session.exec(select(Module.teacher).distinct()).all()
+        # Extract all distinct teachers, scopés au périmètre du RPRM : un
+        # admin (sans périmètre RPRM) voit tous les profs, un RPRM ne voit
+        # que ceux déjà associés à des modules de ses formations.
+        is_unrestricted_admin = (
+            allowed_programs is None or allowed_programs == []
+        ) and "admin" in roles
+        teacher_query = select(Module.teacher).distinct()
+        if not is_unrestricted_admin:
+            teacher_query = teacher_query.join(
+                Survey, Survey.survey_id == Module.survey_id
+            ).where(Survey.program.in_(allowed_programs))
+        associated_teachers = session.exec(teacher_query).all()
         teachers = set()
         for at in associated_teachers:
             if not at:
@@ -673,7 +734,7 @@ def create_app():
                 if teacher:
                     teachers.add(teacher)
 
-        if (allowed_programs is None or allowed_programs == []) and "admin" in roles:
+        if is_unrestricted_admin:
             programs_list = session.exec(select(Program)).all()
         else:
             programs_list = session.exec(
@@ -693,7 +754,7 @@ def create_app():
                 "campus": campus,
                 "programs": programs_list,
                 "school_years": school_years,
-                "teachers_list": sorted(list(teachers)),
+                "teachers_list": sorted(teachers, key=teacher_sort_key),
                 "survey_prefill": survey_prefill,
                 "user": user,
             },
@@ -782,7 +843,6 @@ def create_app():
                                 name=module_data.name,
                                 teacher=enseignant_str,
                                 ue=ue.name,
-                                is_optional=ue.is_optional,
                                 one_teacher_in_list=module_data.one_teacher_in_list,
                                 survey_id=survey_id,
                             )
@@ -1054,13 +1114,12 @@ def create_app():
                     "module_id": mod.module_id,
                     "name": mod.name,
                     "ue": mod.ue,
-                    "is_optional": bool(mod.is_optional),
                     "teachers": teachers,
                     "one_teacher_in_list": bool(mod.one_teacher_in_list),
                 }
             )
 
-        # ── Grouper les modules par UE pour la logique conditionnelle ────
+        # ── Grouper les modules par UE ───────────────────────────────────
         ues_data = {}
 
         for mod_data in modules_data:
@@ -1069,7 +1128,6 @@ def create_app():
             if ue_name not in ues_data:
                 ues_data[ue_name] = {
                     "name": ue_name,
-                    "is_optional": mod_data["is_optional"],
                     "modules": [],
                 }
 
@@ -1672,7 +1730,12 @@ def create_app():
         )
 
     @dashboard_router.get("/program-manager", response_class=HTMLResponse)
-    async def program_manager_dashboard(request: Request, session: SessionDep):
+    async def program_manager_dashboard(
+        request: Request,
+        session: SessionDep,
+        school_year: Optional[str] = None,
+        semester: Optional[str] = None,
+    ):
         user = get_current_user(request)
 
         if not user:
@@ -1758,9 +1821,16 @@ def create_app():
             }
             for r in rows
         ]
+
+        available_school_years = sorted(
+            {s["school_year"] for s in surveys if s["school_year"]}, reverse=True
+        )
+        surveys = filter_surveys(surveys, school_year, semester)
+
         stats_by_survey = get_stats_by_survey(
             session, surveys
         )
+        avg_stats = get_avg_stats(session, surveys)
 
         programs = [
             {
@@ -1787,12 +1857,16 @@ def create_app():
 
         summaries = { s[0]:
              {"summaries_count": s[1], "summaries_done": s[2], "summaries_error": s[3]} for s in  summary_rows }
-        
+
 
         context = {
             "user": user,
             "surveys": surveys,
             "stats_by_survey": stats_by_survey,
+            "avg_stats": avg_stats,
+            "available_school_years": available_school_years,
+            "selected_school_year": school_year or "",
+            "selected_semester": semester or "",
             "programs": programs,
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
@@ -1814,7 +1888,12 @@ def create_app():
         )
 
     @dashboard_router.get("/campus-manager", response_class=HTMLResponse)
-    async def campus_manager_dashboard(request: Request, session: SessionDep):
+    async def campus_manager_dashboard(
+        request: Request,
+        session: SessionDep,
+        school_year: Optional[str] = None,
+        semester: Optional[str] = None,
+    ):
         user = get_current_user(request)
         if not user:
             return RedirectResponse(url="/")
@@ -1885,14 +1964,25 @@ def create_app():
             }
             for row in rows
         ]
+
+        available_school_years = sorted(
+            {s["school_year"] for s in surveys if s["school_year"]}, reverse=True
+        )
+        surveys = filter_surveys(surveys, school_year, semester)
+
         stats_by_survey = get_stats_by_survey(
             session, surveys
         )
+        avg_stats = get_avg_stats(session, surveys)
 
         context = {
             "user": user,
             "surveys": surveys,
             "stats_by_survey": stats_by_survey,
+            "avg_stats": avg_stats,
+            "available_school_years": available_school_years,
+            "selected_school_year": school_year or "",
+            "selected_semester": semester or "",
             "allowed_campuses": allowed_campuses,
             "can_view_survey_students": False,
             "can_delete_survey": False,
@@ -1913,7 +2003,12 @@ def create_app():
         )
 
     @dashboard_router.get("/facilitator", response_class=HTMLResponse)
-    async def facilitator_dashboard(request: Request, session: SessionDep):
+    async def facilitator_dashboard(
+        request: Request,
+        session: SessionDep,
+        school_year: Optional[str] = None,
+        semester: Optional[str] = None,
+    ):
         user = get_current_user(request)
 
         if not user:
@@ -1999,9 +2094,16 @@ def create_app():
             }
             for r in rows
         ]
+
+        available_school_years = sorted(
+            {s["school_year"] for s in surveys if s["school_year"]}, reverse=True
+        )
+        surveys = filter_surveys(surveys, school_year, semester)
+
         stats_by_survey = get_stats_by_survey(
             session, surveys
         )
+        avg_stats = get_avg_stats(session, surveys)
 
         programs = [
             {
@@ -2033,6 +2135,10 @@ def create_app():
             "user": user,
             "surveys": surveys,
             "stats_by_survey": stats_by_survey,
+            "avg_stats": avg_stats,
+            "available_school_years": available_school_years,
+            "selected_school_year": school_year or "",
+            "selected_semester": semester or "",
             "programs": programs,
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
@@ -2067,7 +2173,12 @@ def create_app():
         return "".join(matches).upper()
 
     @dashboard_router.get("/admin", response_class=HTMLResponse)
-    async def admin_dashboard(request: Request, session: SessionDep):
+    async def admin_dashboard(
+        request: Request,
+        session: SessionDep,
+        school_year: Optional[str] = None,
+        semester: Optional[str] = None,
+    ):
         user = get_current_user(request)
 
         if not user:
@@ -2139,9 +2250,16 @@ def create_app():
             }
             for r in rows
         ]
+
+        available_school_years = sorted(
+            {s["school_year"] for s in surveys if s["school_year"]}, reverse=True
+        )
+        surveys = filter_surveys(surveys, school_year, semester)
+
         stats_by_survey = get_stats_by_survey(
             session, surveys
         )
+        avg_stats = get_avg_stats(session, surveys)
 
         db_users = session.exec(
             select(User, func.group_concat(Role.role))
@@ -2182,6 +2300,10 @@ def create_app():
             "user": user,
             "surveys": surveys,
             "stats_by_survey": stats_by_survey,
+            "avg_stats": avg_stats,
+            "available_school_years": available_school_years,
+            "selected_school_year": school_year or "",
+            "selected_semester": semester or "",
             "programs": programs,
             "campuses": campuses,
             "users": users,
