@@ -16,6 +16,7 @@ L'application **OcéEns II** permet aux responsables de programme, animateurs, d
 | **Templating** | Jinja2 (rendu serveur) |
 | **Frontend** | HTML / CSS / JavaScript, sans framework |
 | **Serveur** | Uvicorn |
+| **Journalisation** | Module standard Python `logging`, via les handlers Uvicorn |
 | **Exports** | Pandas (CSV) |
 | **Synthèses de verbatims** | Daemon séparé, appel à un LLM (`requests-cache`, `markdown-it-py`) |
 
@@ -112,6 +113,45 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
    Ce processus tourne en boucle, écrit en base et contacte un service LLM externe : à ne lancer que lorsque c'est nécessaire.
 
 7. Ouvrez votre navigateur à l'adresse **http://localhost:8000**.
+
+---
+
+## Journalisation
+
+Les logs applicatifs utilisent le module standard Python `logging` et le logger
+`uvicorn`. Cela permet aux messages d'`app.py`, `auth.py` et `seed.py` de reprendre
+le format, les couleurs et les handlers déjà configurés par le serveur.
+
+Les niveaux sont utilisés selon leur gravité :
+
+| Niveau | Utilisation |
+|--------|-------------|
+| `DEBUG` | Informations détaillées utiles au développement et au seeding. |
+| `INFO` | Démarrage, arrêt et opérations applicatives normales. |
+| `WARNING` | Ressource attendue absente ou situation non bloquante. |
+| `ERROR` / `EXCEPTION` | Échec d'une opération ; `logger.exception()` conserve la traceback. |
+| `CRITICAL` | Configuration indispensable manquante, empêchant le démarrage. |
+
+Exemple :
+
+```python
+import logging
+
+logger = logging.getLogger("uvicorn")
+
+logger.info("Opération terminée")
+
+try:
+    operation_risquee()
+except Exception:
+    logger.exception("Échec de l'opération")
+```
+
+Les nouveaux diagnostics doivent utiliser le logger approprié plutôt que
+`print()`. Le niveau applicatif est actuellement réglé sur `DEBUG` dans
+`app.py`. Les logs applicatifs passent par le handler Uvicorn, généralement
+écrit sur `stderr` ; avec une redirection séparée, utilisez par exemple
+`2> error.log` pour les récupérer.
 
 ---
 
@@ -249,6 +289,7 @@ Puis tester manuellement les routes concernées sur une base SQLite jetable (jam
 ## Ressources
 
 - [FastAPI](https://fastapi.tiangolo.com/)
+- [Guide du logging FastAPI et Uvicorn](https://apitally.io/blog/fastapi-logging-guide)
 - [MSAL Python](https://github.com/AzureAD/microsoft-authentication-library-for-python)
 - [Microsoft Graph](https://learn.microsoft.com/en-us/graph/)
 - [Jinja2](https://jinja.palletsprojects.com/)
