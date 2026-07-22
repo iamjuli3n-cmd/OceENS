@@ -121,17 +121,25 @@ if __name__ == "__main__":
                 llm_answer, llm_metadata, status_code = askModel(model,full_prompt,session=session_llm,timeout=120)
                 # print(llm_answer)
                 # print(llm_metadata)
-                # print(status_code)
+                print(status_code)
 
-                dt = datetime.fromisoformat(llm_metadata["created_at"].replace('Z', '+00:00'))
-                date_pretty = dt.strftime("%d/%m/%Y %H:%M")
-                metadata_text=f"Réponse synthétisée par {llm_metadata["model"]} le {date_pretty} en {llm_metadata["total_duration"]/1000000000:.1f}s ({1000000000*llm_metadata["eval_count"]/llm_metadata["eval_duration"]:.1f} token/s)"
-                print(metadata_text)
-
-                summary_row.summary_text = md.render(llm_answer)
-                summary_row.metadata_text = metadata_text
-                summary_row.http_status=status_code
-                session.add(summary_row)
+                if llm_answer:
+                    dt = datetime.fromisoformat(llm_metadata["created_at"].replace('Z', '+00:00'))
+                    date_pretty = dt.strftime("%d/%m/%Y %H:%M")
+                    metadata_text=f"Réponse synthétisée par {llm_metadata["model"]} le {date_pretty} en {llm_metadata["total_duration"]/1000000000:.1f}s ({1000000000*llm_metadata["eval_count"]/llm_metadata["eval_duration"]:.1f} token/s)"
+                    print(metadata_text)
+    
+                    summary_row.summary_text = md.render(llm_answer)
+                    summary_row.metadata_text = metadata_text
+                    summary_row.http_status=status_code
+                    session.add(summary_row)
                 
-                session.commit()
+                    session.commit()
+                else:
+                    print(llm_metadata)
+                    summary_row.metadata_text = json.dumps(llm_metadata)
+                    summary_row.http_status=status_code
+                    session.add(summary_row)
+
+                    session.commit()
         
