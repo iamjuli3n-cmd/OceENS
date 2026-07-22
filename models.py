@@ -183,9 +183,6 @@ class Module(SQLModel, table=True):
     name: Optional[str] = Field(default=None, sa_column=Column("name", String))
     teacher: Optional[str] = Field(default=None, sa_column=Column("teacher", String))
     ue: Optional[str] = Field(default=None, sa_column=Column("ue", String))
-    is_optional: Optional[bool] = Field(
-        default=False, sa_column=Column("is_optional", Integer)
-    )
     one_teacher_in_list: Optional[bool] = Field(
         default=False, sa_column=Column("one_teacher_in_list", Integer)
     )

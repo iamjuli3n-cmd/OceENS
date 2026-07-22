@@ -534,7 +534,11 @@ def seed_surveys(session: Session):
 
 
 def seed_modules(session: Session):
-    """Remplit la table modules."""
+    """Remplit la table modules.
+
+    Chaque tuple : (module_id, name, teacher, ue, <inutilisé, ancien flag UE
+    optionnelle>, one_teacher_in_list, template_id, <inutilisé>).
+    """
     modules_data = [
         (
             1,
@@ -746,7 +750,6 @@ def seed_modules(session: Session):
                 name=m_data[1],
                 teacher=m_data[2],
                 ue=m_data[3],
-                is_optional=bool(m_data[4]),
                 one_teacher_in_list=bool(m_data[5]),
                 template_id=m_data[6],
                 survey_id=survey_data["survey_id"],

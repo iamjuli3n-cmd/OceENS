@@ -165,7 +165,6 @@ if __name__ == "__main__":
                 name=row["name"].strip(),
                 teacher=row["teachers"].strip(),
                 ue=row["ue"].strip(),
-                is_optional=int(row["is_optional"]),
                 one_teacher_in_list=int(row["one_teacher_in_list"]),
                 survey_id=survey_id
             )
