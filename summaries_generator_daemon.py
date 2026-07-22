@@ -2,6 +2,7 @@ from database import engine
 from sqlmodel import Session, select, func
 from models import Summary, Answer, Prompt, Question,Module,Program, Survey, Submission
 import requests_cache
+from requests.exceptions import ReadTimeout
 import json
 from datetime import datetime
 from markdown_it import MarkdownIt
@@ -118,27 +119,35 @@ if __name__ == "__main__":
             # print(full_prompt)
 
             if llm_ok:
-                llm_answer, llm_metadata, status_code = askModel(model,full_prompt,session=session_llm,timeout=120)
-                # print(llm_answer)
-                # print(llm_metadata)
-                print(status_code)
+                try:
+                    llm_answer, llm_metadata, status_code = askModel(model,full_prompt,session=session_llm,timeout=120)
+                    # print(llm_answer)
+                    # print(llm_metadata)
+                    print(status_code)
 
-                if llm_answer:
-                    dt = datetime.fromisoformat(llm_metadata["created_at"].replace('Z', '+00:00'))
-                    date_pretty = dt.strftime("%d/%m/%Y %H:%M")
-                    metadata_text=f"Réponse synthétisée par {llm_metadata["model"]} le {date_pretty} en {llm_metadata["total_duration"]/1000000000:.1f}s ({1000000000*llm_metadata["eval_count"]/llm_metadata["eval_duration"]:.1f} token/s)"
-                    print(metadata_text)
-    
-                    summary_row.summary_text = md.render(llm_answer)
-                    summary_row.metadata_text = metadata_text
-                    summary_row.http_status=status_code
-                    session.add(summary_row)
+                    if llm_answer:
+                        dt = datetime.fromisoformat(llm_metadata["created_at"].replace('Z', '+00:00'))
+                        date_pretty = dt.strftime("%d/%m/%Y %H:%M")
+                        metadata_text=f"Réponse synthétisée par {llm_metadata["model"]} le {date_pretty} en {llm_metadata["total_duration"]/1000000000:.1f}s ({1000000000*llm_metadata["eval_count"]/llm_metadata["eval_duration"]:.1f} token/s)"
+                        print(metadata_text)
+        
+                        summary_row.summary_text = md.render(llm_answer)
+                        summary_row.metadata_text = metadata_text
+                        summary_row.http_status=status_code
+                        session.add(summary_row)
                 
-                    session.commit()
-                else:
-                    print(llm_metadata)
-                    summary_row.metadata_text = json.dumps(llm_metadata)
-                    summary_row.http_status=status_code
+                        session.commit()
+                    else:
+                        print(llm_metadata)
+                        summary_row.metadata_text = json.dumps(llm_metadata)
+                        summary_row.http_status=status_code
+                        session.add(summary_row)
+
+                        session.commit()
+                except ReadTimeout as e:
+                    print(f"{e}")
+                    summary_row.metadata_text = f"{e}"
+                    summary_row.http_status=504  # Timeout
                     session.add(summary_row)
 
                     session.commit()
