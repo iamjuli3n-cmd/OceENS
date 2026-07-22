@@ -179,6 +179,22 @@ html[data-theme="dark"] .page-visualisation .summary-row {
     border-color: var(--theme-border);
 }
 
+html[data-theme="dark"] .survey-filter-field label,
+html[data-theme="dark"] .survey-avg-stats-label {
+    color: var(--theme-text-soft);
+}
+
+html[data-theme="dark"] .survey-filter-field select {
+    color: var(--theme-text);
+    background: var(--theme-surface);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .survey-avg-stats {
+    background: var(--theme-surface-soft);
+    border-color: var(--theme-border);
+}
+
 html[data-theme="dark"] .page-admin .users-table thead tr,
 html[data-theme="dark"] .page-admin .users-table tbody tr:hover {
     background: var(--theme-surface-soft);
@@ -215,8 +231,7 @@ html[data-theme="dark"] .row-icon svg {
 /* Survey form */
 html[data-theme="dark"] .page-survey .questionnaire-hero h1,
 html[data-theme="dark"] .page-survey .q-number,
-html[data-theme="dark"] .page-survey .prof-name-banner,
-html[data-theme="dark"] .page-survey .ue-filter-block .question-label {
+html[data-theme="dark"] .page-survey .prof-name-banner {
     color: #c891e4;
 }
 
@@ -243,7 +258,6 @@ html[data-theme="dark"] .page-survey .question-block {
 
 html[data-theme="dark"] .page-survey .hero-progress,
 html[data-theme="dark"] .page-survey .prof-name-banner,
-html[data-theme="dark"] .page-survey .ue-filter-block,
 html[data-theme="dark"] .page-survey .option-radio,
 html[data-theme="dark"] .page-survey .option-checkbox,
 html[data-theme="dark"] .page-survey .open-answer,
@@ -310,7 +324,6 @@ html[data-theme="dark"] .page-survey-create .dropzone__text small {
 
 html[data-theme="dark"] .page-survey-create .param-ue,
 html[data-theme="dark"] .page-survey-create .param-module,
-html[data-theme="dark"] .page-survey-create .param-prof-dropdown-content,
 html[data-theme="dark"] .page-survey-create .param-checkbox-label,
 html[data-theme="dark"] .page-survey-create .param-btn-add,
 html[data-theme="dark"] .page-survey-create .btn-icon,
@@ -324,18 +337,45 @@ html[data-theme="dark"] .page-survey-create textarea {
 }
 
 html[data-theme="dark"] .page-survey-create .param-ue-header,
-html[data-theme="dark"] .page-survey-create .param-module,
-html[data-theme="dark"] .page-survey-create .param-prof-item,
-html[data-theme="dark"] .page-survey-create .param-prof-dropdown-content .param-prof-option-new {
+html[data-theme="dark"] .page-survey-create .param-module {
     color: var(--theme-text-soft);
     background: var(--theme-surface-soft);
     border-color: var(--theme-border);
 }
 
-html[data-theme="dark"] .page-survey-create .param-ue-header:hover,
-html[data-theme="dark"] .page-survey-create .param-prof-dropdown-content .param-prof-option:hover {
+html[data-theme="dark"] .page-survey-create .param-ue-header:hover {
     color: #e3b8f5;
     background: var(--theme-surface-hover);
+}
+
+/* Select2 (choix des profs) */
+html[data-theme="dark"] .page-survey-create .select2-container--default .select2-selection--multiple,
+html[data-theme="dark"] .page-survey-create .select2-dropdown {
+    color: var(--theme-text);
+    background: var(--theme-surface);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-survey-create .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    color: var(--theme-text-soft);
+    background: var(--theme-surface-soft);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-survey-create .select2-results__option {
+    color: var(--theme-text);
+    background: var(--theme-surface);
+}
+
+html[data-theme="dark"] .page-survey-create .select2-search--dropdown .select2-search__field {
+    color: var(--theme-text);
+    background: var(--theme-surface-soft);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .page-survey-create .select2-results__option--highlighted[aria-selected] {
+    color: #fff;
+    background: #7b2fa0;
 }
 
 html[data-theme="dark"] .page-survey-create .param-checkbox-label:has(input:checked) {

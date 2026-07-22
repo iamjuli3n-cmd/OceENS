@@ -137,35 +137,11 @@
                 <div class="ue-group-header">
                     <span class="section-number">{{ section_counter.val }}</span>
                     <div>
-                        <h2>{{ ue.name }}{% if ue.is_optional %}<span class="ue-badge-optional">Optionnelle</span>{%
-                            endif %}</h2>
+                        <h2>{{ ue.name }}</h2>
                     </div>
                 </div>
 
-                {# Question filtre pour UE optionnelle #}
-                {% if ue.is_optional %}
-                <div class="ue-filter-block" data-ue-name="{{ ue.name }}">
-                    <div class="question-label">
-                        <text class="text_fr">Avez-vous suivi cette UE ?</text>
-                        <text class="text_en">Did you take this course unit?</text>
-                    </div>
-                    <div class="options-grid">
-                        <label class="option-radio">
-                            <input type="radio" name="ue_filter_{{ ue.name | replace(' ', '_') }}" value="Oui"
-                                onchange="SurveyModule.toggleUeFilter(this)">
-                            <span class="option-label">Oui / Yes</span>
-                        </label>
-                        <label class="option-radio">
-                            <input type="radio" name="ue_filter_{{ ue.name | replace(' ', '_') }}" value="Non"
-                                onchange="SurveyModule.toggleUeFilter(this)" checked>
-                            <span class="option-label">Non / No</span>
-                        </label>
-                    </div>
-                </div>
-                {% endif %}
-
-                {# Contenu conditionnel de l'UE #}
-                <div class="ue-conditional-content" {% if ue.is_optional %}style="display: none;" {% endif %}>
+                <div class="ue-conditional-content">
                     {% for module in ue.modules %}
                     <div class="section-card module-inside-ue" data-module-id="{{ module.module_id }}"
                         data-satisfaction-group="module-{{ module.module_id }}">
@@ -513,9 +489,6 @@
             })
             document.querySelectorAll('.toggleProf').forEach(r => {
                 SurveyModule.toggleProfBlock(r);
-            })
-            document.querySelectorAll('.toggleUeFilter').forEach(r => {
-                SurveyModule.toggleUeFilter(r);
             })
             document.querySelectorAll('.selectExclu').forEach(r => {
                 SurveyModule.selectExclusiveProf(r);

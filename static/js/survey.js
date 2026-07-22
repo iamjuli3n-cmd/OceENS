@@ -256,32 +256,6 @@ const SurveyModule = {
     },
 
     // ─── Toggle UE Filter (UE optionnelle) ──────────────
-    toggleUeFilter(radio) {
-        if (!radio.checked) // Prevent invalid call
-            return;
-        const filterBlock = radio.closest('.ue-filter-block');
-        if (!filterBlock) return;
-
-        const ueCard = filterBlock.closest('.ue-group-card');
-        if (!ueCard) return;
-
-        const content = ueCard.querySelector('.ue-conditional-content');
-        if (!content) return;
-
-        const isYes = radio.value === 'Oui';
-        content.style.display = isYes ? 'block' : 'none';
-
-        // Réinitialiser les réponses si "Non"
-        if (!isYes) {
-            content.querySelectorAll('input[type="radio"]:checked').forEach(r => r.checked = false);
-            content.querySelectorAll('input[type="checkbox"]:checked').forEach(c => c.checked = false);
-            content.querySelectorAll('textarea').forEach(t => t.value = '');
-            content.querySelectorAll('.missing-answer').forEach(el => el.classList.remove('missing-answer'));
-        }
-
-        this.updateProgress();
-    },
-
     // ─── Toggle Prof Block (mode INCLUSIF) ──────────────
     toggleProfBlock(radio) {
         if (!radio.checked) // Prevent invalid call
