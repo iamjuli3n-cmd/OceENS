@@ -21,7 +21,7 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
             question_id=question_id,
             option_id=option_id,
             module_id=module_id,
-            teacher=teacher,
+            teacher=teacher.title(), # Capitalize first letter of each word
         )
         session.add(answer)
         session.flush()
@@ -44,7 +44,7 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
                 question_id=question_id,
                 option_id=option_id,
                 module_id=module_id,
-                teacher=teacher,
+                teacher=teacher.title(), # Capitalize first letter of each word
             )
             session.add(answer)
             session.flush()
@@ -59,7 +59,7 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
             question_id=question_id,
             value=answer_row,
             module_id=module_id,
-            teacher=teacher,
+            teacher=teacher.title(), # Capitalize first letter of each word
         )
         session.add(answer)
         session.flush()

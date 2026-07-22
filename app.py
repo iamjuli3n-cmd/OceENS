@@ -734,7 +734,7 @@ def create_app():
             if not at:
                 continue
             for teacher in at.split(","):
-                teacher = teacher.strip()
+                teacher = teacher.strip().title()
                 if teacher:
                     teachers.add(teacher)
 
@@ -837,8 +837,9 @@ def create_app():
                     # ── Étape 2 : Créer les modules ──
                     for ue in survey.ues:
                         for module_data in ue.modules:
+                            module_data.teachers = [t.title() for t in module_data.teachers] # Teacher Name always titled (Capitalize each word)
                             enseignant_str = (
-                                ", ".join(module_data.teachers)
+                                ", ".join(module_data.teachers) 
                                 if module_data.teachers
                                 else None
                             )
