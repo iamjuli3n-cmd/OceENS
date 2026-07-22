@@ -1,5 +1,7 @@
 from sqlmodel import Session, delete
 from pathlib import Path
+import logging
+
 import csv
 import json
 from models import (
@@ -19,6 +21,9 @@ from models import (
     Stat,
 )
 from database import engine
+
+logger = logging.getLogger("uvicorn")
+
 
 
 ADDITIONAL_STUDENT_USERS = [
@@ -467,7 +472,7 @@ def seed_programs(session: Session):
     csv_path = Path("import/Program_list.csv")
 
     if not csv_path.exists():
-        print("[SEED] import/Program_list.csv introuvable.")
+        logger.warning("[SEED] import/Program_list.csv introuvable.")
         return
 
     inserted = 0
@@ -505,7 +510,7 @@ def seed_programs(session: Session):
             inserted += 1
 
     session.commit()
-    print(
+    logger.debug(
         f"[SEED] {inserted} programme(s) inséré(s)/mis à jour depuis Liste_Formations.csv."
     )
 
@@ -797,7 +802,6 @@ def seed_stats(session: Session):
     """Remplit la table stats."""
 
     for stat in STAT_COLOR_THRESHOLDS:
-        print(stat)
         stats = Stat(
             name=stat,
             color_scale=json.dumps(STAT_COLOR_THRESHOLDS[stat]["color_scale"]),
@@ -819,7 +823,7 @@ def seed_answers(session: Session):
         csv_path = Path("import") / survey_data["answers_file"]
 
         if not csv_path.exists():
-            print(f"[SEED] {csv_path} introuvable.")
+            logger.warning(f"[SEED] {csv_path} introuvable.")
             continue
 
         with csv_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
@@ -889,4 +893,4 @@ def seed_all_if_necessary():
 
         seed_stats(session)
 
-        print("Database seeding completed successfully!")
+        logger.debug("Database seeding completed successfully!")

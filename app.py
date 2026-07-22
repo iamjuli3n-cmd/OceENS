@@ -513,52 +513,12 @@ def parse_name(full_name: Optional[str], fallback_id: int) -> Dict[str, Optional
     return {"id": fallback_id, "firstname": parts[0], "name": " ".join(parts[1:])}
 
 
-class ColorFormatter(logging.Formatter):
-    """Format console logs like Uvicorn and color them by severity."""
-
-    GREEN = "\x1b[32m"
-    RED = "\x1b[31m"
-    RESET = "\x1b[0m"
-
-    def __init__(self) -> None:
-        super().__init__("%(levelname)s: %(message)s")
-
-    def format(self, record: logging.LogRecord) -> str:
-        message = super().format(record)
-
-        if record.levelno in (logging.DEBUG, logging.INFO):
-            color = self.GREEN
-        elif record.levelno >= logging.WARNING:
-            color = self.RED
-        else:
-            return message
-
-        return f"{color}{message}{self.RESET}"
 
 
-def setup_logging() -> None:
-    root_logger = logging.getLogger()
 
-    # Remplacer les handlers existants évite les lignes dupliquées.
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
+logger = logging.getLogger("uvicorn")
+logger.level=logging.DEBUG
 
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(ColorFormatter())
-    root_logger.addHandler(console_handler)
-    root_logger.setLevel(logging.INFO)
-
-    # Uvicorn configure ces loggers séparément. On les fait remonter vers
-    # le root logger pour unifier le format et les couleurs.
-    for logger_name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
-        uvicorn_logger = logging.getLogger(logger_name)
-        uvicorn_logger.handlers.clear()
-        uvicorn_logger.setLevel(logging.NOTSET)
-        uvicorn_logger.propagate = True
-
-
-setup_logging()
-logger = logging.getLogger(__name__)
 
 # ┌─ Gestion du cycle de vie (lifespan) ──────────────────────────────────┐
 @asynccontextmanager
@@ -2551,5 +2511,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=False,
-        log_config=None,
     )
