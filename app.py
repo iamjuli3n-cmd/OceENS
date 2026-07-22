@@ -246,12 +246,9 @@ def delete_survey_with_relations(session: Session, survey_id: int) -> None:
 def _get_color(color_scale:dict,score:float):
     color = None
     for threshold in color_scale:
-        if (score < float(threshold)):
+        if (score <= float(threshold)):
             return color_scale[threshold]
-        color = color_scale[threshold]
-    # Score au-delà (ou pile sur) le dernier seuil : garder la couleur du
-    # dernier palier plutôt que de renvoyer None (ex: un score à 100% pile
-    # ne matchait aucun seuil car la comparaison est stricte).
+       
     return color
 
 def get_stats_by_survey(session: Session, surveys: List) -> Dict[int, Dict]:
@@ -718,12 +715,14 @@ def create_app():
         is_unrestricted_admin = (
             allowed_programs is None or allowed_programs == []
         ) and "admin" in roles
-        teacher_query = select(Module.teacher).distinct()
-        if not is_unrestricted_admin:
-            teacher_query = teacher_query.join(
-                Survey, Survey.survey_id == Module.survey_id
-            ).where(Survey.program.in_(allowed_programs))
-        associated_teachers = session.exec(teacher_query).all()
+        # teacher_query = select(Module.teacher).distinct()
+        # if not is_unrestricted_admin:
+        #     teacher_query = teacher_query.join(
+        #         Survey, Survey.survey_id == Module.survey_id
+        #     ).where(Survey.program.in_(allowed_programs))
+        # associated_teachers = session.exec(teacher_query).all()
+        associated_teachers = session.exec(select(Module.teacher).distinct()).all()
+
         teachers = set()
         for at in associated_teachers:
             if not at:
