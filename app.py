@@ -16,6 +16,7 @@ import os
 import io
 import json
 import re
+import logging
 from typing import Annotated, Dict, List, Optional
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -440,7 +441,7 @@ import json
 
 
 def check_role(roles: list[str], allowed_roles: list[str]):
-    print(f"CHECK {roles} {allowed_roles}")
+    logger.info("CHECK %s %s", roles, allowed_roles)
     for role_and_program in roles:
         if ":" in role_and_program:
             role = role_and_program.split(":")[0]
@@ -512,14 +513,21 @@ def parse_name(full_name: Optional[str], fallback_id: int) -> Dict[str, Optional
     return {"id": fallback_id, "firstname": parts[0], "name": " ".join(parts[1:])}
 
 
+
+
+
+logger = logging.getLogger("uvicorn")
+logger.level=logging.DEBUG
+
+
 # ┌─ Gestion du cycle de vie (lifespan) ──────────────────────────────────┐
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Initialisation de la base de données...")
+    logger.info("Initialisation de la base de données...")
     create_db_and_tables()
     seed_all_if_necessary()
     yield
-    print("Fermeture de la connexion...")
+    logger.info("Fermeture de la connexion...")
 
 
 # └────────────────────────────────────────────────────────────────────────┘
@@ -788,8 +796,9 @@ def create_app():
                         existing_email_map = {
                             u.mail.lower(): u.user_id for u in existing_users if u.mail
                         }
-                        print(
-                            f"[SONDAGE+IMPORT] {len(existing_email_map)} user(s) existant(s) en BDD"
+                        logger.info(
+                            "[SONDAGE+IMPORT] %d user(s) existant(s) en BDD",
+                            len(existing_email_map),
                         )
 
                         max_id = max([u.user_id for u in existing_users] + [0])
@@ -810,8 +819,10 @@ def create_app():
                                 existing_email_map[email] = max_id
                                 nb_crees += 1
 
-                        print(
-                            f"[SONDAGE+IMPORT] Users : {nb_crees} créé(s), {nb_existants} existant(s)"
+                        logger.info(
+                            "[SONDAGE+IMPORT] Users : %d créé(s), %d existant(s)",
+                            nb_crees,
+                            nb_existants,
                         )
 
                         user_ids = list(email_to_user_id.values())
@@ -843,18 +854,20 @@ def create_app():
                                 session.add(new_repondre)
                                 nb_repondre_inseres += 1
 
-                        print(
-                            f"[SONDAGE+IMPORT] Respondent : {nb_repondre_inseres} affectation(s) ajoutée(s)."
+                        logger.info(
+                            "[SONDAGE+IMPORT] Respondent : %d affectation(s) ajoutée(s).",
+                            nb_repondre_inseres,
                         )
 
             # Si on arrive ici, le COMMIT a été fait par le context manager
-            print(f"[SONDAGE+IMPORT] Transaction COMMIT réussie !")
+            logger.info("[SONDAGE+IMPORT] Transaction COMMIT réussie !")
 
         except Exception as e:
-            print(f"[SONDAGE+IMPORT] ERREUR — ROLLBACK : {type(e).__name__}: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(
+                "[SONDAGE+IMPORT] ERREUR — ROLLBACK : %s: %s",
+                type(e).__name__,
+                e,
+            )
             return JSONResponse(
                 content={"error": f"Erreur lors de la création du survey : {str(e)}"},
                 status_code=500,
@@ -2396,7 +2409,7 @@ def create_app():
                 status_code=409,
             )
         
-        print("GENERATE")
+        logger.info("GENERATE")
 
 
         try:
@@ -2421,7 +2434,7 @@ def create_app():
 
 
             rows_to_insert = [{"survey_id":survey_id, "module_id":a[0], "teacher":a[1], "question_id":a[2], "prompt_id":prompt_id, "http_status":0, "summary_text":None, "metadata_text":None} for a in answers]
-            print(rows_to_insert)
+            logger.info("Résumés à insérer : %s", rows_to_insert)
 
             session.exec(insert(Summary),params=rows_to_insert)
             session.commit()
@@ -2458,7 +2471,7 @@ def create_app():
                 status_code=error_or_warning["status_code"],
             )
         
-        print("DESTROY")
+        logger.info("DESTROY")
 
         try:
             survey.status=0

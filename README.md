@@ -4,31 +4,56 @@ Plateforme d'évaluation des enseignements conçue pour l'école d'ingénieurs E
 
 ## Aperçu
 
-L'application **OcéEns II** permet à l'administration et à la scolarité de créer et gérer des sondages d'évaluation pour les différentes filières de l'EPF. L'interface est habillée de la charte graphique officielle de l'EPF.
+L'application **OcéEns II** permet aux responsables de programme, animateurs, directions de campus et administrateurs de créer et gérer des sondages d'évaluation pour les différentes filières de l'EPF, et aux étudiants d'y répondre. Les réponses peuvent être exportées, visualisées, et synthétisées via un LLM. L'interface est habillée de la charte graphique officielle de l'EPF.
 
 ### Stack technique
 
 | Composant | Technologie |
 |-----------|-------------|
-| **Framework** | FastAPI (Python) |
-| **Authentification** | Microsoft Entra ID (Azure AD) via OAuth2.0 / MSAL |
+| **Framework** | FastAPI (Python 3.12) |
+| **Authentification** | Microsoft Entra ID (Azure AD) via OAuth2.0 / MSAL, Microsoft Graph |
 | **Base de données** | SQLite (via SQLAlchemy + SQLModel) |
-| **Templating** | Jinja2 |
-| **Frontend** | HTML / CSS / JavaScript |
+| **Templating** | Jinja2 (rendu serveur) |
+| **Frontend** | HTML / CSS / JavaScript, sans framework |
 | **Serveur** | Uvicorn |
+| **Journalisation** | Module standard Python `logging`, via les handlers Uvicorn |
+| **Exports** | Pandas (CSV) |
+| **Synthèses de verbatims** | Daemon séparé, appel à un LLM (`requests-cache`, `markdown-it-py`) |
 
 ---
 
-## Pages de l'application
+## Rôles
 
-| Route | Page | Description |
-|-------|------|-------------|
-| `/` | Accueil | Hub principal avec la charte graphique EPF. Accès à l'authentification. |
-| `/dashboard/survey-create` | Paramétrage | Interface de création de sondage : sélection année, campus, filière, configuration des UE, modules et professeurs. |
-| `/survey/{id_sondage}` | Questionnaire | Interface de réponse au sondage avec affichage dynamique des sections et questions (choix unique, multiple, ouverte). |
-| `/dashboard/admin` | Dashboard Admin | Tableau de bord administrateur. |
-| `/dashboard/student` | Dashboard Étudiant | Tableau de bord étudiant. |
-| `/dashboard/program_manager` | Dashboard RP/RM | Tableau de bord responsable pédagogique / responsable de module. |
+- `student` : répond aux sondages auxquels il est inscrit.
+- `program_manager:<code>` : gère les sondages de sa/ses filière(s).
+- `facilitator:<code>` : anime les sondages de sa/ses filière(s).
+- `campus_manager:<campus>` : périmètre à l'échelle du campus.
+- `admin` : administration générale.
+
+Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre (codes filière ou campus séparés par `;`).
+
+---
+
+## Pages et routes principales
+
+| Route | Description |
+|-------|-------------|
+| `/` | Accueil, hub d'authentification. |
+| `/login`, `/auth/callback`, `/logout` | Flux d'authentification Microsoft Entra ID. |
+| `/dashboard/student` | Dashboard étudiant. |
+| `/dashboard/program-manager` | Dashboard responsable de programme. |
+| `/dashboard/facilitator` | Dashboard animateur. |
+| `/dashboard/campus-manager` | Dashboard direction de campus. |
+| `/dashboard/admin` | Dashboard administrateur. |
+| `/dashboard/survey-create` | Création / paramétrage d'un sondage. |
+| `/api/surveys/{survey_id}` | Questionnaire (réponse au sondage). |
+| `/api/surveys/{survey_id}/status` | Changement de statut d'un sondage. |
+| `/api/surveys/{survey_id}/students` | Gestion des étudiants inscrits à un sondage. |
+| `/api/surveys/{survey_id}/export` | Export CSV des réponses. |
+| `/api/surveys/{survey_id}/visualisation` | Visualisation des réponses. |
+| `/api/surveys/{survey_id}/generate-summaries` | Lancement de la génération de synthèses LLM. |
+| `/api/surveys/{survey_id}/destroy-summaries` | Suppression des synthèses générées. |
+| `/api/users/{user_id}/role` | Modification du rôle d'un utilisateur. |
 
 ---
 
@@ -36,7 +61,7 @@ L'application **OcéEns II** permet à l'administration et à la scolarité de c
 
 ### Prérequis
 
-- Python 3.x
+- Python 3.12
 - Un fichier `.env` configuré (voir section [Configuration](#configuration))
 
 ### Étapes
@@ -63,13 +88,13 @@ L'application **OcéEns II** permet à l'administration et à la scolarité de c
    ```
 
 4. **Ajouter la base de données**
-  Créer un dossier database/ puis y coller le fichier db_oceens.db
+   Créer un dossier `database/` puis y placer le fichier `db_oceens.db`, ou laisser `seed_all_if_necessary()` initialiser une base vide au premier démarrage.
 
-5. **Lancez l'application** :
+5. **Lancer l'application** :
+
    ```bash
    fastapi dev
    ```
-
 
    Ou directement avec Uvicorn :
 
@@ -77,7 +102,56 @@ L'application **OcéEns II** permet à l'administration et à la scolarité de c
    uvicorn app:app --host 0.0.0.0 --port 8000
    ```
 
-6. Ouvrez votre navigateur à l'adresse **http://localhost:8000**.
+   En production, `launch.sh` lance l'application et le daemon de synthèses dans des sessions `screen` séparées.
+
+6. **(Optionnel) Lancer le daemon de synthèses LLM** :
+
+   ```bash
+   python summaries_generator_daemon.py
+   ```
+
+   Ce processus tourne en boucle, écrit en base et contacte un service LLM externe : à ne lancer que lorsque c'est nécessaire.
+
+7. Ouvrez votre navigateur à l'adresse **http://localhost:8000**.
+
+---
+
+## Journalisation
+
+Les logs applicatifs utilisent le module standard Python `logging` et le logger
+`uvicorn`. Cela permet aux messages d'`app.py`, `auth.py` et `seed.py` de reprendre
+le format, les couleurs et les handlers déjà configurés par le serveur.
+
+Les niveaux sont utilisés selon leur gravité :
+
+| Niveau | Utilisation |
+|--------|-------------|
+| `DEBUG` | Informations détaillées utiles au développement et au seeding. |
+| `INFO` | Démarrage, arrêt et opérations applicatives normales. |
+| `WARNING` | Ressource attendue absente ou situation non bloquante. |
+| `ERROR` / `EXCEPTION` | Échec d'une opération ; `logger.exception()` conserve la traceback. |
+| `CRITICAL` | Configuration indispensable manquante, empêchant le démarrage. |
+
+Exemple :
+
+```python
+import logging
+
+logger = logging.getLogger("uvicorn")
+
+logger.info("Opération terminée")
+
+try:
+    operation_risquee()
+except Exception:
+    logger.exception("Échec de l'opération")
+```
+
+Les nouveaux diagnostics doivent utiliser le logger approprié plutôt que
+`print()`. Le niveau applicatif est actuellement réglé sur `DEBUG` dans
+`app.py`. Les logs applicatifs passent par le handler Uvicorn, généralement
+écrit sur `stderr` ; avec une redirection séparée, utilisez par exemple
+`2> error.log` pour les récupérer.
 
 ---
 
@@ -96,10 +170,12 @@ ALLOWED_DOMAINS=epf.fr,epfedu.fr
 # Session
 SECRET_KEY=your_secure_random_key_here
 
+# Synthèses LLM
+LLM_API_KEY=your_llm_api_key_here
 ```
 
 > [!CAUTION]
-> Ne jamais commiter le fichier `.env`. Il est déjà listé dans le `.gitignore`.
+> Ne jamais commiter le fichier `.env`. Il est déjà listé dans le `.gitignore`, tout comme les fichiers `*.db` (`database/db_oceens.db`, `cache_llm.db`).
 
 ---
 
@@ -107,46 +183,52 @@ SECRET_KEY=your_secure_random_key_here
 
 ```
 OceENS/
-├── app.py                  # Point d'entrée – routes et configuration FastAPI
-├── auth.py                 # Authentification Microsoft Entra ID (login, logout, callback)
-├── database.py             # Configuration SQLAlchemy + modèle UserRole (rôles)
-├── models.py               # Modèles SQLModel (tables, relations, structure des données)
-├── remplir_db.py           # Script d'initialisation des données
-├── launch.sh               # Script de lancement
-├── requirements.txt        # Dépendances Python
-├── .env                    # Variables d'environnement (⚠️ non commité)
-├── .gitignore              # Fichiers et dossiers ignorés par Git
+├── app.py                        # Fabrique FastAPI, routes, autorisations, orchestration métier
+├── auth.py                       # Authentification Microsoft Entra ID (login, logout, callback)
+├── database.py                   # Moteur SQLite et dépendance SessionDep
+├── models.py                     # Schéma SQLModel (tables, relations)
+├── seed.py                       # Données initiales et synchronisation des formations
+├── sondage_loader.py             # Chargement d'un sondage complet pour l'export
+├── survey_loader_from_xlsx.py    # Import de sondages depuis un fichier Excel
+├── summaries_generator_daemon.py # Traitement asynchrone des synthèses LLM (processus séparé)
+├── launch.sh                     # Script de lancement (production)
+├── requirements.txt              # Dépendances Python
+├── .env                          # Variables d'environnement (⚠️ non commité)
+├── .gitignore                    # Fichiers et dossiers ignorés par Git
 │
-├── database/                # Dossier contenant la base de données (à ajouter manuellement)
-│   └── db_oceens.db         # Fichier de la base de données (à ajouter manuellement)
-|
-├── templates/              # Templates HTML (Jinja2)
-│   ├── index.html               # Page d'accueil / login
-│   ├── parametrage.html         # Création de sondage
-│   ├── questionnaire.html       # Réponse au sondage
-│   └── dashboard/
-│       ├── admin.html           # Dashboard administrateur
-│       ├── student.html        # Dashboard étudiant
-│       └── program_manager.html            # Dashboard RP/RM
+├── database/                     # Dossier contenant la base de données (ignoré par Git)
+│   └── db_oceens.db
 │
-├── static/                 # Fichiers statiques
-│   ├── css/
-│   │   ├── admin.css            # Styles dashboard admin
-│   │   ├── etudiant.css         # Styles dashboard étudiant
-│   │   ├── parametrage.css      # Styles page paramétrage
-│   │   └── questionnaire.css    # Styles page questionnaire
+├── services/
+│   ├── visualisation_data.py     # Agrégations et contexte de visualisation
+│   └── export_csv.py             # Export CSV des réponses
+│
+├── templates/                    # Templates HTML (Jinja2)
+│   ├── index.html                     # Page d'accueil / login
+│   ├── survey.html                    # Réponse au sondage
+│   ├── survey_create.html             # Création de sondage
+│   ├── visualisation.html             # Visualisation des réponses
+│   ├── dashboard/
+│   │   ├── admin.html
+│   │   ├── student.html
+│   │   ├── program_manager.html
+│   │   ├── facilitator.html
+│   │   └── campus_manager.html
+│   └── template_parts/                # Fragments réutilisables entre dashboards
+│       ├── part_site_header.html
+│       ├── part_dashboard_navigation.html
+│       ├── part_theme_switcher.html
+│       └── ...
+│
+├── static/
+│   ├── css/                      # admin.css, student.css, program_manager.css, survey.css,
+│   │                              # survey_create.css, visualisation.css, theme.css,
+│   │                              # site_header.css, dashboard_navigation.css, responsive.css
 │   ├── js/
-│   │   ├── admin.js             # Scripts dashboard admin
-│   │   ├── etudiant.js          # Scripts dashboard étudiant
-│   │   ├── parametrage.js       # Scripts page paramétrage
-│   │   └── questionnaire.js     # Scripts page questionnaire
+│   │   └── survey.js
 │   └── img/
-│       ├── epf_logo.png         # Logo EPF
-│       ├── epf_logo_blanc.png   # Logo EPF (blanc)
-│       ├── hautpage.png         # Image en-tête
-│       └── logo.png             # Logo application
 │
-└── env/                    # Environnement virtuel Python (non commité)
+└── env/                           # Environnement virtuel Python (non commité)
 ```
 
 ---
@@ -164,10 +246,10 @@ Le flux d'authentification repose sur **Microsoft Entra ID** via la bibliothèqu
    → Microsoft redirige vers /auth/callback avec un code + state
 
 3. Le serveur échange le code contre un token d'accès
-   → Récupération des infos utilisateur
-   → Consultation de la BDD pour obtenir le rôle
-   → Création de la session {name, email, role}
-   → Redirection vers /dashboard/{role}
+   → Récupération des infos utilisateur via Microsoft Graph
+   → Consultation de la BDD pour obtenir le(s) rôle(s) et leur périmètre
+   → Création de la session {name, email, roles}
+   → Redirection vers le dashboard correspondant
 
 4. À la déconnexion (/logout)
    → Suppression de la session et des cookies
@@ -175,42 +257,45 @@ Le flux d'authentification repose sur **Microsoft Entra ID** via la bibliothèqu
    → Retour à la page d'accueil
 ```
 
+L'authentification seule n'autorise aucune action métier : chaque route vérifie ensuite le rôle et le périmètre (formation ou campus) via `require_roles()` et les helpers associés.
+
 ---
 
 ## Checklist de déploiement
 
-- [ ] `.env` créé avec les vraies credentials Azure
+- [ ] `.env` créé avec les vraies credentials Azure et une `SECRET_KEY` dédiée
 - [ ] Certificat SSL valide (Let's Encrypt ou équivalent)
 - [ ] `https_only=True` dans le SessionMiddleware
-- [ ] Base de données présente
-- [ ] Variables d'environnement sécurisées
+- [ ] Base de données présente (`database/db_oceens.db`)
+- [ ] Variables d'environnement sécurisées, y compris `LLM_API_KEY`
+- [ ] Daemon `summaries_generator_daemon.py` lancé si les synthèses LLM sont utilisées
 
 ---
 
-## Évolutions futures
+## Validation avant contribution
 
-- Fonctionnalité de visualisation des réponses des questionnaires. Un début de cette fonctionnalité a été implémenté dans la branche feat/visualisation.
-- Implémenter des tests et du CI/CD.
-- Migration vers une base de données plus robuste (PostgreSQL)
+Le dépôt ne contient pas de suite de tests automatisés ni de CI. Avant de proposer un changement :
 
----
+```bash
+python -m compileall -q app.py auth.py database.py models.py seed.py \
+  sondage_loader.py survey_loader_from_xlsx.py summaries_generator_daemon.py services
+git diff --check
+```
 
-## Maquette de la visualisation
-
-[générée par IA]
-<img width="945" height="646" alt="image" src="https://github.com/user-attachments/assets/f4654635-346c-42a5-b935-15edbdfddfe2" />
-<img width="945" height="558" alt="image" src="https://github.com/user-attachments/assets/da2d185e-efa1-4408-9aa4-230d5bacba89" />
+Puis tester manuellement les routes concernées sur une base SQLite jetable (jamais une copie de production), avec les rôles et statuts de sondage pertinents.
 
 ---
 
 ## Ressources
 
 - [FastAPI](https://fastapi.tiangolo.com/)
+- [Guide du logging FastAPI et Uvicorn](https://apitally.io/blog/fastapi-logging-guide)
 - [MSAL Python](https://github.com/AzureAD/microsoft-authentication-library-for-python)
 - [Microsoft Graph](https://learn.microsoft.com/en-us/graph/)
 - [Jinja2](https://jinja.palletsprojects.com/)
 - [SQLAlchemy](https://www.sqlalchemy.org/)
 - [SQLModel](https://sqlmodel.tiangolo.com/)
+- [Pandas](https://pandas.pydata.org/)
 
 ---
 

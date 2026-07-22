@@ -34,6 +34,7 @@ import requests
 import msal
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, Response
+import logging
 
 import os
 load_dotenv()
@@ -44,6 +45,7 @@ ALLOWED_DOMAINS = os.environ.get("ALLOWED_DOMAINS", "").split(",")
 # Accepte des domaines multiples séparés par des virgules
 # └───────────────────────────────────────────────────────────────────────────┘
 
+logger = logging.getLogger("uvicorn")
 
 
 router = APIRouter()
@@ -56,7 +58,7 @@ CLIENT_SECRET = os.environ.get("ENTRA_CLIENT_SECRET")
 # Clé secrète pour l'authentification (confidentielle)
 TENANT_ID = os.environ.get("ENTRA_TENANT_ID")
 if CLIENT_ID == None or CLIENT_SECRET == None or TENANT_ID == None:
-    print("MISSING ENTRA INFO. Please check .env")
+    logger.critical("MISSING ENTRA INFO. Please check .env")
     exit()
 # ID du "tenant" (organisation) dans Azure Entra
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"

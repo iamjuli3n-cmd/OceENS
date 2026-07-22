@@ -457,7 +457,6 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
 
         for row in summary_rows:
             summary,section_name,module_name=row
-            print(summary.module_id)
             if summary.module_id:
                 q = data[section_name]["modules"][module_name]["teachers"][summary.teacher]["questions"][summary.question_id]
             else:
