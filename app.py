@@ -244,10 +244,15 @@ def delete_survey_with_relations(session: Session, survey_id: int) -> None:
             )
 
 def _get_color(color_scale:dict,score:float):
+    color = None
     for threshold in color_scale:
         if (score < float(threshold)):
             return color_scale[threshold]
-    return None
+        color = color_scale[threshold]
+    # Score au-delà (ou pile sur) le dernier seuil : garder la couleur du
+    # dernier palier plutôt que de renvoyer None (ex: un score à 100% pile
+    # ne matchait aucun seuil car la comparaison est stricte).
+    return color
 
 def get_stats_by_survey(session: Session, surveys: List) -> Dict[int, Dict]:
     if not surveys:
