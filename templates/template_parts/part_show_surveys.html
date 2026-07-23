@@ -190,6 +190,18 @@
       <option value="Printemps" {% if selected_semester=='Printemps' %}selected{% endif %}>Printemps</option>
     </select>
   </div>
+  {% if available_programs %}
+  <div class="survey-filter-field">
+    <label for="filter-program">Formation</label>
+    <select id="filter-program" name="program"
+      onchange="document.getElementById('survey-filter-form').submit()">
+      <option value="" {% if not selected_program %}selected{% endif %}>Toutes</option>
+      {% for p in available_programs %}
+      <option value="{{ p.code }}" {% if selected_program == p.code %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
 </form>
 
 {% if avg_stats %}
