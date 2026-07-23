@@ -326,6 +326,24 @@
 
         .delete-warning strong { color: #df231d; }
 
+        /* ── Template actif / inactif ── */
+        .template-inactive { opacity: 0.5; }
+        .template-inactive .template-header { background: #6b7280; }
+
+        .btn-tpl-active {
+            background: rgba(134,239,172,.15);
+            color: #86efac;
+            border: 1px solid rgba(134,239,172,.35);
+        }
+        .btn-tpl-active:hover { background: rgba(134,239,172,.28); }
+
+        .btn-tpl-inactive {
+            background: rgba(0,0,0,.25);
+            color: rgba(255,255,255,.45);
+            border: 1px solid rgba(255,255,255,.18);
+        }
+        .btn-tpl-inactive:hover { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); }
+
         /* Modal surveys — centré et large */
         #modal-surveys {
             position: fixed;
@@ -380,7 +398,7 @@
 
         {% if templates_data %}
             {% for t in templates_data %}
-            <div class="template-card">
+            <div class="template-card{% if not t.template.active %} template-inactive{% endif %}">
                 <div class="template-header">
                     <div class="left" onclick="toggleTemplateBody({{ loop.index }})">
                         <span class="chevron" id="chevron-{{ loop.index }}" style="transform: rotate(-90deg);">▾</span>
@@ -389,6 +407,12 @@
                         {% if t.in_use %}<span class="badge-use">Utilisé par des sondages</span>{% endif %}
                     </div>
                     <div class="row-actions">
+                        <button class="btn btn-sm {% if t.template.active %}btn-tpl-active{% else %}btn-tpl-inactive{% endif %}"
+                            data-action="toggle-active"
+                            data-id="{{ t.template.template_id }}"
+                            title="{% if t.template.active %}Désactiver ce template{% else %}Activer ce template{% endif %}">
+                            {% if t.template.active %}● Actif{% else %}○ Inactif{% endif %}
+                        </button>
                         <button class="btn btn-white btn-sm"
                             data-action="edit-template"
                             data-id="{{ t.template.template_id }}"
@@ -657,6 +681,18 @@
     <div id="toast"></div>
 
     <script>
+        // ── Toggle actif/inactif ──
+        async function toggleTemplateActive(id) {
+            const r = await fetch(`/api/templates/${id}/toggle-active`, { method: 'POST' });
+            const res = await r.json().catch(() => ({}));
+            if (res.ok) {
+                showToast(res.active ? 'Template activé.' : 'Template désactivé.');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                showToast(res.error || 'Erreur.', true);
+            }
+        }
+
         // ── Toggle template body ──
         function toggleTemplateBody(idx) {
             const body    = document.getElementById('template-body-' + idx);
@@ -837,7 +873,10 @@
 
             const action = btn.dataset.action;
 
-            if (action === 'show-surveys') {
+            if (action === 'toggle-active') {
+                toggleTemplateActive(+btn.dataset.id);
+
+            } else if (action === 'show-surveys') {
                 const data = document.getElementById('surveys-data-' + btn.dataset.idx);
                 document.getElementById('modal-surveys-body').innerHTML = data ? data.innerHTML : '';
                 const tplName = btn.closest('.template-card').querySelector('.template-name').textContent.trim();

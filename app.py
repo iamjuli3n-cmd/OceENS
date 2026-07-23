@@ -716,8 +716,17 @@ def create_app():
             ).all()
             survey_prefill = build_survey_prefill(source_survey, source_modules)
 
-        # Fetch all potential templates
-        survey_templates = session.exec(select(Template)).all()
+        # Admin pur (sans rôle program_manager) voit tous les templates,
+        # les autres (rprm seul ou rprm+admin) ne voient que les actifs
+        is_pure_admin = "admin" in roles and not any(
+            r.startswith("program_manager") for r in roles
+        )
+        if is_pure_admin:
+            survey_templates = session.exec(select(Template).order_by(Template.template_id)).all()
+        else:
+            survey_templates = session.exec(
+                select(Template).where(Template.active == True).order_by(Template.template_id)
+            ).all()
 
         # Extract all distinct school years
         school_years = session.exec(select(Survey.school_year).distinct()).all()
@@ -3073,6 +3082,17 @@ def create_app():
             )
 
         try:
+            # Suppression en cascade : questions → sections → template
+            sections = session.exec(
+                select(Section).where(Section.template_id == template_id)
+            ).all()
+            for sec in sections:
+                questions = session.exec(
+                    select(Question).where(Question.section_id == sec.section_id)
+                ).all()
+                for q in questions:
+                    session.delete(q)
+                session.delete(sec)
             session.delete(tpl)
             session.commit()
         except Exception:
@@ -3080,6 +3100,36 @@ def create_app():
             return JSONResponse({"error": "Erreur lors de la suppression."}, status_code=500)
 
         return JSONResponse({"ok": True})
+    @api_router.post("/templates/{template_id}/toggle-active")
+    def toggle_template_active(request: Request, template_id: int, session: SessionDep):
+        user = get_current_user(request)
+        if not user:
+            return JSONResponse({"error": "Non authentifié."}, status_code=401)
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if "admin" not in roles:
+            return JSONResponse({"error": "Accès refusé."}, status_code=403)
+
+        tpl = session.get(Template, template_id)
+        if not tpl:
+            return JSONResponse({"error": "Template introuvable."}, status_code=404)
+
+        tpl.active = not tpl.active
+        try:
+            session.add(tpl)
+            session.commit()
+        except Exception:
+            session.rollback()
+            return JSONResponse({"error": "Erreur lors de la mise à jour."}, status_code=500)
+
+        return JSONResponse({"ok": True, "active": tpl.active})
+
     # └────────────────────────────────────────────────────────────────────┘
 
     # ┌─ API : CRUD Sections (admin only) ──────────────────────────────────┐
