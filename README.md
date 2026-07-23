@@ -54,6 +54,12 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
 | `/api/surveys/{survey_id}/generate-summaries` | Lancement de la génération de synthèses LLM. |
 | `/api/surveys/{survey_id}/destroy-summaries` | Suppression des synthèses générées. |
 | `/api/users/{user_id}/role` | Modification du rôle d'un utilisateur. |
+| `/backend/prompts` | Liste des prompts LLM (admin uniquement). |
+| `/backend/prompts/new` | Formulaire de création d'un prompt. |
+| `/backend/prompts/{id}/edit` | Formulaire de modification d'un prompt. |
+| `/api/prompts` | Création d'un prompt (POST, form). |
+| `/api/prompts/{id}` | Modification d'un prompt (POST, form). |
+| `/api/prompts/{id}/delete` | Suppression d'un prompt (POST, form). |
 
 ---
 
@@ -214,6 +220,9 @@ OceENS/
 │   │   ├── program_manager.html
 │   │   ├── facilitator.html
 │   │   └── campus_manager.html
+│   ├── backend/                       # Pages d'administration (admin only)
+│   │   ├── prompts.html               # Liste des prompts LLM
+│   │   └── prompt_form.html           # Formulaire create/edit partagé
 │   └── template_parts/                # Fragments réutilisables entre dashboards
 │       ├── part_site_header.html
 │       ├── part_dashboard_navigation.html
@@ -222,8 +231,8 @@ OceENS/
 │
 ├── static/
 │   ├── css/                      # admin.css, student.css, program_manager.css, survey.css,
-│   │                              # survey_create.css, visualisation.css, theme.css,
-│   │                              # site_header.css, dashboard_navigation.css, responsive.css
+│   │                              # survey_create.css, visualisation.css, prompt_form.css,
+│   │                              # theme.css, site_header.css, dashboard_navigation.css, responsive.css
 │   ├── js/
 │   │   └── survey.js
 │   └── img/
