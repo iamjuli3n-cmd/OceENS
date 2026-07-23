@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if prompt %}Modifier le prompt #{{ prompt.prompt_id }}{% else %}Nouveau prompt{% endif %} – OCEENS II
+    </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/prompt_form.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}">
+
+</head>
+
+<body class="page-admin">
+
+    {% set header_title_fr = "Administration" %}
+    {% include 'template_parts/part_site_header.html' %}
+
+    <div class="form-main">
+        <h1>{% if prompt %}Modifier le prompt #{{ prompt.prompt_id }}{% else %}Nouveau prompt{% endif %}</h1>
+
+        {% if request.query_params.get("error") %}
+        <div class="notice error">{{ request.query_params.get("error") }}</div>
+        {% endif %}
+
+        <div class="card">
+            <form method="POST"
+                action="{% if prompt %}/api/prompts/{{ prompt.prompt_id }}{% else %}/api/prompts{% endif %}">
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <input type="text" id="description" name="description"
+                        value="{{ prompt.description or '' if prompt else '' }}" placeholder="Ex. : Synthèse détaillée">
+                </div>
+
+                <div class="form-group">
+                    <label for="model">Modèle LLM</label>
+                    <input type="text" id="model" name="model" value="{{ prompt.model or '' if prompt else '' }}"
+                        placeholder="Ex. : gpt-4o">
+                </div>
+
+                <div class="form-group">
+                    <label for="prompt_text">Texte du prompt</label>
+                    <textarea id="prompt_text" name="prompt_text"
+                        placeholder="Entrez le texte du prompt…">{{ prompt.prompt_text or '' if prompt else '' }}</textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <a href="/backend/prompts" class="btn btn-secondary">Annuler</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</body>
+
+</html>

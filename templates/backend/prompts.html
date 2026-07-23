@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des prompts – OCEENS II</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}">
+    <style>
+        .backend-main {
+            max-width: 1100px;
+            margin: 32px auto;
+            padding: 0 24px;
+        }
+
+        .backend-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .backend-header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .notice {
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: .88rem;
+        }
+
+        .notice.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .notice.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg, white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
+        }
+
+        th,
+        td {
+            padding: 11px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border, #dce4ec);
+            font-size: .88rem;
+        }
+
+        th {
+            background: var(--bg, #f0f4f8);
+            font-weight: 600;
+            color: var(--text-muted, #7f8fa6);
+            text-transform: uppercase;
+            font-size: .75rem;
+            letter-spacing: .04em;
+        }
+
+        td.cell-text {
+            max-width: 320px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: 'DM Mono', monospace;
+            font-size: .78rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: .82rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--purple, #470a68);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: .88;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border, #dce4ec);
+            color: var(--text, #2c3e50);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg, #f0f4f8);
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid #df231d;
+            color: #df231d;
+        }
+
+        .btn-danger:hover {
+            background: #fef2f2;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .empty {
+            color: var(--text-muted, #7f8fa6);
+            text-align: center;
+            padding: 48px 0;
+        }
+    </style>
+</head>
+
+<body class="page-admin">
+
+    {% set header_title_fr = "Administration" %}
+    {% include 'template_parts/part_site_header.html' %}
+
+    <div class="backend-main">
+        <div class="backend-header">
+            <h1>Prompts LLM</h1>
+            <a href="/backend/prompts/new" class="btn btn-primary">+ Nouveau prompt</a>
+        </div>
+
+        {% if success %}
+        <div class="notice success">{{ success }}</div>
+        {% endif %}
+        {% if error %}
+        <div class="notice error">{{ error }}</div>
+        {% endif %}
+
+        {% if prompts %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:50px">ID</th>
+                    <th style="width:200px">Description</th>
+                    <th style="width:140px">Modèle</th>
+                    <th>Texte du prompt</th>
+                    <th style="width:150px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in prompts %}
+                <tr>
+                    <td>{{ p.prompt_id }}</td>
+                    <td>{{ p.description or "—" }}</td>
+                    <td>{{ p.model or "—" }}</td>
+                    <td class="cell-text">{{ p.prompt_text or "—" }}</td>
+                    <td>
+                        <div class="row-actions">
+                            <a href="/backend/prompts/{{ p.prompt_id }}/edit" class="btn btn-secondary">Modifier</a>
+                            <form method="POST" action="/api/prompts/{{ p.prompt_id }}/delete"
+                                onsubmit="return confirm('Supprimer ce prompt ?')">
+                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty">Aucun prompt enregistré.</p>
+        {% endif %}
+    </div>
+
+</body>
+
+</html>

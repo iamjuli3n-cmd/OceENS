@@ -1,0 +1,100 @@
+    .form-main {
+        max-width: 700px;
+        margin: 32px auto;
+        padding: 0 24px;
+    }
+
+    h1 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 24px;
+    }
+
+    .card {
+        background: var(--card-bg, white);
+        border-radius: 10px;
+        padding: 28px 32px;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
+    }
+
+    .notice {
+        padding: 10px 16px;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        font-size: .88rem;
+    }
+
+    .notice.error {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: .8rem;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: var(--text-muted, #7f8fa6);
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid var(--border, #dce4ec);
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: .9rem;
+        background: var(--bg, #f0f4f8);
+        color: var(--text, #2c3e50);
+    }
+
+    .form-group textarea {
+        font-family: 'DM Mono', monospace;
+        font-size: .82rem;
+        min-height: 200px;
+        resize: vertical;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 8px 18px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: .88rem;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: var(--purple, #470a68);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        opacity: .88;
+    }
+
+    .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border, #dce4ec);
+        color: var(--text, #2c3e50);
+    }
+
+    .btn-secondary:hover {
+        background: var(--bg, #f0f4f8);
+    }
