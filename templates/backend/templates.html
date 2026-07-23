@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des templates – OCEENS II</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}">
+    <style>
+        .backend-main {
+            max-width: 1200px;
+            margin: 32px auto;
+            padding: 0 24px;
+        }
+
+        .backend-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .backend-header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .notice {
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: .88rem;
+        }
+
+        .notice.success { background: #d1fae5; color: #065f46; }
+        .notice.error   { background: #fee2e2; color: #991b1b; }
+
+        /* ── Template card ── */
+        .template-card {
+            background: var(--card-bg, white);
+            border-radius: 10px;
+            box-shadow: 0 1px 6px rgba(0,0,0,.06);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .template-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: var(--purple, #470a68);
+            color: white;
+            gap: 12px;
+        }
+
+        .template-header .left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .template-name {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .template-id {
+            font-size: .78rem;
+            opacity: .6;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .badge-use {
+            background: rgba(255,255,255,.2);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: .72rem;
+            letter-spacing: .03em;
+        }
+
+        /* ── Section card ── */
+        .sections-list {
+            padding: 0 20px 16px;
+        }
+
+        .section-card {
+            border: 1px solid var(--border, #dce4ec);
+            border-radius: 8px;
+            margin-top: 14px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--bg, #f0f4f8);
+            gap: 12px;
+        }
+
+        .section-header .left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .section-name {
+            font-weight: 600;
+            font-size: .9rem;
+        }
+
+        .section-meta {
+            font-size: .75rem;
+            color: var(--text-muted, #7f8fa6);
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* ── Questions table ── */
+        .questions-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .82rem;
+        }
+
+        .questions-table th,
+        .questions-table td {
+            padding: 8px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border, #dce4ec);
+        }
+
+        .questions-table th {
+            background: var(--bg, #f0f4f8);
+            font-weight: 600;
+            color: var(--text-muted, #7f8fa6);
+            text-transform: uppercase;
+            font-size: .7rem;
+            letter-spacing: .04em;
+        }
+
+        .questions-table tr:last-child td { border-bottom: none; }
+
+        .cell-text {
+            max-width: 260px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        code {
+            background: var(--bg, #f0f4f8);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-family: 'DM Mono', monospace;
+            font-size: .8em;
+        }
+
+        .no-questions,
+        .no-sections,
+        .empty {
+            color: var(--text-muted, #7f8fa6);
+            font-size: .85rem;
+            padding: 12px 14px;
+            font-style: italic;
+        }
+
+        .empty { text-align: center; padding: 48px 0; }
+
+        /* ── Toggle ── */
+        .template-header .left {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chevron {
+            display: inline-block;
+            transition: transform 0.2s ease;
+            font-size: 0.8rem;
+            opacity: 0.75;
+            flex-shrink: 0;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: .82rem;
+            font-weight: 500;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-sm { padding: 4px 10px; font-size: .78rem; }
+
+        .btn-primary   { background: var(--purple, #470a68); color: white; }
+        .btn-primary:hover { opacity: .88; }
+
+        .btn-white     { background: rgba(255,255,255,.15); color: white; border: 1px solid rgba(255,255,255,.3); }
+        .btn-white:hover { background: rgba(255,255,255,.28); }
+
+        .btn-secondary { background: transparent; border: 1px solid var(--border, #dce4ec); color: var(--text, #2c3e50); }
+        .btn-secondary:hover { background: var(--bg, #f0f4f8); }
+
+        .btn-danger    { background: transparent; border: 1px solid #df231d; color: #df231d; }
+        .btn-danger:hover { background: #fef2f2; }
+
+        .btn-add       { background: transparent; border: 1px solid rgba(255,255,255,.4); color: rgba(255,255,255,.9); }
+        .btn-add:hover { background: rgba(255,255,255,.15); }
+
+        .btn-add-sec   { background: transparent; border: 1px solid #bac; color: var(--purple, #470a68); }
+        .btn-add-sec:hover { background: #f5f0fa; }
+
+        .row-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+
+        /* ── Modals ── */
+        dialog {
+            border: none;
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 8px 40px rgba(0,0,0,.18);
+            max-width: 560px;
+            width: 90vw;
+        }
+
+        dialog::backdrop { background: rgba(0,0,0,.4); }
+
+        .modal-header {
+            padding: 18px 24px 14px;
+            border-bottom: 1px solid var(--border, #dce4ec);
+        }
+
+        .modal-header h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .modal-body { padding: 20px 24px; }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 14px 24px;
+            border-top: 1px solid var(--border, #dce4ec);
+            background: var(--bg, #f0f4f8);
+            border-radius: 0 0 12px 12px;
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text-muted, #7f8fa6);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 11px;
+            border: 1px solid var(--border, #dce4ec);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: .88rem;
+            background: white;
+            color: var(--text, #2c3e50);
+            box-sizing: border-box;
+        }
+
+        .form-group textarea {
+            font-family: 'DM Mono', monospace;
+            font-size: .8rem;
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .88rem;
+        }
+
+        .checkbox-group input[type=checkbox] { width: auto; }
+
+        .modal-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: .83rem;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        .modal-error.visible { display: block; }
+
+        /* Delete modal */
+        .delete-warning {
+            font-size: .9rem;
+            color: var(--text, #2c3e50);
+        }
+
+        .delete-warning strong { color: #df231d; }
+
+        /* Modal surveys — centré et large */
+        #modal-surveys {
+            position: fixed;
+            inset: 0;
+            margin: auto;
+            height: fit-content;
+            max-width: 780px;
+            width: 92vw;
+        }
+
+        /* Toast */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #065f46;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: .88rem;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity .25s, transform .25s;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        #toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body class="page-admin">
+
+    {% set header_title_fr = "Administration" %}
+    {% set header_back_url = "/dashboard/admin" %}
+    {% include 'template_parts/part_site_header.html' %}
+
+    <div class="backend-main">
+        <div class="backend-header">
+            <h1>Templates de sondage</h1>
+            <button onclick="openTemplateModal()" class="btn btn-primary">+ Nouveau template</button>
+        </div>
+
+        <div id="page-notice">
+            {% if success %}<div class="notice success">{{ success }}</div>{% endif %}
+            {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+        </div>
+
+        {% if templates_data %}
+            {% for t in templates_data %}
+            <div class="template-card">
+                <div class="template-header">
+                    <div class="left" onclick="toggleTemplateBody({{ loop.index }})">
+                        <span class="chevron" id="chevron-{{ loop.index }}" style="transform: rotate(-90deg);">▾</span>
+                        <span class="template-name">{{ t.template.name or "Sans nom" }}</span>
+                        <span class="template-id">#{{ t.template.template_id }}</span>
+                        {% if t.in_use %}<span class="badge-use">Utilisé par des sondages</span>{% endif %}
+                    </div>
+                    <div class="row-actions">
+                        <button class="btn btn-white btn-sm"
+                            data-action="edit-template"
+                            data-id="{{ t.template.template_id }}"
+                            data-name="{{ t.template.name or '' }}">Modifier</button>
+                        <button class="btn btn-white btn-sm"
+                            data-action="show-surveys"
+                            data-idx="{{ loop.index }}">
+                            Sondages ({{ t.surveys | length }})
+                        </button>
+                        {% if not t.in_use %}
+                        <button class="btn btn-danger btn-sm"
+                            style="border-color:rgba(255,255,255,.5);color:white;"
+                            data-action="delete"
+                            data-type="template"
+                            data-id="{{ t.template.template_id }}"
+                            data-label="{{ t.template.name or 'ce template' }}">Supprimer</button>
+                        {% endif %}
+                        <button class="btn btn-add btn-sm"
+                            data-action="add-section"
+                            data-template-id="{{ t.template.template_id }}">+ Section</button>
+                    </div>
+                </div>
+
+                <!-- Données surveys pour le modal (non affiché) -->
+                <div id="surveys-data-{{ loop.index }}" style="display:none;">
+                    {% if t.surveys %}
+                    <table class="questions-table">
+                        <thead>
+                            <tr>
+                                <th style="width:50px">ID</th>
+                                <th>Programme</th>
+                                <th style="width:100px">Année</th>
+                                <th style="width:100px">Semestre</th>
+                                <th style="width:110px">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sv in t.surveys %}
+                            <tr>
+                                <td>{{ sv.survey_id }}</td>
+                                <td>{{ sv.program or "—" }}</td>
+                                <td>{{ sv.school_year or "—" }}</td>
+                                <td>{{ sv.semester or "—" }}</td>
+                                <td>
+                                    {% if sv.status == 1 %}<span style="color:#065f46;font-weight:600;">Ouvert</span>
+                                    {% elif sv.status == 2 %}<span style="color:#92400e;font-weight:600;">Synthèse en cours</span>
+                                    {% else %}<span style="color:#7f8fa6;">Fermé</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="no-questions">Aucun sondage n'utilise ce template.</p>
+                    {% endif %}
+                </div>
+
+                <div class="sections-list" id="template-body-{{ loop.index }}" style="display:none;">
+                    {% for s in t.sections %}
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div class="left">
+                                <span class="section-name">{{ s.section.name or "Sans nom" }}</span>
+                                <span class="section-meta">type&nbsp;:&nbsp;<code>{{ s.section.section_type or "—" }}</code>&nbsp;·&nbsp;ordre&nbsp;{{ s.section.order }}</span>
+                            </div>
+                            <div class="row-actions">
+                                <button class="btn btn-secondary btn-sm"
+                                    data-action="edit-section"
+                                    data-q='{{ {"id": s.section.section_id, "template_id": t.template.template_id, "name": s.section.name, "section_type": s.section.section_type, "order": s.section.order} | tojson }}'>Modifier</button>
+                                <button class="btn btn-danger btn-sm"
+                                    data-action="delete"
+                                    data-type="section"
+                                    data-id="{{ s.section.section_id }}"
+                                    data-label="{{ s.section.name or 'cette section' }}">Supprimer</button>
+                                <button class="btn btn-add-sec btn-sm"
+                                    data-action="add-question"
+                                    data-section-id="{{ s.section.section_id }}">+ Question</button>
+                            </div>
+                        </div>
+
+                        {% if s.questions %}
+                        <table class="questions-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px">ID</th>
+                                    <th style="width:150px">Type</th>
+                                    <th style="width:70px">Langue</th>
+                                    <th>Texte FR</th>
+                                    <th>Texte EN</th>
+                                    <th style="width:70px">Option.</th>
+                                    <th style="width:140px">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for q in s.questions %}
+                                <tr>
+                                    <td>{{ q.question_id }}</td>
+                                    <td><code>{{ q.question_type or "—" }}</code></td>
+                                    <td>{{ q.language or "—" }}</td>
+                                    <td class="cell-text">{{ q.text_fr or "—" }}</td>
+                                    <td class="cell-text">{{ q.text_en or "—" }}</td>
+                                    <td>{{ "Oui" if q.is_optional else "Non" }}</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <button class="btn btn-secondary btn-sm"
+                                                data-action="edit-question"
+                                                data-q='{{ {"id": q.question_id, "section_id": s.section.section_id, "question_type": q.question_type, "language": q.language, "text_fr": q.text_fr, "text_en": q.text_en, "is_optional": q.is_optional} | tojson }}'>Modifier</button>
+                                            <button class="btn btn-danger btn-sm"
+                                                data-action="delete"
+                                                data-type="question"
+                                                data-id="{{ q.question_id }}"
+                                                data-label="la question #{{ q.question_id }}">Supprimer</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p class="no-questions">Aucune question dans cette section.</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    {% if not t.sections %}
+                    <p class="no-sections">Aucune section dans ce template.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <p class="empty">Aucun template enregistré.</p>
+        {% endif %}
+    </div>
+
+    <!-- ── Modal : Sondages du template ── -->
+    <dialog id="modal-surveys">
+        <div class="modal-header">
+            <h2 id="modal-surveys-title">Sondages</h2>
+        </div>
+        <div class="modal-body" id="modal-surveys-body" style="padding:0;"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="document.getElementById('modal-surveys').close()">Fermer</button>
+        </div>
+    </dialog>
+
+    <!-- ── Modal : Template ── -->
+    <dialog id="modal-template">
+        <div class="modal-header">
+            <h2 id="modal-template-title">Nouveau template</h2>
+        </div>
+        <div class="modal-body">
+            <div class="modal-error" id="modal-template-error"></div>
+            <div class="form-group">
+                <label for="tpl-name">Nom du template</label>
+                <input type="text" id="tpl-name" placeholder="Ex. : Sondage 2025">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="document.getElementById('modal-template').close()">Annuler</button>
+            <button class="btn btn-primary" id="btn-save-template" onclick="saveTemplate()">Enregistrer</button>
+        </div>
+    </dialog>
+
+    <!-- ── Modal : Section ── -->
+    <dialog id="modal-section">
+        <div class="modal-header">
+            <h2 id="modal-section-title">Nouvelle section</h2>
+        </div>
+        <div class="modal-body">
+            <div class="modal-error" id="modal-section-error"></div>
+            <input type="hidden" id="sec-template-id">
+            <div class="form-group">
+                <label for="sec-name">Nom de la section</label>
+                <input type="text" id="sec-name" placeholder="Ex. : Campus">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sec-type">Type de section</label>
+                    <select id="sec-type">
+                        <option value="">— Aucun —</option>
+                        <option value="C">C – Campus</option>
+                        <option value="P">P – Formation</option>
+                        <option value="ME">ME – Module / Enseignant</option>
+                        <option value="R">R – Recommandation</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sec-order">Ordre</label>
+                    <input type="number" id="sec-order" value="1" min="0">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="document.getElementById('modal-section').close()">Annuler</button>
+            <button class="btn btn-primary" onclick="saveSection()">Enregistrer</button>
+        </div>
+    </dialog>
+
+    <!-- ── Modal : Question ── -->
+    <dialog id="modal-question">
+        <div class="modal-header">
+            <h2 id="modal-question-title">Nouvelle question</h2>
+        </div>
+        <div class="modal-body">
+            <div class="modal-error" id="modal-question-error"></div>
+            <input type="hidden" id="q-section-id">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="q-type">Type de question</label>
+                    <select id="q-type">
+                        <option value="">— Aucun —</option>
+                        <option value="QCU_Satisfaction">QCU_Satisfaction</option>
+                        <option value="QCU_Attendance">QCU_Attendance</option>
+                        <option value="QCM_Insatisfaction">QCM_Insatisfaction</option>
+                        <option value="NPS">NPS</option>
+                        <option value="Question_ouverte">Question_ouverte</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="q-language">Langue</label>
+                    <select id="q-language">
+                        <option value="">— Aucune —</option>
+                        <option value="fr">fr</option>
+                        <option value="en">en</option>
+                        <option value="fr/en">fr/en</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="q-text-fr">Texte FR</label>
+                <textarea id="q-text-fr" placeholder="Texte de la question en français…"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="q-text-en">Texte EN</label>
+                <textarea id="q-text-en" placeholder="Question text in English…"></textarea>
+            </div>
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="q-optional">
+                    <label for="q-optional" style="text-transform:none;letter-spacing:0;font-size:.88rem;">Question optionnelle</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="document.getElementById('modal-question').close()">Annuler</button>
+            <button class="btn btn-primary" onclick="saveQuestion()">Enregistrer</button>
+        </div>
+    </dialog>
+
+    <!-- ── Modal : Confirmation suppression ── -->
+    <dialog id="modal-delete">
+        <div class="modal-header">
+            <h2>Confirmer la suppression</h2>
+        </div>
+        <div class="modal-body">
+            <div class="modal-error" id="modal-delete-error"></div>
+            <p class="delete-warning" id="delete-warning-text"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="document.getElementById('modal-delete').close()">Annuler</button>
+            <button class="btn btn-danger" id="btn-confirm-delete">Supprimer définitivement</button>
+        </div>
+    </dialog>
+
+    <div id="toast"></div>
+
+    <script>
+        // ── Toggle template body ──
+        function toggleTemplateBody(idx) {
+            const body    = document.getElementById('template-body-' + idx);
+            const chevron = document.getElementById('chevron-' + idx);
+            if (!body) return;
+            const isOpen = body.style.display !== 'none' && body.style.display !== '';
+            body.style.display = isOpen ? 'none' : 'block';
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+
+        // ── State ──
+        let _editTemplateId = null;
+        let _editSectionId  = null;
+        let _editQuestionId = null;
+        let _deleteType     = null;
+        let _deleteId       = null;
+
+        // ── Helpers ──
+        function showError(modalId, msg) {
+            const el = document.getElementById(modalId + '-error');
+            el.textContent = msg;
+            el.classList.add('visible');
+        }
+
+        function clearError(modalId) {
+            const el = document.getElementById(modalId + '-error');
+            el.textContent = '';
+            el.classList.remove('visible');
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.background = isError ? '#991b1b' : '#065f46';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        async function apiFetch(url, method, data) {
+            const body = new URLSearchParams(data);
+            const r = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: method !== 'DELETE' ? body : undefined,
+            });
+            return r.json();
+        }
+
+        // ── Template modal ──
+        function openTemplateModal(id = null, name = '') {
+            _editTemplateId = id;
+            document.getElementById('modal-template-title').textContent = id ? 'Modifier le template' : 'Nouveau template';
+            document.getElementById('tpl-name').value = name;
+            clearError('modal-template');
+            document.getElementById('modal-template').showModal();
+        }
+
+        async function saveTemplate() {
+            const name = document.getElementById('tpl-name').value.trim();
+            if (!name) { showError('modal-template', 'Le nom est requis.'); return; }
+
+            const url    = _editTemplateId ? `/api/templates/${_editTemplateId}` : '/api/templates';
+            const method = _editTemplateId ? 'PUT' : 'POST';
+            const res = await apiFetch(url, method, { name });
+
+            if (res.ok) {
+                document.getElementById('modal-template').close();
+                showToast(_editTemplateId ? 'Template modifié.' : 'Template créé.');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                showError('modal-template', res.error || 'Erreur.');
+            }
+        }
+
+        // ── Section modal ──
+        function openSectionModal(id = null, templateId, name = '', sectionType = '', order = 1) {
+            _editSectionId = id;
+            document.getElementById('modal-section-title').textContent = id ? 'Modifier la section' : 'Nouvelle section';
+            document.getElementById('sec-template-id').value = templateId;
+            document.getElementById('sec-name').value  = name;
+            document.getElementById('sec-type').value  = sectionType;
+            document.getElementById('sec-order').value = order;
+            clearError('modal-section');
+            document.getElementById('modal-section').showModal();
+        }
+
+        async function saveSection() {
+            const name        = document.getElementById('sec-name').value.trim();
+            const template_id = document.getElementById('sec-template-id').value;
+            const section_type = document.getElementById('sec-type').value;
+            const order       = document.getElementById('sec-order').value;
+
+            if (!name) { showError('modal-section', 'Le nom est requis.'); return; }
+
+            const url    = _editSectionId ? `/api/sections/${_editSectionId}` : '/api/sections';
+            const method = _editSectionId ? 'PUT' : 'POST';
+            const data   = { name, section_type, order };
+            if (!_editSectionId) data.template_id = template_id;
+
+            const res = await apiFetch(url, method, data);
+
+            if (res.ok) {
+                document.getElementById('modal-section').close();
+                showToast(_editSectionId ? 'Section modifiée.' : 'Section créée.');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                showError('modal-section', res.error || 'Erreur.');
+            }
+        }
+
+        // ── Question modal ──
+        function openQuestionModal(id = null, sectionId, qType = '', language = '', textFr = '', textEn = '', isOptional = false) {
+            _editQuestionId = id;
+            document.getElementById('modal-question-title').textContent = id ? 'Modifier la question' : 'Nouvelle question';
+            document.getElementById('q-section-id').value = sectionId;
+            document.getElementById('q-type').value       = qType || '';
+            document.getElementById('q-language').value   = language || '';
+            document.getElementById('q-text-fr').value    = textFr || '';
+            document.getElementById('q-text-en').value    = textEn || '';
+            document.getElementById('q-optional').checked = !!isOptional;
+            clearError('modal-question');
+            document.getElementById('modal-question').showModal();
+        }
+
+        async function saveQuestion() {
+            const section_id    = document.getElementById('q-section-id').value;
+            const question_type = document.getElementById('q-type').value;
+            const language      = document.getElementById('q-language').value;
+            const text_fr       = document.getElementById('q-text-fr').value.trim();
+            const text_en       = document.getElementById('q-text-en').value.trim();
+            const is_optional   = document.getElementById('q-optional').checked ? 1 : 0;
+
+            if (!text_fr && !text_en) { showError('modal-question', 'Au moins un texte (FR ou EN) est requis.'); return; }
+
+            const url    = _editQuestionId ? `/api/questions/${_editQuestionId}` : '/api/questions';
+            const method = _editQuestionId ? 'PUT' : 'POST';
+            const data   = { question_type, language, text_fr, text_en, is_optional };
+            if (!_editQuestionId) data.section_id = section_id;
+
+            const res = await apiFetch(url, method, data);
+
+            if (res.ok) {
+                document.getElementById('modal-question').close();
+                showToast(_editQuestionId ? 'Question modifiée.' : 'Question créée.');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                showError('modal-question', res.error || 'Erreur.');
+            }
+        }
+
+        // ── Delete modal ──
+        function openDeleteModal(type, id, label) {
+            _deleteType = type;
+            _deleteId   = id;
+            const labels = { template: 'le template', section: 'la section', question: 'la question' };
+            document.getElementById('delete-warning-text').innerHTML =
+                `Supprimer <strong>${label}</strong> ? Cette action est irréversible.`;
+            clearError('modal-delete');
+            document.getElementById('modal-delete').showModal();
+        }
+
+        document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
+            const url = `/api/${_deleteType}s/${_deleteId}`;
+            const res = await apiFetch(url, 'DELETE', {});
+            if (res.ok) {
+                document.getElementById('modal-delete').close();
+                showToast('Supprimé avec succès.');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                showError('modal-delete', res.error || 'Erreur lors de la suppression.');
+            }
+        });
+
+        // ── Wire up data-action buttons ──
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+
+            const action = btn.dataset.action;
+
+            if (action === 'show-surveys') {
+                const data = document.getElementById('surveys-data-' + btn.dataset.idx);
+                document.getElementById('modal-surveys-body').innerHTML = data ? data.innerHTML : '';
+                const tplName = btn.closest('.template-card').querySelector('.template-name').textContent.trim();
+                document.getElementById('modal-surveys-title').textContent = 'Sondages — ' + tplName;
+                document.getElementById('modal-surveys').showModal();
+
+            } else if (action === 'edit-template') {
+                openTemplateModal(+btn.dataset.id, btn.dataset.name);
+
+            } else if (action === 'add-section') {
+                openSectionModal(null, +btn.dataset.templateId);
+
+            } else if (action === 'edit-section') {
+                const d = JSON.parse(btn.dataset.q);
+                openSectionModal(d.id, d.template_id, d.name || '', d.section_type || '', d.order || 1);
+
+            } else if (action === 'add-question') {
+                openQuestionModal(null, +btn.dataset.sectionId);
+
+            } else if (action === 'edit-question') {
+                const d = JSON.parse(btn.dataset.q);
+                openQuestionModal(d.id, d.section_id, d.question_type || '', d.language || '', d.text_fr || '', d.text_en || '', d.is_optional);
+
+            } else if (action === 'delete') {
+                openDeleteModal(btn.dataset.type, +btn.dataset.id, btn.dataset.label);
+            }
+        });
+    </script>
+
+</body>
+</html>
