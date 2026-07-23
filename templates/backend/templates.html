@@ -327,7 +327,6 @@
         .delete-warning strong { color: #df231d; }
 
         /* ── Template actif / inactif ── */
-        .template-inactive { opacity: 0.5; }
         .template-inactive .template-header { background: #6b7280; }
 
         .btn-tpl-active {
@@ -343,6 +342,15 @@
             border: 1px solid rgba(255,255,255,.18);
         }
         .btn-tpl-inactive:hover { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); }
+
+        .tpl-locked-hint {
+            font-size: .75rem;
+            opacity: .6;
+            color: white;
+            letter-spacing: .02em;
+            cursor: default;
+            user-select: none;
+        }
 
         /* Modal surveys — centré et large */
         #modal-surveys {
@@ -413,16 +421,22 @@
                             title="{% if t.template.active %}Désactiver ce template{% else %}Activer ce template{% endif %}">
                             {% if t.template.active %}● Actif{% else %}○ Inactif{% endif %}
                         </button>
+                        {% if not t.template.active %}
                         <button class="btn btn-white btn-sm"
                             data-action="edit-template"
                             data-id="{{ t.template.template_id }}"
                             data-name="{{ t.template.name or '' }}">Modifier</button>
+                        {% endif %}
+                        <button class="btn btn-white btn-sm"
+                            data-action="duplicate-template"
+                            data-id="{{ t.template.template_id }}"
+                            title="Dupliquer ce template (sections, questions et options copiées)">Dupliquer</button>
                         <button class="btn btn-white btn-sm"
                             data-action="show-surveys"
                             data-idx="{{ loop.index }}">
                             Sondages ({{ t.surveys | length }})
                         </button>
-                        {% if not t.in_use %}
+                        {% if not t.in_use and not t.template.active %}
                         <button class="btn btn-danger btn-sm"
                             style="border-color:rgba(255,255,255,.5);color:white;"
                             data-action="delete"
@@ -430,9 +444,13 @@
                             data-id="{{ t.template.template_id }}"
                             data-label="{{ t.template.name or 'ce template' }}">Supprimer</button>
                         {% endif %}
+                        {% if not t.template.active %}
                         <button class="btn btn-add btn-sm"
                             data-action="add-section"
                             data-template-id="{{ t.template.template_id }}">+ Section</button>
+                        {% else %}
+                        <span class="tpl-locked-hint" title="Désactivez le template pour le modifier">🔒 Lecture seule</span>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -479,6 +497,7 @@
                                 <span class="section-meta">type&nbsp;:&nbsp;<code>{{ s.section.section_type or "—" }}</code>&nbsp;·&nbsp;ordre&nbsp;{{ s.section.order }}</span>
                             </div>
                             <div class="row-actions">
+                                {% if not t.template.active %}
                                 <button class="btn btn-secondary btn-sm"
                                     data-action="edit-section"
                                     data-q='{{ {"id": s.section.section_id, "template_id": t.template.template_id, "name": s.section.name, "section_type": s.section.section_type, "order": s.section.order} | tojson }}'>Modifier</button>
@@ -490,6 +509,7 @@
                                 <button class="btn btn-add-sec btn-sm"
                                     data-action="add-question"
                                     data-section-id="{{ s.section.section_id }}">+ Question</button>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -517,6 +537,7 @@
                                     <td>{{ "Oui" if q.is_optional else "Non" }}</td>
                                     <td>
                                         <div class="row-actions">
+                                            {% if not t.template.active %}
                                             <button class="btn btn-secondary btn-sm"
                                                 data-action="edit-question"
                                                 data-q='{{ {"id": q.question_id, "section_id": s.section.section_id, "question_type": q.question_type, "language": q.language, "text_fr": q.text_fr, "text_en": q.text_en, "is_optional": q.is_optional} | tojson }}'>Modifier</button>
@@ -525,6 +546,7 @@
                                                 data-type="question"
                                                 data-id="{{ q.question_id }}"
                                                 data-label="la question #{{ q.question_id }}">Supprimer</button>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -681,6 +703,18 @@
     <div id="toast"></div>
 
     <script>
+        // ── Duplication ──
+        async function duplicateTemplate(id) {
+            const r = await fetch(`/api/templates/${id}/duplicate`, { method: 'POST' });
+            const res = await r.json().catch(() => ({}));
+            if (res.ok) {
+                showToast('Template dupliqué (inactif par défaut).');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                showToast(res.error || 'Erreur.', true);
+            }
+        }
+
         // ── Toggle actif/inactif ──
         async function toggleTemplateActive(id) {
             const r = await fetch(`/api/templates/${id}/toggle-active`, { method: 'POST' });
@@ -873,7 +907,10 @@
 
             const action = btn.dataset.action;
 
-            if (action === 'toggle-active') {
+            if (action === 'duplicate-template') {
+                duplicateTemplate(+btn.dataset.id);
+
+            } else if (action === 'toggle-active') {
                 toggleTemplateActive(+btn.dataset.id);
 
             } else if (action === 'show-surveys') {
