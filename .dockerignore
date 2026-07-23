@@ -1,0 +1,27 @@
+# Secrets — ne jamais inclure dans l'image
+.env
+
+# Bases de données locales
+*.db
+database/
+
+# Cache Python
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Environnement virtuel
+venv/
+.venv/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+*.error
+
+# Fichiers de développement
+import/seed_answers*.csv
