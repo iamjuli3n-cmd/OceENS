@@ -2549,9 +2549,14 @@ def create_app():
 
 
         context = get_visualisation_context2(survey_id)
-        context["user"]=user
+        context["user"] = user
 
-
+        # URL de retour = page qui a envoyé l'utilisateur ici (dashboard admin,
+        # program_manager, etc.). Si le referer est la page elle-même (rechargement)
+        # ou absent, on retombe sur l'accueil.
+        referer = request.headers.get("referer", "")
+        current_path = str(request.url)
+        context["back_url"] = referer if referer and referer != current_path else "/"
 
         return templates.TemplateResponse(
             request=request, name="visualisation.html", context=context
