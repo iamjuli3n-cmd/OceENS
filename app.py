@@ -2687,12 +2687,32 @@ def create_app():
 
         prompts = session.exec(select(Prompt).order_by(Prompt.prompt_id)).all()
 
+        # Pour chaque prompt, liste des sondages distincts qui ont des synthèses utilisant ce prompt
+        prompt_surveys: dict = {}
+        if prompts:
+            rows = session.exec(
+                select(Summary.prompt_id, Survey.program, Survey.school_year, Survey.semester)
+                .join(Survey, Summary.survey_id == Survey.survey_id)
+                .where(Summary.prompt_id.in_([p.prompt_id for p in prompts]))
+                .distinct()
+            ).all()
+            for row in rows:
+                pid = row[0]
+                if pid not in prompt_surveys:
+                    prompt_surveys[pid] = []
+                prompt_surveys[pid].append({
+                    "program": row[1],
+                    "school_year": row[2],
+                    "semester": row[3],
+                })
+
         return templates.TemplateResponse(
             request=request,
             name="backend/prompts.html",
             context={
                 "user": user,
                 "prompts": prompts,
+                "prompt_surveys": prompt_surveys,
                 "success": request.query_params.get("success"),
                 "error": request.query_params.get("error"),
             },
@@ -2738,7 +2758,16 @@ def create_app():
 
         prompt = session.get(Prompt, prompt_id)
         if not prompt:
-            return RedirectResponse(url="/backend/prompts?error=Prompt+introuvable.")
+            return RedirectResponse(url="/backend/prompts?error=Prompt+introuvable.", status_code=303)
+
+        in_use = session.exec(
+            select(Summary).where(Summary.prompt_id == prompt_id).limit(1)
+        ).first()
+        if in_use:
+            return RedirectResponse(
+                url="/backend/prompts?error=Ce+prompt+est+utilisé+par+des+synthèses+existantes+et+ne+peut+pas+être+modifié.",
+                status_code=303,
+            )
 
         return templates.TemplateResponse(
             request=request,
@@ -2788,7 +2817,7 @@ def create_app():
 
         return RedirectResponse(url="/backend/prompts?success=Prompt+créé.", status_code=303)
 
-    @api_router.post("/prompts/{prompt_id}")
+    @api_router.put("/prompts/{prompt_id}")
     def update_prompt(
         request: Request,
         prompt_id: int,
@@ -2817,6 +2846,17 @@ def create_app():
                 url="/backend/prompts?error=Prompt+introuvable.", status_code=303
             )
 
+
+        in_use = session.exec(
+            select(Summary).where(Summary.prompt_id == prompt_id).limit(1)
+        ).first()
+
+        if in_use:
+            return RedirectResponse(
+                url="/backend/prompts?error=Ce+prompt+est+utilisé+par+des+synthèses+existantes+et+ne+peut+pas+être+modifié.",
+                status_code=409,
+            )
+
         prompt.description = description or None
         prompt.model = model or None
         prompt.prompt_text = prompt_text or None
@@ -2833,7 +2873,7 @@ def create_app():
 
         return RedirectResponse(url="/backend/prompts?success=Prompt+modifié.", status_code=303)
 
-    @api_router.post("/prompts/{prompt_id}/delete")
+    @api_router.delete("/prompts/{prompt_id}")
     def delete_prompt(request: Request, prompt_id: int, session: SessionDep):
         user = get_current_user(request)
         if not user:
@@ -2853,6 +2893,15 @@ def create_app():
         if not prompt:
             return RedirectResponse(
                 url="/backend/prompts?error=Prompt+introuvable.", status_code=303
+            )
+
+        in_use = session.exec(
+            select(Summary).where(Summary.prompt_id == prompt_id).limit(1)
+        ).first()
+        if in_use:
+            return RedirectResponse(
+                url="/backend/prompts?error=Ce+prompt+est+utilisé+par+des+synthèses+existantes+et+ne+peut+pas+être+supprimé.",
+                status_code=409,
             )
 
         try:
