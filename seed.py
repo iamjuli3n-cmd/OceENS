@@ -130,47 +130,37 @@ def seed_roles(session: Session):
 
 def seed_templates(session: Session):
     """Remplit la table templates."""
-    template_data = {"template_id": 1, "name": "Sondage_Semestriel_2025", "user_id": 1}
-    template = Template(**template_data)
-    session.merge(template)
+    templates_data = [
+        {"template_id": 1, "name": "Sondage_Semestriel_2025", "user_id": 1, "active": True},
+        {"template_id": 2, "name": "Sondage_Court",            "user_id": 1, "active": True},
+        {"template_id": 3, "name": "Évaluation_Pédagogique",   "user_id": 1, "active": True},
+    ]
+    for data in templates_data:
+        session.merge(Template(**data))
     session.commit()
 
 
 def seed_sections(session: Session):
     """Remplit la table sections."""
     sections_data = [
-        {
-            "template_id": 1,
-            "section_id": 1,
-            "name": "Campus",
-            "order": 1,
-            "section_type": "C",  # Section relative to Campus
-        },
-        {
-            "template_id": 1,
-            "section_id": 2,
-            "name": "Formation",
-            "order": 2,
-            "section_type": "P", # Section relative to Program
-        },
-        {
-            "template_id": 1,
-            "section_id": 3,
-            "name": "Module / Enseignant",
-            "order": 3,
-            "section_type": "ME",  # iterate over module enseignant
-        },
-        {
-            "template_id": 1,
-            "section_id": 4,
-            "name": "Recommandation",
-            "order": 4,
-            "section_type": "R",  # Section relative to Recommendation
-        },
+        # ── Template 1 : Sondage_Semestriel_2025 ─────────────────────────
+        {"template_id": 1, "section_id": 1, "name": "Campus",             "order": 1, "section_type": "C"},
+        {"template_id": 1, "section_id": 2, "name": "Formation",          "order": 2, "section_type": "P"},
+        {"template_id": 1, "section_id": 3, "name": "Module / Enseignant","order": 3, "section_type": "ME"},
+        {"template_id": 1, "section_id": 4, "name": "Recommandation",     "order": 4, "section_type": "R"},
+
+        # ── Template 2 : Sondage_Court (version allégée) ─────────────────
+        {"template_id": 2, "section_id": 5, "name": "Campus",             "order": 1, "section_type": "C"},
+        {"template_id": 2, "section_id": 6, "name": "Formation",          "order": 2, "section_type": "P"},
+        {"template_id": 2, "section_id": 7, "name": "Module / Enseignant","order": 3, "section_type": "ME"},
+        {"template_id": 2, "section_id": 8, "name": "Recommandation",     "order": 4, "section_type": "R"},
+
+        # ── Template 3 : Évaluation_Pédagogique (modules uniquement) ─────
+        {"template_id": 3, "section_id": 9,  "name": "Module / Enseignant","order": 1, "section_type": "ME"},
+        {"template_id": 3, "section_id": 10, "name": "Recommandation",     "order": 2, "section_type": "R"},
     ]
     for data in sections_data:
-        section = Section(**data)
-        session.merge(section)
+        session.merge(Section(**data))
     session.commit()
 
 
@@ -315,6 +305,66 @@ def seed_questions(session: Session):
         ),
     ]
 
+    # ── Template 2 : Sondage_Court ───────────────────────────────────────
+    # section_id 5 (C) : 2 questions
+    questions_data += [
+        (5, "QCU_Satisfaction",  "FR_EN",
+         "Comment évaluez-vous votre satisfaction globale vis-à-vis de la vie sur le campus ?",
+         "How would you rate your overall satisfaction with campus life?", False),
+        (5, "Question_ouverte",  "FR_EN",
+         "Avez-vous des suggestions pour améliorer la vie sur le campus ?",
+         "Do you have any suggestions to improve campus life?", True),
+
+    # section_id 6 (P) : 2 questions
+        (6, "QCU_Satisfaction",  "FR_EN",
+         "Comment évaluez-vous votre satisfaction globale vis-à-vis de votre formation ce semestre ?",
+         "How would you rate your overall satisfaction with your program this semester?", False),
+        (6, "Question_ouverte",  "FR_EN",
+         "Qu'est-ce qui vous a le plus marqué dans votre formation ce semestre ? (positif ou négatif)",
+         "What stood out the most to you about your program this semester? (positive or negative)", True),
+
+    # section_id 7 (ME) : 3 questions
+        (7, "QCU_Attendance",   "FR_EN",
+         "Avez-vous suivi ce module ?",
+         "Did you attend this module?", False),
+        (7, "QCU_Satisfaction", "FR_EN",
+         "Comment évaluez-vous ce module et l'enseignant(e) en quelques mots ?",
+         "How would you rate this module and the teacher overall?", False),
+        (7, "Question_ouverte", "FR_EN",
+         "Un commentaire libre sur ce module ou cet(te) enseignant(e) ?",
+         "Any free comment about this module or teacher?", True),
+
+    # section_id 8 (R) : 1 question
+        (8, "NPS", "FR_EN",
+         "Recommanderiez-vous cette formation à un ami ou un collègue ?",
+         "Would you recommend this program to a friend or colleague?", False),
+    ]
+
+    # ── Template 3 : Évaluation_Pédagogique ──────────────────────────────
+    # section_id 9 (ME) : 5 questions
+    questions_data += [
+        (9, "QCU_Attendance",      "FR_EN",
+         "Avez-vous participé à ce module ?",
+         "Did you participate in this module?", False),
+        (9, "QCU_Satisfaction",    "FR_EN",
+         "Dans l'ensemble, êtes-vous satisfait(e) de la qualité pédagogique de ce module ?",
+         "Overall, are you satisfied with the teaching quality of this module?", False),
+        (9, "QCM_Insatisfaction",  "FR_EN",
+         "Si vous n'êtes pas satisfait(e), quels aspects ont posé problème ?",
+         "If you are not satisfied, which aspects were problematic?", False),
+        (9, "Question_ouverte",    "FR_EN",
+         "Quels points forts avez-vous appréciés dans ce module ?",
+         "What strengths did you appreciate in this module?", True),
+        (9, "Question_ouverte",    "FR_EN",
+         "Quelles améliorations suggèreriez-vous pour ce module ?",
+         "What improvements would you suggest for this module?", True),
+
+    # section_id 10 (R) : 1 question
+        (10, "NPS", "FR_EN",
+         "Dans quelle mesure recommanderiez-vous cette formation à quelqu'un de votre entourage ?",
+         "To what extent would you recommend this program to someone you know?", False),
+    ]
+
     for question_id, q_data in enumerate(questions_data, start=1):
         question = Question(
             question_id=question_id,
@@ -427,6 +477,39 @@ def seed_options(session: Session):
             None,
         ),
     ]
+
+    SATISFACTION = [
+        ("Totalement satisfait",    "Totally satisfied",       1),
+        ("Très satisfait",          "Very satisfied",           1),
+        ("Plutôt satisfait",        "Somewhat satisfied",       1),
+        ("Plutôt pas satisfait",    "Somewhat dissatisfied",    0),
+        ("Pas du tout satisfait",   "Not at all satisfied",     0),
+        ("Totalement insatisfait",  "Totally dissatisfied",     0),
+    ]
+    OUI_NON = [("Oui", "Yes", 1), ("Non", "No", 0)]
+
+    # Template 2 — question IDs 18 (QCU_Sat campus), 20 (QCU_Sat formation),
+    #              22 (Attendance), 23 (QCU_Sat module)
+    for qid in (18, 20, 23):
+        for fr, en, pos in SATISFACTION:
+            options_data.append((qid, fr, en, pos))
+    for fr, en, pos in OUI_NON:
+        options_data.append((22, fr, en, pos))
+
+    # Template 3 — question IDs 26 (Attendance), 27 (QCU_Sat), 28 (QCM_Insatisfaction)
+    for fr, en, pos in OUI_NON:
+        options_data.append((26, fr, en, pos))
+    for fr, en, pos in SATISFACTION:
+        options_data.append((27, fr, en, pos))
+    for fr, en in [
+        ("L'organisation des séances",             "The organization of sessions"),
+        ("Les objectifs et pré-requis du module",  "The module objectives and prerequisites"),
+        ("Les ressources pédagogiques",            "Teaching resources"),
+        ("Les méthodes d'évaluation",              "Assessment methods"),
+        ("La qualité des explications",            "Quality of explanations"),
+        ("La disponibilité de l'enseignant(e)",    "Teacher availability"),
+    ]:
+        options_data.append((28, fr, en, None))
 
     for opt_data in options_data:
         option = Option(

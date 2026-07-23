@@ -23,6 +23,10 @@ class Template(SQLModel, table=True):
     user_id: Optional[int] = Field(
         default=None, sa_column=Column("user_id", Integer, ForeignKey("users.user_id"))
     )
+    active: bool = Field(
+        default=False,
+        sa_column=Column("active", Integer, nullable=False, default=0, server_default="0"),
+    )
 
 
 class Survey(SQLModel, table=True):

@@ -59,7 +59,7 @@
   </nav>
 </header>
 
-<script>
+<!--<script>
   // Le bouton "Retour" ci-dessus (et le bouton retour du navigateur) font
   // history.back() : la page d'arrivée est alors souvent restaurée depuis
   // le cache du navigateur (bfcache) sans être redemandée au serveur, donc
@@ -72,7 +72,7 @@
       window.location.reload();
     }
   });
-</script>
+</script>-->
 
 {% set survey_error = request.query_params.get("error") %}
 {% if survey_error in ("survey_access", "survey_not_found") %}
@@ -85,9 +85,9 @@
     };
     showNotification(messages[{{ survey_error | tojson }}], 'error');
 
-    const url = new URL(window.location.href);
-    url.searchParams.delete('error');
-    window.history.replaceState({}, '', url);
+  const url = new URL(window.location.href);
+  url.searchParams.delete('error');
+  window.history.replaceState({}, '', url);
   });
 </script>
 {% endif %}
