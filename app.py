@@ -480,6 +480,8 @@ class SummaryRequest(BaseModel):
     prompt_id: int
 
 
+
+
 import json
 
 # └────────────────────────────────────────────────────────────────────────┘
@@ -665,6 +667,8 @@ def create_app():
     dashboard_router = APIRouter(tags=["Dashboard"], prefix="/dashboard")
 
     api_router = APIRouter(tags=["API"], prefix="/api")
+
+    backend_router = APIRouter(tags=["Backend"], prefix="/backend")
 
     # ┌─ Route : Paramétrage (accès restreint Admin + RP-RM) ──────────────┐
     @dashboard_router.get("/survey-create", response_class=HTMLResponse)
@@ -2621,8 +2625,209 @@ def create_app():
             status_code=303,
         )
 
+    # ┌─ Pages : Gestion des prompts (admin only) ──────────────────────────┐
+    @backend_router.get("/prompts", response_class=HTMLResponse)
+    def backend_prompts(request: Request, session: SessionDep):
+        user = get_current_user(request)
+        if not user:
+            return RedirectResponse(url="/")
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if "admin" not in roles:
+            return RedirectResponse(url="/")
+
+        prompts = session.exec(select(Prompt).order_by(Prompt.prompt_id)).all()
+
+        return templates.TemplateResponse(
+            request=request,
+            name="backend/prompts.html",
+            context={
+                "user": user,
+                "prompts": prompts,
+                "success": request.query_params.get("success"),
+                "error": request.query_params.get("error"),
+            },
+        )
+
+    @backend_router.get("/prompts/new", response_class=HTMLResponse)
+    def backend_prompt_new(request: Request, session: SessionDep):
+        user = get_current_user(request)
+        if not user:
+            return RedirectResponse(url="/")
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if "admin" not in roles:
+            return RedirectResponse(url="/")
+
+        return templates.TemplateResponse(
+            request=request,
+            name="backend/prompt_form.html",
+            context={"user": user, "prompt": None},
+        )
+
+    @backend_router.get("/prompts/{prompt_id}/edit", response_class=HTMLResponse)
+    def backend_prompt_edit(request: Request, prompt_id: int, session: SessionDep):
+        user = get_current_user(request)
+        if not user:
+            return RedirectResponse(url="/")
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if "admin" not in roles:
+            return RedirectResponse(url="/")
+
+        prompt = session.get(Prompt, prompt_id)
+        if not prompt:
+            return RedirectResponse(url="/backend/prompts?error=Prompt+introuvable.")
+
+        return templates.TemplateResponse(
+            request=request,
+            name="backend/prompt_form.html",
+            context={"user": user, "prompt": prompt},
+        )
+
+    # └────────────────────────────────────────────────────────────────────┘
+
+    # ┌─ API : CRUD Prompts via formulaires HTML (admin only) ──────────────┐
+    @api_router.post("/prompts")
+    def create_prompt(
+        request: Request,
+        session: SessionDep,
+        description: Optional[str] = Form(None),
+        model: Optional[str] = Form(None),
+        prompt_text: Optional[str] = Form(None),
+    ):
+        user = get_current_user(request)
+        if not user:
+            return RedirectResponse(url="/", status_code=303)
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if "admin" not in roles:
+            return RedirectResponse(url="/", status_code=303)
+
+        prompt = Prompt(
+            description=description or None,
+            model=model or None,
+            prompt_text=prompt_text or None,
+        )
+        try:
+            session.add(prompt)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            return RedirectResponse(
+                url=f"/backend/prompts/new?error=Erreur+lors+de+la+création.",
+                status_code=303,
+            )
+
+        return RedirectResponse(url="/backend/prompts?success=Prompt+créé.", status_code=303)
+
+    @api_router.post("/prompts/{prompt_id}")
+    def update_prompt(
+        request: Request,
+        prompt_id: int,
+        session: SessionDep,
+        description: Optional[str] = Form(None),
+        model: Optional[str] = Form(None),
+        prompt_text: Optional[str] = Form(None),
+    ):
+        user = get_current_user(request)
+        if not user:
+            return RedirectResponse(url="/", status_code=303)
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if "admin" not in roles:
+            return RedirectResponse(url="/", status_code=303)
+
+        prompt = session.get(Prompt, prompt_id)
+        if not prompt:
+            return RedirectResponse(
+                url="/backend/prompts?error=Prompt+introuvable.", status_code=303
+            )
+
+        prompt.description = description or None
+        prompt.model = model or None
+        prompt.prompt_text = prompt_text or None
+
+        try:
+            session.add(prompt)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            return RedirectResponse(
+                url=f"/backend/prompts/{prompt_id}/edit?error=Erreur+lors+de+la+mise+à+jour.",
+                status_code=303,
+            )
+
+        return RedirectResponse(url="/backend/prompts?success=Prompt+modifié.", status_code=303)
+
+    @api_router.post("/prompts/{prompt_id}/delete")
+    def delete_prompt(request: Request, prompt_id: int, session: SessionDep):
+        user = get_current_user(request)
+        if not user:
+            return RedirectResponse(url="/", status_code=303)
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if "admin" not in roles:
+            return RedirectResponse(url="/", status_code=303)
+
+        prompt = session.get(Prompt, prompt_id)
+        if not prompt:
+            return RedirectResponse(
+                url="/backend/prompts?error=Prompt+introuvable.", status_code=303
+            )
+
+        try:
+            session.delete(prompt)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            return RedirectResponse(
+                url="/backend/prompts?error=Erreur+lors+de+la+suppression.", status_code=303
+            )
+
+        return RedirectResponse(url="/backend/prompts?success=Prompt+supprimé.", status_code=303)
+
+    # └────────────────────────────────────────────────────────────────────┘
+
     app.include_router(api_router)
     app.include_router(dashboard_router)
+    app.include_router(backend_router)
 
     return app
 
