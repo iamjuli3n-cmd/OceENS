@@ -299,14 +299,17 @@ def filter_surveys(
     surveys: List[dict],
     school_year: Optional[str],
     semester: Optional[str],
+    program: Optional[str] = None,
 ) -> List[dict]:
-    """Filtre une liste de sondages déjà scopée par rôle, sur année scolaire
-    et/ou semestre (valeur vide = pas de filtre sur ce champ)."""
+    """Filtre une liste de sondages déjà scopée par rôle, sur année scolaire,
+    semestre et/ou formation (valeur vide = pas de filtre sur ce champ)."""
     filtered = surveys
     if school_year:
         filtered = [s for s in filtered if s["school_year"] == school_year]
     if semester:
         filtered = [s for s in filtered if s["semester"] == semester]
+    if program:
+        filtered = [s for s in filtered if s["program"] == program]
     return filtered
 
 
@@ -1744,6 +1747,7 @@ def create_app():
         session: SessionDep,
         school_year: Optional[str] = None,
         semester: Optional[str] = None,
+        program: Optional[str] = None,
     ):
         user = get_current_user(request)
 
@@ -1834,7 +1838,14 @@ def create_app():
         available_school_years = sorted(
             {s["school_year"] for s in surveys if s["school_year"]}, reverse=True
         )
-        surveys = filter_surveys(surveys, school_year, semester)
+        seen_codes: set = set()
+        available_programs = []
+        for s in surveys:
+            if s["program"] and s["program"] not in seen_codes:
+                seen_codes.add(s["program"])
+                available_programs.append({"code": s["program"], "name": s["program_name"]})
+        available_programs.sort(key=lambda p: p["name"])
+        surveys = filter_surveys(surveys, school_year, semester, program)
 
         stats_by_survey = get_stats_by_survey(
             session, surveys
@@ -1874,8 +1885,10 @@ def create_app():
             "stats_by_survey": stats_by_survey,
             "avg_stats": avg_stats,
             "available_school_years": available_school_years,
+            "available_programs": available_programs,
             "selected_school_year": school_year or "",
             "selected_semester": semester or "",
+            "selected_program": program or "",
             "programs": programs,
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
@@ -1902,6 +1915,7 @@ def create_app():
         session: SessionDep,
         school_year: Optional[str] = None,
         semester: Optional[str] = None,
+        program: Optional[str] = None,
     ):
         user = get_current_user(request)
         if not user:
@@ -1977,7 +1991,14 @@ def create_app():
         available_school_years = sorted(
             {s["school_year"] for s in surveys if s["school_year"]}, reverse=True
         )
-        surveys = filter_surveys(surveys, school_year, semester)
+        seen_codes: set = set()
+        available_programs = []
+        for s in surveys:
+            if s["program"] and s["program"] not in seen_codes:
+                seen_codes.add(s["program"])
+                available_programs.append({"code": s["program"], "name": s["program_name"]})
+        available_programs.sort(key=lambda p: p["name"])
+        surveys = filter_surveys(surveys, school_year, semester, program)
 
         stats_by_survey = get_stats_by_survey(
             session, surveys
@@ -1990,8 +2011,10 @@ def create_app():
             "stats_by_survey": stats_by_survey,
             "avg_stats": avg_stats,
             "available_school_years": available_school_years,
+            "available_programs": available_programs,
             "selected_school_year": school_year or "",
             "selected_semester": semester or "",
+            "selected_program": program or "",
             "allowed_campuses": allowed_campuses,
             "can_view_survey_students": False,
             "can_delete_survey": False,
@@ -2017,6 +2040,7 @@ def create_app():
         session: SessionDep,
         school_year: Optional[str] = None,
         semester: Optional[str] = None,
+        program: Optional[str] = None,
     ):
         user = get_current_user(request)
 
@@ -2107,7 +2131,14 @@ def create_app():
         available_school_years = sorted(
             {s["school_year"] for s in surveys if s["school_year"]}, reverse=True
         )
-        surveys = filter_surveys(surveys, school_year, semester)
+        seen_codes: set = set()
+        available_programs = []
+        for s in surveys:
+            if s["program"] and s["program"] not in seen_codes:
+                seen_codes.add(s["program"])
+                available_programs.append({"code": s["program"], "name": s["program_name"]})
+        available_programs.sort(key=lambda p: p["name"])
+        surveys = filter_surveys(surveys, school_year, semester, program)
 
         stats_by_survey = get_stats_by_survey(
             session, surveys
@@ -2146,8 +2177,10 @@ def create_app():
             "stats_by_survey": stats_by_survey,
             "avg_stats": avg_stats,
             "available_school_years": available_school_years,
+            "available_programs": available_programs,
             "selected_school_year": school_year or "",
             "selected_semester": semester or "",
+            "selected_program": program or "",
             "programs": programs,
             "allowed_programs":allowed_programs,
             "can_view_survey_students": True,
@@ -2187,6 +2220,7 @@ def create_app():
         session: SessionDep,
         school_year: Optional[str] = None,
         semester: Optional[str] = None,
+        program: Optional[str] = None,
     ):
         user = get_current_user(request)
 
@@ -2263,7 +2297,14 @@ def create_app():
         available_school_years = sorted(
             {s["school_year"] for s in surveys if s["school_year"]}, reverse=True
         )
-        surveys = filter_surveys(surveys, school_year, semester)
+        seen_codes: set = set()
+        available_programs = []
+        for s in surveys:
+            if s["program"] and s["program"] not in seen_codes:
+                seen_codes.add(s["program"])
+                available_programs.append({"code": s["program"], "name": s["program_name"]})
+        available_programs.sort(key=lambda p: p["name"])
+        surveys = filter_surveys(surveys, school_year, semester, program)
 
         stats_by_survey = get_stats_by_survey(
             session, surveys
@@ -2311,8 +2352,10 @@ def create_app():
             "stats_by_survey": stats_by_survey,
             "avg_stats": avg_stats,
             "available_school_years": available_school_years,
+            "available_programs": available_programs,
             "selected_school_year": school_year or "",
             "selected_semester": semester or "",
+            "selected_program": program or "",
             "programs": programs,
             "campuses": campuses,
             "users": users,

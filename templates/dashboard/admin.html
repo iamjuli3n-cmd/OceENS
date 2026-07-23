@@ -27,14 +27,19 @@
       <div class="banner-badge">Administrateur</div>
       <div class="banner-greeting">Bonjour, {{ user.name }} !</div>
     </div>
-    <a href="/dashboard/survey-create" class="btn-banner">+ Créer un questionnaire</a>
+    <div style="display:flex; gap:12px;">
+      <a href="/dashboard/survey-create" class="btn-banner">+ Créer un questionnaire</a>
+      <a href="/backend/prompts" class="btn-banner">Accéder aux prompts 🤖</a>
+    </div>
   </div>
 
   <main>
     <div class="tab-container">
       <div class="tabs">
-        <button type="button" class='tab {% if request.query_params["tab"]!="users" %} active {% endif %}' data-tab="surveys">Sondages</button>
-        <button type="button" class='tab {% if request.query_params["tab"]=="users" %} active {% endif %}' data-tab="users">Utilisateurs</button>
+        <button type="button" class='tab {% if request.query_params["tab"]!="users" %} active {% endif %}'
+          data-tab="surveys">Sondages</button>
+        <button type="button" class='tab {% if request.query_params["tab"]=="users" %} active {% endif %}'
+          data-tab="users">Utilisateurs</button>
       </div>
 
       <div class='tab-content {% if request.query_params["tab"]=="users" %} active {% endif %}' id="users">
