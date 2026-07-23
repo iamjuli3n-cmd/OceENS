@@ -212,40 +212,6 @@ main {
     font-weight: 600;
 }
 
-.ue-badge-optional {
-    display: inline-block;
-    font-size: 0.7rem;
-    padding: 2px 10px;
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 10px;
-    font-weight: 600;
-    margin-left: 8px;
-}
-
-/* ── UE Filter Question ─────────────────── */
-.ue-filter-block {
-    padding: 22px 28px;
-    background: #faf5ff;
-    border-bottom: 2px solid #e8d5f5;
-}
-
-.ue-filter-block .question-label {
-    color: #470a68;
-    font-weight: 600;
-}
-
-.ue-filter-block .options-grid {
-    flex-direction: row;
-    gap: 12px;
-}
-
-.ue-filter-block .option-radio {
-    flex: 1;
-    justify-content: center;
-    text-align: center;
-    min-width: 100px;
-}
-
 .ue-conditional-content {
     animation: fadeInUp 0.3s ease;
 }
@@ -658,10 +624,6 @@ main {
     .nps-label {
         height: 44px;
         font-size: 0.95rem;
-    }
-
-    .ue-filter-block .options-grid {
-        flex-direction: column;
     }
 }
 

@@ -59,6 +59,21 @@
   </nav>
 </header>
 
+<script>
+  // Le bouton "Retour" ci-dessus (et le bouton retour du navigateur) font
+  // history.back() : la page d'arrivée est alors souvent restaurée depuis
+  // le cache du navigateur (bfcache) sans être redemandée au serveur, donc
+  // avec des données potentiellement obsolètes (ex : stats calculées entre
+  // temps sur la page visualisation). On force un vrai rechargement dans ce
+  // cas précis. Placé ici (header partagé par toutes les pages) pour ne pas
+  // dupliquer ce comportement page par page.
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  });
+</script>
+
 {% set survey_error = request.query_params.get("error") %}
 {% if survey_error in ("survey_access", "survey_not_found") %}
 {% include 'template_parts/part_show_notification.html' %}

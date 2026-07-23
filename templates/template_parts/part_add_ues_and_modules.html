@@ -36,9 +36,9 @@
         const syllabusTeachers = ues.flatMap(ue =>
             (ue.modules || []).flatMap(module => module.teachers || [])
         );
-        teachersList = [...new Set([...teachersList, ...syllabusTeachers])]
-            .filter(Boolean)
-            .sort((left, right) => left.localeCompare(right, 'fr'));
+        teachersList = sortTeachers(
+            [...new Set([...teachersList, ...syllabusTeachers])].filter(Boolean)
+        );
 
         renderUEs();
     }
@@ -52,6 +52,35 @@
         return div.innerHTML;
     }
 
+    // Échappement pour usage dans un attribut HTML (ex: value="...")
+    function escAttr(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    // ─── Tri des professeurs (accents, casse, espaces) ──
+    // Équivalent JS de teacher_sort_key() côté Python (app.py), pour que le
+    // tri reste cohérent entre le chargement initial (serveur) et les ajouts
+    // faits en direct dans cette page.
+    function teacherSortKey(name) {
+        const normalized = String(name || '').normalize('NFD').toLowerCase();
+        const withoutAccents = normalized.replace(/[\u0300-\u036f]/g, '');
+        return withoutAccents.replace(/\s+/g, ' ').trim();
+    }
+
+    function sortTeachers(list) {
+        return [...list].sort((a, b) => {
+            const keyA = teacherSortKey(a);
+            const keyB = teacherSortKey(b);
+            if (keyA < keyB) return -1;
+            if (keyA > keyB) return 1;
+            return 0;
+        });
+    }
+
     function addUE() {
         selectedProgramId = document.getElementById("param-filiere").value
         if (!selectedProgramId) return;
@@ -60,7 +89,6 @@
             id: newId,
             name: 'Nouvelle UE '+newId,
             filiere_id: selectedProgramId,
-            is_optional: false,
             _open: true,
             modules: []
         });
@@ -85,6 +113,7 @@
             </div>
             <button class="param-btn-add param-btn-add-ue" onclick="addUE()">+ Ajouter une UE</button>
         `;
+        initProfSelects();
     }
 
     // ─── Render une UE ──────────────────────────────────
@@ -100,9 +129,7 @@
                                onblur="renameUE(${ue.id}, this.value)"
                                onkeydown="if(event.key==='Enter'){this.blur();}">
                     </span>
-                    ${ue.is_optional ? '<span class="param-badge-optionnel">Optionnelle</span>' : ''}
                     <span class="param-ue-actions" onclick="event.stopPropagation()">
-                        <label><input type="checkbox" ${ue.is_optional ? 'checked' : ''} onchange="toggleOptional(${ue.id}, this.checked)"> Opt.</label>
                         <button class="param-btn-remove" onclick="removeUE(${ue.id})" title="Supprimer l'UE">&times;</button>
                     </span>
                 </div>
@@ -117,10 +144,17 @@
     }
 
     // ─── Render un Module ───────────────────────────────
-    function renderModule(mod, ueId) {
-        const assignedTeachers = (mod.teachers || []);
-        const availableTeachers = teachersList.filter(p => !assignedTeachers.includes(p));
+    function renderProfSelectOptions(mod) {
+        const selected = new Set(mod.teachers || []);
+        const allNames = sortTeachers(
+            [...new Set([...teachersList, ...(mod.teachers || [])])]
+        );
+        return allNames.map(name =>
+            `<option value="${escAttr(name)}"${selected.has(name) ? ' selected' : ''}>${esc(name)}</option>`
+        ).join('');
+    }
 
+    function renderModule(mod, ueId) {
         return `
             <div class="param-module" data-module-id="${mod.id}">
                 <div class="param-module-name">
@@ -136,46 +170,71 @@
                     </label>
                 </div>
                 <div class="param-module-profs">
-                    <ul class="param-prof-list">
-                        ${(mod.teachers || []).map(p => `
-                            <li class="param-prof-item">
-                                <span class="param-prof-name">${p}</span>
-                                <button class="param-remove-tag" onclick="removeProf(${mod.id}, '${p}', ${ueId})">&times;</button>
-                            </li>
-                        `).join('')}
-                    </ul>
-                    <span class="param-prof-dropdown">
-                        <button class="param-add-prof-btn" onclick="toggleProfDropdown(${mod.id})">+ Prof</button>
-                        <div class="param-prof-dropdown-content" id="prof-dd-${mod.id}">
-                            <div class="param-prof-option param-prof-option-new" onclick="createNewProf(${mod.id}, ${ueId})">
-                                + Créer un nouveau professeur
-                            </div>
-                            ${availableTeachers.length === 0 ? '<div class="param-prof-option" style="color:#999;">Aucun prof disponible</div>' :
-                availableTeachers.map(p => `
-                                <div class="param-prof-option" onclick="addProf(${mod.id}, '${p}', ${ueId})">
-                                    ${esc(p)}
-                                </div>
-                              `).join('')}
-                        </div>
-                    </span>
+                    <select class="param-profs-select" multiple="multiple"
+                            data-module-id="${mod.id}" data-ue-id="${ueId}"
+                            aria-label="Professeurs du module">
+                        ${renderProfSelectOptions(mod)}
+                    </select>
                 </div>
                 <button class="param-btn-remove" onclick="removeModule(${mod.id}, ${ueId})" title="Supprimer le module">&times;</button>
             </div>
         `;
     }
 
+    // ─── Sélection des profs (Select2) ──────────────────
+    function updateModuleTeachers(modId, ueId, values) {
+        const ue = ues.find(u => u.id === ueId);
+        if (!ue) return;
+        const mod = (ue.modules || []).find(m => m.id === modId);
+        if (!mod) return;
+
+        mod.teachers = values;
+
+        // Un nom saisi qui n'existait pas encore devient un nouveau prof,
+        // disponible ensuite pour tous les modules.
+        let listChanged = false;
+        values.forEach((name) => {
+            if (!teachersList.includes(name)) {
+                teachersList.push(name);
+                listChanged = true;
+            }
+        });
+
+        if (listChanged) {
+            teachersList = sortTeachers(teachersList);
+            renderUEs();
+        }
+    }
+
+    function initProfSelects() {
+        if (typeof $ === 'undefined' || !$.fn || !$.fn.select2) return;
+
+        document.querySelectorAll('.param-profs-select').forEach((el) => {
+            const $el = $(el);
+            if ($el.data('select2')) {
+                $el.select2('destroy');
+            }
+            $el.select2({
+                width: '100%',
+                tags: true,
+                language: 'fr',
+                placeholder: 'Sélectionner ou ajouter un professeur',
+                allowClear: true,
+                theme: 'default',
+            });
+            $el.on('change', function () {
+                const modId = Number(this.dataset.moduleId);
+                const ueId = Number(this.dataset.ueId);
+                const values = Array.from(this.selectedOptions).map((o) => o.value).filter(Boolean);
+                updateModuleTeachers(modId, ueId, values);
+            });
+        });
+    }
+
     function renameUE(ueId, newName) {
         if (!newName || !newName.trim()) return;
         const ue = ues.find(u => u.id === ueId);
         if (ue) ue.name = newName.trim();
-    }
-
-    function toggleOptional(ueId, checked) {
-        const ue = ues.find(u => u.id === ueId);
-        if (ue) {
-            ue.is_optional = checked;
-            renderUEs();
-        }
     }
 
     function removeUE(ueId) {
@@ -225,50 +284,6 @@
         renderUEs();
     }
 
-    // ─── Actions Professeur ─────────────────────────────
-    function toggleProfDropdown(modId) {
-        document.querySelectorAll('.param-prof-dropdown-content.show').forEach(el => {
-            if (el.id !== 'prof-dd-' + modId) el.classList.remove('show');
-        });
-        const dd = document.getElementById('prof-dd-' + modId);
-        if (dd) dd.classList.toggle('show');
-    }
-
-    function addProf(modId, teacher, ueId) {
-        const dd = document.getElementById('prof-dd-' + modId);
-        if (dd) dd.classList.remove('show');
-
-        const ue = ues.find(u => u.id === ueId);
-        if (!ue) return;
-        const mod = (ue.modules || []).find(m => m.id === modId);
-        if (!mod) return;
-        
-        if (!mod.teachers) mod.teachers = [];
-        mod.teachers.push( teacher );
-        ue._open = true;
-        renderUEs();
-    }
-
-    function createNewProf(modId, ueId) {
-        const dd = document.getElementById('prof-dd-' + modId);
-        if (dd) dd.classList.remove('show');
-
-        const name = prompt('Nom du professeur :');
-        if (!name || !name.trim()) return;
-
-        teachersList.push(name);
-        addProf(modId, name, ueId);
-    }
-
-    function removeProf(modId, teacher, ueId) {
-        const ue = ues.find(u => u.id === ueId);
-        if (!ue) return;
-        const mod = (ue.modules || []).find(m => m.id === modId);
-        if (!mod) return;
-        mod.teachers = (mod.teachers || []).filter(p => p !== teacher);
-        ue._open = true;
-        renderUEs();
-    }
 </script>
 
 <div id="param-ue-container">

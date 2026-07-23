@@ -748,12 +748,6 @@ button {
         min-width: 0;
     }
 
-    .page-survey-create .param-prof-dropdown-content {
-        right: 0;
-        left: auto;
-        max-width: min(320px, calc(100vw - 48px));
-    }
-
     .page-survey-create .dropzone {
         padding-inline: 18px;
     }

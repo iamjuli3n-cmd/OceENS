@@ -121,7 +121,92 @@
     white-space: nowrap;
     border: 0;
   }
+
+  .survey-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .survey-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .survey-filter-field label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #666;
+  }
+
+  .survey-filter-field select {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    background: white;
+    color: #333;
+  }
+
+  .survey-avg-stats {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background: #f5f7fa;
+    border: 1px solid #e0e6ec;
+    border-radius: 8px;
+  }
+
+  .survey-avg-stats-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #555;
+  }
 </style>
+
+<form method="get" class="survey-filter-bar" id="survey-filter-form" aria-label="Filtrer les sondages">
+  <div class="survey-filter-field">
+    <label for="filter-school-year">Année scolaire</label>
+    <select id="filter-school-year" name="school_year"
+      onchange="document.getElementById('survey-filter-form').submit()">
+      <option value="">Toutes</option>
+      {% for sy in available_school_years %}
+      <option value="{{ sy }}" {% if sy==selected_school_year %}selected{% endif %}>{{ sy }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="survey-filter-field">
+    <label for="filter-semester">Semestre</label>
+    <select id="filter-semester" name="semester"
+      onchange="document.getElementById('survey-filter-form').submit()">
+      <option value="" {% if not selected_semester %}selected{% endif %}>Tout</option>
+      <option value="Automne" {% if selected_semester=='Automne' %}selected{% endif %}>Automne</option>
+      <option value="Printemps" {% if selected_semester=='Printemps' %}selected{% endif %}>Printemps</option>
+    </select>
+  </div>
+</form>
+
+{% if avg_stats %}
+<div class="survey-avg-stats" role="group" aria-label="Moyenne des scores sur les sondages affichés">
+  <span class="survey-avg-stats-label">Moyenne sur {{ surveys | length }} sondage{{ 's' if surveys | length > 1
+    else '' }} :</span>
+  {% for stat_name in avg_stats %}
+  {% set avg_stat = avg_stats[stat_name] %}
+  <span class="survey-score survey-score-{{ avg_stat.color }}"
+    title="{{ avg_stat.label }} (moyenne) : {% if avg_stat['show_explicit_positive'] and avg_stat.value > 0 %}+{% endif %}{{ avg_stat.value | round(1) }}{{ avg_stat.suffix }}">
+    <span aria-hidden="true">{{ avg_stat.short }}</span>
+    <span class="survey-score-full-label">{{ avg_stat.label }} (moyenne) :</span>
+    <span>{% if avg_stat['show_explicit_positive'] and avg_stat.value > 0 %}+{% endif %}{{ avg_stat.value | round(1) }}{{ avg_stat.suffix }}</span>
+  </span>
+  {% endfor %}
+</div>
+{% endif %}
 
 {% for survey in surveys %}
 
