@@ -58,8 +58,8 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
 | `/backend/prompts/new` | Formulaire de création d'un prompt. |
 | `/backend/prompts/{id}/edit` | Formulaire de modification d'un prompt. |
 | `/api/prompts` | Création d'un prompt (POST, form). |
-| `/api/prompts/{id}` | Modification d'un prompt (POST, form). |
-| `/api/prompts/{id}/delete` | Suppression d'un prompt (POST, form). |
+| `/api/prompts/{id}` | Modification d'un prompt (PUT, fetch). Bloqué si le prompt est référencé dans `summaries`. |
+| `/api/prompts/{id}/delete` | Suppression d'un prompt (POST, form). Bloquée si le prompt est référencé dans `summaries`. |
 
 ---
 

@@ -32,7 +32,7 @@
         {% endif %}
 
         <div class="card">
-            <form method="POST"
+            <form id="prompt-form" method="POST"
                 action="{% if prompt %}/api/prompts/{{ prompt.prompt_id }}{% else %}/api/prompts{% endif %}">
 
                 <div class="form-group">
@@ -61,6 +61,23 @@
             </form>
         </div>
     </div>
+
+{% if prompt %}
+<script>
+    document.getElementById('prompt-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        fetch(this.action, {
+            method: 'PUT',
+            body: new URLSearchParams(new FormData(this)),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        }).then(function (r) {
+            window.location.href = r.url;
+        }).catch(function () {
+            window.location.href = '/backend/prompts?error=Erreur+réseau.';
+        });
+    });
+</script>
+{% endif %}
 
 </body>
 
