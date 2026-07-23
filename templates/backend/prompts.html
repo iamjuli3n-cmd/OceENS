@@ -182,7 +182,7 @@
                     <th style="width:200px">Description</th>
                     <th style="width:140px">Modèle</th>
                     <th>Texte du prompt</th>
-                    <th style="width:200px">Actions / Sondages</th>
+                    <th style="width:200px"></th>
                 </tr>
             </thead>
             <tbody>
@@ -194,7 +194,7 @@
                     <td class="cell-text">{{ p.prompt_text or "—" }}</td>
                     <td>
                         {% if prompt_surveys.get(p.prompt_id) %}
-                        <div>
+                        <div>Utilisé par:
                             {% for s in prompt_surveys[p.prompt_id] %}
                             <span class="survey-tag">{{ s.program }} · {{ s.school_year }} · {{ s.semester }}</span>
                             {% endfor %}
@@ -202,10 +202,7 @@
                         {% else %}
                         <div class="row-actions">
                             <a href="/backend/prompts/{{ p.prompt_id }}/edit" class="btn btn-secondary">Modifier</a>
-                            <form method="DELETE" action="/api/prompts/{{ p.prompt_id }}"
-                                onsubmit="return confirm('Supprimer ce prompt ?')">
-                                <button type="submit" class="btn btn-danger">Supprimer</button>
-                            </form>
+                            <button class="btn btn-danger" onclick="deletePrompt({{ p.prompt_id }})">Supprimer</button>
                         </div>
                         {% endif %}
                     </td>
@@ -218,6 +215,22 @@
         {% endif %}
     </div>
 
+    <script>
+        async function deletePrompt(id) {
+            if (!confirm('Supprimer ce prompt ?')) return;
+            try {
+                const r = await fetch(`/api/prompts/${id}`, { method: 'DELETE' });
+                const res = await r.json();
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    alert(res.error || 'Erreur lors de la suppression.');
+                }
+            } catch {
+                alert('Erreur réseau lors de la suppression.');
+            }
+        }
+    </script>
 </body>
 
 </html>

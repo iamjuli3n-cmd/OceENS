@@ -2877,7 +2877,7 @@ def create_app():
     def delete_prompt(request: Request, prompt_id: int, session: SessionDep):
         user = get_current_user(request)
         if not user:
-            return RedirectResponse(url="/", status_code=303)
+            return JSONResponse({"error": "Non authentifié."}, status_code=401)
 
         roles_query = session.exec(
             select(func.group_concat(Role.role))
@@ -2887,33 +2887,29 @@ def create_app():
         roles = roles_query.split(",") if roles_query else ["student"]
 
         if "admin" not in roles:
-            return RedirectResponse(url="/", status_code=303)
+            return JSONResponse({"error": "Accès refusé."}, status_code=403)
 
         prompt = session.get(Prompt, prompt_id)
         if not prompt:
-            return RedirectResponse(
-                url="/backend/prompts?error=Prompt+introuvable.", status_code=303
-            )
+            return JSONResponse({"error": "Prompt introuvable."}, status_code=404)
 
         in_use = session.exec(
             select(Summary).where(Summary.prompt_id == prompt_id).limit(1)
         ).first()
         if in_use:
-            return RedirectResponse(
-                url="/backend/prompts?error=Ce+prompt+est+utilisé+par+des+synthèses+existantes+et+ne+peut+pas+être+supprimé.",
+            return JSONResponse(
+                {"error": "Ce prompt est utilisé par des synthèses existantes et ne peut pas être supprimé."},
                 status_code=409,
             )
 
         try:
             session.delete(prompt)
             session.commit()
-        except Exception as e:
+        except Exception:
             session.rollback()
-            return RedirectResponse(
-                url="/backend/prompts?error=Erreur+lors+de+la+suppression.", status_code=303
-            )
+            return JSONResponse({"error": "Erreur lors de la suppression."}, status_code=500)
 
-        return RedirectResponse(url="/backend/prompts?success=Prompt+supprimé.", status_code=303)
+        return JSONResponse({"ok": True})
 
     # └────────────────────────────────────────────────────────────────────┘
 
