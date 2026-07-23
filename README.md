@@ -70,6 +70,27 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
 - Python 3.12
 - Un fichier `.env` configuré (voir section [Configuration](#configuration))
 
+### Avec Docker (recommandé)
+
+```bash
+# Build
+docker build -t oceens:1.0 .
+
+# Lancer (production)
+docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database oceens:1.0
+
+# Lancer (développement — avec les données de seed)
+docker run -p 8000:8000 --env-file .env \
+  -v oceens_db:/app/database \
+  -v ./import:/app/import \
+  oceens:1.0
+```
+
+> La base SQLite est persistée dans le volume Docker `oceens_db` (`/app/database`).
+> Le fichier `.env` n'est jamais copié dans l'image : il est passé via `--env-file` au lancement.
+
+### Sans Docker (installation manuelle)
+
 ### Étapes
 
 1. **Cloner le projet**
@@ -197,8 +218,10 @@ OceENS/
 ├── sondage_loader.py             # Chargement d'un sondage complet pour l'export
 ├── survey_loader_from_xlsx.py    # Import de sondages depuis un fichier Excel
 ├── summaries_generator_daemon.py # Traitement asynchrone des synthèses LLM (processus séparé)
-├── launch.sh                     # Script de lancement (production)
+├── launch.sh                     # Script de lancement (production, sans Docker)
 ├── requirements.txt              # Dépendances Python
+├── Dockerfile                    # Image Docker de l'application
+├── .dockerignore                 # Fichiers exclus du build Docker
 ├── .env                          # Variables d'environnement (⚠️ non commité)
 ├── .gitignore                    # Fichiers et dossiers ignorés par Git
 │
@@ -275,8 +298,9 @@ L'authentification seule n'autorise aucune action métier : chaque route vérifi
 - [ ] `.env` créé avec les vraies credentials Azure et une `SECRET_KEY` dédiée
 - [ ] Certificat SSL valide (Let's Encrypt ou équivalent)
 - [ ] `https_only=True` dans le SessionMiddleware
-- [ ] Base de données présente (`database/db_oceens.db`)
+- [ ] Base de données présente (`database/db_oceens.db`) ou volume Docker monté
 - [ ] Variables d'environnement sécurisées, y compris `LLM_API_KEY`
+- [ ] **Docker** : `.env` passé via `--env-file`, jamais copié dans l'image
 - [ ] Daemon `summaries_generator_daemon.py` lancé si les synthèses LLM sont utilisées
 
 ---
