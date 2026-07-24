@@ -161,9 +161,16 @@
 
                                 {{ teacher_name }}
 
-                                {% if teacher.attendance_count > 0 and "satisfaction_count" in teacher.keys() %}
-                                {% set satisfaction_score = (100*teacher.satisfaction_count / teacher.attendance_count)
-                                |round(1) %}
+                                {% if "satisfaction_count" in teacher.keys() %}
+                                {% if "attendance_count" in teacher.keys() and teacher.attendance_count > 0 %}
+                                {% set score_denom = teacher.attendance_count %}
+                                {% elif "satisfaction_responses_count" in teacher.keys() and teacher.satisfaction_responses_count > 0 %}
+                                {% set score_denom = teacher.satisfaction_responses_count %}
+                                {% else %}
+                                {% set score_denom = 0 %}
+                                {% endif %}
+                                {% if score_denom > 0 %}
+                                {% set satisfaction_score = (100*teacher.satisfaction_count / score_denom)|round(1) %}
                                 <div class="score-line">
                                     <div class="score-bar">
                                         <div class="score-fill {{ 'good' if satisfaction_score > 50 else 'warning' }}"
@@ -171,8 +178,9 @@
                                     </div>
                                     <span class="score-value {{ 'good' if satisfaction_score > 50 else 'warning' }}">{{
                                         satisfaction_score
-                                        }}% </span><span>({{ teacher.attendance_count}} 👤)</span>
+                                        }}% </span><span>({{ score_denom }} 👤)</span>
                                 </div>
+                                {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
                                 {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
 
 
@@ -199,14 +207,14 @@
 
                                 {{ chart_block( ns.graph_counter , {"items":question.histo,
                                 "positive_list":question.is_positive,"allow_pie":True,
-                                "attendance_count":teacher['attendance_count'], "suffix_text":'des personnes ayant
+                                "attendance_count":teacher.get('attendance_count'), "suffix_text":'des personnes ayant
                                 eu cet.te enseignant.e.'} ) }}
                                 {% set ns.graph_counter = ns.graph_counter + 1 %}
 
                                 {% elif question.question_type == 'QCM_Insatisfaction' %}
                                 {{ chart_block( ns.graph_counter , {"items":question.histo,
                                 "positive_list":question.is_positive,"allow_pie":False, "sort_desc":true,
-                                "attendance_count":teacher['attendance_count'], "suffix_text":'des personnes ayant
+                                "attendance_count":teacher.get('attendance_count'), "suffix_text":'des personnes ayant
                                 eu cet.te enseignant.e.'} ) }}
                                 {% set ns.graph_counter = ns.graph_counter + 1 %}
 
