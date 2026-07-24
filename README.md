@@ -44,6 +44,7 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
 | `/dashboard/program-manager` | Dashboard responsable de programme. |
 | `/dashboard/facilitator` | Dashboard animateur. |
 | `/dashboard/campus-manager` | Dashboard direction de campus. |
+| `/dashboard/campus-manager/prof` | Score de satisfaction par enseignant (campus_manager uniquement). |
 | `/dashboard/admin` | Dashboard administrateur. |
 | `/dashboard/survey-create` | Création / paramétrage d'un sondage. |
 | `/api/surveys/{survey_id}` | Questionnaire (réponse au sondage). |
@@ -238,7 +239,8 @@ OceENS/
 │   │   ├── student.html
 │   │   ├── program_manager.html
 │   │   ├── facilitator.html
-│   │   └── campus_manager.html
+│   │   ├── campus_manager.html
+│   │   └── prof.html                  # Satisfaction des enseignants (campus_manager)
 │   ├── backend/                       # Pages d'administration (admin only)
 │   │   ├── prompts.html               # Liste des prompts LLM
 │   │   └── prompt_form.html           # Formulaire create/edit partagé
