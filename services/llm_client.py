@@ -215,6 +215,19 @@ def _parse_iso(value):
         return None
 
 
+def _error_metadata(response):
+    """Extrait le corps d'une réponse en erreur, pour le diagnostic.
+
+    Les fournisseurs renvoient un message utile ("invalid_api_key",
+    "model_not_found"…) : le perdre laisserait l'administrateur devant un
+    simple code HTTP.
+    """
+    try:
+        return response.json()
+    except ValueError:
+        return {"body": (response.text or "")[:500]}
+
+
 def _post(provider, path, payload, session, timeout):
     """POST commun aux trois adaptateurs, avec chronométrage côté client.
 
@@ -285,7 +298,7 @@ def _ask_ollama(provider, model, prompt, session, timeout, seed):
     response, elapsed = _post(provider, "/api/generate", payload, session, timeout)
 
     if response.status_code != 200:
-        return None, None, response.status_code
+        return None, _error_metadata(response), response.status_code
 
     data = response.json()
     # `context` est le vecteur d'état du modèle : volumineux et inutile ici.
@@ -328,7 +341,7 @@ def _ask_openai(provider, model, prompt, session, timeout, seed):
     )
 
     if response.status_code != 200:
-        return None, None, response.status_code
+        return None, _error_metadata(response), response.status_code
 
     data = response.json()
     choices = data.get("choices") or []
@@ -362,7 +375,7 @@ def _ask_anthropic(provider, model, prompt, session, timeout, seed):
     response, elapsed = _post(provider, "/v1/messages", payload, session, timeout)
 
     if response.status_code != 200:
-        return None, None, response.status_code
+        return None, _error_metadata(response), response.status_code
 
     data = response.json()
     blocks = data.get("content") or []
