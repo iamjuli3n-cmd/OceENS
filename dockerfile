@@ -17,12 +17,13 @@ COPY ./templates templates
 COPY ./static static
 COPY ./import import
 
+ENV PYTHONUNBUFFERED=1
+
+
 # Le répertoire database/ est créé automatiquement par database.py au démarrage.
 # Monter /app/database comme volume pour persister la base SQLite entre les redémarrages.
 # Le fichier .env ne doit PAS être copié dans l'image : fournir les secrets via
 # --env-file .env au lancement (docker run) ou via les variables d'environnement.
 
-EXPOSE 8000
-VOLUME ["/app/database"]
-
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+
