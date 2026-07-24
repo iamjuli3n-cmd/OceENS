@@ -83,8 +83,16 @@ La base SQLite est persistée dans un répertoire local. Par défaut `./database
 LOCAL_DATABASE_DIR=/chemin/vers/database
 ```
 
-> Le fichier `.env` n'est jamais copié dans l'image : il est chargé via `env_file` dans `docker-compose.yaml`.
-> Le service redémarre automatiquement (`restart: always`).
+**Développement** — code source monté en volume (les modifications sont prises en compte sans rebuild), données de seed disponibles :
+
+```bash
+docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/app/import -v .:/app oceens:1.0
+```
+
+> Le `Dockerfile` inclut `--reload` dans la commande Uvicorn : uvicorn détecte les changements de fichiers et recharge l'application automatiquement lorsque le code source est monté via `-v .:/app`. Retirer `--reload` pour un déploiement en production.
+
+> La base SQLite est persistée dans le volume Docker `oceens_db` (`/app/database`).
+> Le fichier `.env` n'est jamais copié dans l'image : il est passé via `--env-file` au lancement.
 
 ### Sans Docker (installation manuelle)
 
@@ -240,7 +248,7 @@ OceENS/
 │   │   ├── program_manager.html
 │   │   ├── facilitator.html
 │   │   ├── campus_manager.html
-│   │   └── prof.html                     # Satisfaction des enseignants (campus_manager, program_manager)
+│   │   └── prof.html                  # Satisfaction des enseignants (campus_manager)
 │   ├── backend/                       # Pages d'administration (admin only)
 │   │   ├── prompts.html               # Liste des prompts LLM
 │   │   └── prompt_form.html           # Formulaire create/edit partagé
