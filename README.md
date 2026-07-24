@@ -72,18 +72,22 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
 
 ### Avec Docker (recommandé)
 
+**Build**
+
 ```bash
-# Build
 docker build -t oceens:1.0 .
+```
 
-# Lancer (production)
+**Production** — code figé dans l'image, base persistée dans un volume :
+
+```bash
 docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database oceens:1.0
+```
 
-# Lancer (développement — avec les données de seed)
-docker run -p 8000:8000 --env-file .env \
-  -v oceens_db:/app/database \
-  -v ./import:/app/import \
-  oceens:1.0
+**Développement** — code source monté en volume (les modifications sont prises en compte sans rebuild), données de seed disponibles :
+
+```bash
+docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/app/import -v .:/app oceens:1.0
 ```
 
 > La base SQLite est persistée dans le volume Docker `oceens_db` (`/app/database`).
