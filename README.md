@@ -44,6 +44,7 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
 | `/dashboard/program-manager` | Dashboard responsable de programme. |
 | `/dashboard/facilitator` | Dashboard animateur. |
 | `/dashboard/campus-manager` | Dashboard direction de campus. |
+| `/dashboard/campus-manager/prof` | Score de satisfaction par enseignant (campus_manager uniquement). |
 | `/dashboard/admin` | Dashboard administrateur. |
 | `/dashboard/survey-create` | Création / paramétrage d'un sondage. |
 | `/api/surveys/{survey_id}` | Questionnaire (réponse au sondage). |
@@ -89,6 +90,8 @@ docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database oceens:1.0
 ```bash
 docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/app/import -v .:/app oceens:1.0
 ```
+
+> Le `Dockerfile` inclut `--reload` dans la commande Uvicorn : uvicorn détecte les changements de fichiers et recharge l'application automatiquement lorsque le code source est monté via `-v .:/app`. Retirer `--reload` pour un déploiement en production.
 
 > La base SQLite est persistée dans le volume Docker `oceens_db` (`/app/database`).
 > Le fichier `.env` n'est jamais copié dans l'image : il est passé via `--env-file` au lancement.
@@ -246,7 +249,8 @@ OceENS/
 │   │   ├── student.html
 │   │   ├── program_manager.html
 │   │   ├── facilitator.html
-│   │   └── campus_manager.html
+│   │   ├── campus_manager.html
+│   │   └── prof.html                  # Satisfaction des enseignants (campus_manager)
 │   ├── backend/                       # Pages d'administration (admin only)
 │   │   ├── prompts.html               # Liste des prompts LLM
 │   │   └── prompt_form.html           # Formulaire create/edit partagé
