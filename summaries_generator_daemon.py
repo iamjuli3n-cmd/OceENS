@@ -2,7 +2,7 @@ from database import engine
 from sqlmodel import Session, select, func
 from models import Summary, Answer, Prompt, Question,Module,Program, Survey, Submission
 import requests_cache
-from requests.exceptions import ReadTimeout
+from requests.exceptions import RequestException
 import json
 from datetime import datetime
 from markdown_it import MarkdownIt
@@ -144,7 +144,7 @@ if __name__ == "__main__":
                         session.add(summary_row)
 
                         session.commit()
-                except ReadTimeout as e:
+                except RequestException as e:
                     print(f"{e}")
                     summary_row.metadata_text = f"{e}"
                     summary_row.http_status=504  # Timeout
