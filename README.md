@@ -248,7 +248,7 @@ OceENS/
 │   │   ├── program_manager.html
 │   │   ├── facilitator.html
 │   │   ├── campus_manager.html
-│   │   └── prof.html                  # Satisfaction des enseignants (campus_manager)
+│   │   └── prof.html                     # Satisfaction des enseignants (campus_manager, program_manager)
 │   ├── backend/                       # Pages d'administration (admin only)
 │   │   ├── prompts.html               # Liste des prompts LLM
 │   │   └── prompt_form.html           # Formulaire create/edit partagé
