@@ -216,22 +216,7 @@ LLM_API_KEY=your_llm_api_key_here
 ```
 OceENS/
 ├── main.py                       # Fabrique FastAPI, middlewares et assemblage des routeurs
-├── dependencies.py               # templates Jinja et logger partagés
-├── security.py                   # Authentification, rôles et périmètres
-├── helpers.py                    # Navigation, statistiques, filtres, tri
 ├── schemas.py                    # Schémas Pydantic des corps de requête
-├── routers/                      # Routes découpées par domaine métier
-│   ├── pages.py                  #   Accueil et dashboards par rôle
-│   ├── surveys.py                #   Sondages : CRUD, statut, export, visualisation
-│   ├── students.py               #   Inscription des étudiants à un sondage
-│   ├── users.py                  #   Gestion des rôles utilisateurs
-│   ├── summaries.py              #   Déclenchement des synthèses LLM
-│   ├── prompts.py                #   Administration des prompts
-│   ├── survey_templates.py       #   Administration des modèles de sondage
-│   └── sections_questions.py     #   Administration des sections et questions
-├── auth.py                       # Authentification Microsoft Entra ID (login, logout, callback)
-├── database.py                   # Moteur SQLite et dépendance SessionDep
-├── models.py                     # Schéma SQLModel (tables, relations)
 ├── seed.py                       # Données initiales et synchronisation des formations
 ├── sondage_loader.py             # Chargement d'un sondage complet pour l'export
 ├── survey_loader_from_xlsx.py    # Import de sondages depuis un fichier Excel
@@ -243,10 +228,31 @@ OceENS/
 ├── .env                          # Variables d'environnement (⚠️ non commité)
 ├── .gitignore                    # Fichiers et dossiers ignorés par Git
 │
+├── core/                         # Accès bas niveau et sécurité
+│   ├── auth.py                   #   Authentification Microsoft Entra ID (login, logout, callback)
+│   ├── database.py               #   Moteur SQLite et dépendance SessionDep
+│   ├── security.py               #   Rôles, périmètres, contrôle d'accès
+│   └── dependencies.py           #   templates Jinja et logger partagés
+│
+├── models/                       # Schéma SQLModel, un fichier par table
+│   ├── __init__.py               #   Ré-exporte toutes les classes (voir sa docstring)
+│   └── User.py, Survey.py, ...
+│
+├── routers/                      # Routes découpées par domaine métier
+│   ├── pages.py                  #   Accueil et dashboards par rôle
+│   ├── surveys.py                #   Sondages : CRUD, statut, export, visualisation
+│   ├── students.py               #   Inscription des étudiants à un sondage
+│   ├── users.py                  #   Gestion des rôles utilisateurs
+│   ├── summaries.py              #   Déclenchement des synthèses LLM
+│   ├── prompts.py                #   Administration des prompts
+│   ├── survey_templates.py       #   Administration des modèles de sondage
+│   └── sections_questions.py     #   Administration des sections et questions
+│
 ├── database/                     # Dossier contenant la base de données (ignoré par Git)
 │   └── db_oceens.db
 │
-├── services/
+├── services/                     # Logique métier
+│   ├── helpers.py                # Navigation, statistiques, filtres, tri
 │   ├── visualisation_data.py     # Agrégations et contexte de visualisation
 │   └── export_csv.py             # Export CSV des réponses
 │
@@ -349,9 +355,9 @@ Le dashboard `campus_manager` n'affiche que les sondages fermés ayant au moins 
 Le dépôt ne contient pas de suite de tests automatisés ni de CI. Avant de proposer un changement :
 
 ```bash
-python -m compileall -q main.py auth.py database.py models.py seed.py \
-  dependencies.py security.py helpers.py schemas.py \
-  sondage_loader.py survey_loader_from_xlsx.py summaries_generator_daemon.py routers services
+python -m compileall -q main.py seed.py schemas.py \
+  sondage_loader.py survey_loader_from_xlsx.py summaries_generator_daemon.py \
+  core models routers services
 git diff --check
 ```
 
