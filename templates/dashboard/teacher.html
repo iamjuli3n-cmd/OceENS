@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OceEns — Enseignants</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Playfair+Display:wght@600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/program_manager.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard_navigation.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}" />
+  <style>
+    .prof-score-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .prof-score {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      text-decoration: none;
+      border: 1px solid transparent;
+    }
+
+    .prof-score-green {
+      color: #027a48;
+      background: #ecfdf3;
+      border-color: #a6f4c5;
+    }
+
+    .prof-score-orange {
+      color: #b54708;
+      background: #fffaeb;
+      border-color: #fec84b;
+    }
+
+    .prof-score-red {
+      color: #b42318;
+      background: #fef3f2;
+      border-color: #fda29b;
+    }
+
+    .prof-score-neutral {
+      color: #555;
+      background: #f5f5f5;
+      border-color: #ddd;
+    }
+
+    .prof-score-label {
+      font-weight: 400;
+      opacity: 0.75;
+    }
+
+    .sondage-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .prof-empty {
+      text-align: center;
+      padding: 48px 0;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    /* Barre de filtres (reprise de part_show_surveys.html) */
+    .survey-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .survey-filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .survey-filter-field label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #666;
+    }
+
+    .survey-filter-field select {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      background: white;
+      color: #333;
+    }
+  </style>
+</head>
+
+<body class="page-program-manager">
+  {% set header_title_fr = "Enseignants — Analytique" %}
+  {% set header_back_url = "/dashboard/campus-manager" %}
+  {% include 'template_parts/part_site_header.html' %}
+
+  <div class="banner">
+    <div>
+      <div class="banner-badge">Analytique</div>
+      <div class="banner-greeting">Satisfaction des enseignants</div>
+    </div>
+  </div>
+
+  <div class="questionnaires-card">
+    <div class="questionnaires-header">
+      <div class="questionnaires-title">Score de satisfaction par enseignant</div>
+      {% if teachers %}
+      <div style="font-size: 12px; color: #aaa;">{{ teachers | length }} enseignant{{ 's' if teachers | length > 1 else
+        '' }}</div>
+      {% endif %}
+    </div>
+
+    <form method="get" class="survey-filter-bar" id="survey-filter-form" aria-label="Filtrer les enseignants">
+      <div class="survey-filter-field">
+        <label for="filter-school-year">Année scolaire</label>
+        <select id="filter-school-year" name="school_year"
+          onchange="document.getElementById('survey-filter-form').submit()">
+          <option value="">Toutes</option>
+          {% for sy in available_school_years %}
+          <option value="{{ sy }}" {% if sy==selected_school_year %}selected{% endif %}>{{ sy }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="survey-filter-field">
+        <label for="filter-semester">Semestre</label>
+        <select id="filter-semester" name="semester" onchange="document.getElementById('survey-filter-form').submit()">
+          <option value="" {% if not selected_semester %}selected{% endif %}>Tout</option>
+          <option value="Automne" {% if selected_semester=='Automne' %}selected{% endif %}>Automne</option>
+          <option value="Printemps" {% if selected_semester=='Printemps' %}selected{% endif %}>Printemps</option>
+        </select>
+      </div>
+      {% if available_programs %}
+      <div class="survey-filter-field">
+        <label for="filter-program">Formation</label>
+        <select id="filter-program" name="program" onchange="document.getElementById('survey-filter-form').submit()">
+          <option value="" {% if not selected_program %}selected{% endif %}>Toutes</option>
+          {% for p in available_programs %}
+          <option value="{{ p.code }}" {% if selected_program==p.code %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% if available_teachers | length > 1 %}
+      <div class="survey-filter-field">
+        <label for="filter-teacher">Enseignant</label>
+        <select id="filter-teacher" name="teacher" onchange="document.getElementById('survey-filter-form').submit()">
+          <option value="" {% if not selected_teacher %}selected{% endif %}>Tous</option>
+          {% for t in available_teachers %}
+          <option value="{{ t }}" {% if selected_teacher==t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+    </form>
+
+    {% if teachers %}
+    {% for teacher in teachers %}
+    <div class="sondage-row">
+      <div class="sondage-main">
+        <div class="sondage-row-name">{{ teacher.name }}</div>
+        <div class="prof-score-list" role="group" aria-label="Scores de satisfaction pour {{ teacher.name }}">
+          {% for survey in teacher.surveys %}
+          {% if survey.score is not none %}
+          {% if survey.score <= 20 %}{% set color="red" %} {% elif survey.score <=50 %}{% set color="orange" %} {% else
+            %}{% set color="green" %} {% endif %} {% else %} {% set color="neutral" %} {% endif %} <a
+            href="/api/surveys/{{ survey.survey_id }}/visualisation?teacher={{ teacher.name | urlencode }}" class="prof-score prof-score-{{ color }}"
+            title="{{ survey.program_name }} — {{ survey.semester }} {{ survey.school_year }}{% if survey.score is not none %} : {{ survey.score }}%{% else %} : pas de données{% endif %}">
+            <span class="prof-score-label">{{ survey.program }} · {{ survey.school_year }}</span>
+            <span>{% if survey.score is not none %}{{ survey.score }}%{% else %}—{% endif %}</span>
+            </a>
+            {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="prof-empty">
+      Aucun enseignant évalué dans les sondages de votre périmètre.
+    </div>
+    {% endif %}
+  </div>
+
+</body>
+
+</html>

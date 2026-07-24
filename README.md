@@ -44,13 +44,14 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
 | `/dashboard/program-manager` | Dashboard responsable de programme. |
 | `/dashboard/facilitator` | Dashboard animateur. |
 | `/dashboard/campus-manager` | Dashboard direction de campus. |
+| `/dashboard/teachers/analytics` | Score de satisfaction par enseignant, filtrable par année / semestre / formation. Accessible aux rôles `campus_manager` et `program_manager`, scopé au périmètre de chacun. |
 | `/dashboard/admin` | Dashboard administrateur. |
 | `/dashboard/survey-create` | Création / paramétrage d'un sondage. |
 | `/api/surveys/{survey_id}` | Questionnaire (réponse au sondage). |
 | `/api/surveys/{survey_id}/status` | Changement de statut d'un sondage. |
 | `/api/surveys/{survey_id}/students` | Gestion des étudiants inscrits à un sondage. |
 | `/api/surveys/{survey_id}/export` | Export CSV des réponses. |
-| `/api/surveys/{survey_id}/visualisation` | Visualisation des réponses. |
+| `/api/surveys/{survey_id}/visualisation` | Visualisation des réponses. Accepte `?teacher=<nom>` pour arriver déjà filtré sur un enseignant. |
 | `/api/surveys/{survey_id}/generate-summaries` | Lancement de la génération de synthèses LLM. |
 | `/api/surveys/{survey_id}/destroy-summaries` | Suppression des synthèses générées. |
 | `/api/users/{user_id}/role` | Modification du rôle d'un utilisateur. |
@@ -82,8 +83,16 @@ La base SQLite est persistée dans un répertoire local. Par défaut `./database
 LOCAL_DATABASE_DIR=/chemin/vers/database
 ```
 
-> Le fichier `.env` n'est jamais copié dans l'image : il est chargé via `env_file` dans `docker-compose.yaml`.
-> Le service redémarre automatiquement (`restart: always`).
+**Développement** — code source monté en volume (les modifications sont prises en compte sans rebuild), données de seed disponibles :
+
+```bash
+docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/app/import -v .:/app oceens:1.0
+```
+
+> Le `Dockerfile` inclut `--reload` dans la commande Uvicorn : uvicorn détecte les changements de fichiers et recharge l'application automatiquement lorsque le code source est monté via `-v .:/app`. Retirer `--reload` pour un déploiement en production.
+
+> La base SQLite est persistée dans le volume Docker `oceens_db` (`/app/database`).
+> Le fichier `.env` n'est jamais copié dans l'image : il est passé via `--env-file` au lancement.
 
 ### Sans Docker (installation manuelle)
 
@@ -238,7 +247,8 @@ OceENS/
 │   │   ├── student.html
 │   │   ├── program_manager.html
 │   │   ├── facilitator.html
-│   │   └── campus_manager.html
+│   │   ├── campus_manager.html
+│   │   └── prof.html                     # Satisfaction des enseignants (campus_manager, program_manager)
 │   ├── backend/                       # Pages d'administration (admin only)
 │   │   ├── prompts.html               # Liste des prompts LLM
 │   │   └── prompt_form.html           # Formulaire create/edit partagé
@@ -286,6 +296,26 @@ Le flux d'authentification repose sur **Microsoft Entra ID** via la bibliothèqu
 ```
 
 L'authentification seule n'autorise aucune action métier : chaque route vérifie ensuite le rôle et le périmètre (formation ou campus) via `require_roles()` et les helpers associés.
+
+---
+
+## Fonctionnalités notables
+
+### Analytique des enseignants
+
+La route `/dashboard/teachers/analytics` (`campus_manager`, `program_manager`) agrège le score de satisfaction par `(enseignant, sondage)` à partir des réponses `QCU_Satisfaction` renseignées d'un `Answer.teacher` (sections ME). La liste des enseignants est triée avec `teacher_sort_key()`, insensible à la casse et aux accents, et reste filtrable par année scolaire, semestre, formation et enseignant.
+
+### Filtre par enseignant dans la visualisation
+
+Un sélecteur côté client filtre la visualisation sans rechargement : seules les modules de l'enseignant choisi restent affichées, les sections Campus et Formation étant masquées. La page lit `?teacher=<nom>` au chargement pour se pré-filtrer ; les liens depuis l'analytique transmettent ce paramètre, si bien qu'un clic sur le score d'un enseignant ouvre directement sa vue.
+
+### Sondages importés via Excel
+
+Les sondages chargés par `survey_loader_from_xlsx.py` n'ont pas de question `QCU_Attendance` : `services/visualisation_data.py` utilise alors `satisfaction_responses_count` comme dénominateur de repli pour le score enseignant. Les noms d'enseignants sont normalisés en `.title()` à l'import comme à l'agrégation, pour fusionner les variantes de casse (`"GADEMER Antoine"` et `"Gademer Antoine"` = une seule entrée). Les questions sont triées par `question_id` dans le template, ce qui garantit les graphes avant les verbatims quel que soit l'ordre d'insertion.
+
+### Périmètre de la direction de campus
+
+Le dashboard `campus_manager` n'affiche que les sondages fermés ayant au moins un répondant. Le lien vers le questionnaire et le QR code y sont masqués (`can_view_survey_link=False`) : ce rôle consulte les résultats sans diffuser les sondages. Le garde `{% if can_view_survey_link | default(true) %}` laisse les autres dashboards inchangés.
 
 ---
 

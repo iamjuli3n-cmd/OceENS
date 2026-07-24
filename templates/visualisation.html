@@ -51,6 +51,23 @@
             grid-template-columns: 2fr 1fr;
         }
 
+        .teacher-filter-bar {
+            margin-bottom: 12px;
+        }
+        .teacher-filter-bar label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .teacher-filter-bar select {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
         .verbatim-list li::marker {
             content: "";
         }
@@ -78,23 +95,20 @@
         </div>
         {% endif %}
 
-        <div class="filters-bar">
-            <div class="filter-item"><span class="filter-label">Campus</span><select class="filter-select" disabled>
-                    <option>{{ survey.campus }}</option>
-                </select></div>
-            <span class="filter-separator">›</span>
-            <div class="filter-item"><span class="filter-label">Année</span><select class="filter-select" disabled>
-                    <option>{{ survey.school_year }}</option>
-                </select></div>
-            <span class="filter-separator">›</span>
-            <div class="filter-item"><span class="filter-label">Filière</span><select class="filter-select" disabled>
-                    <option>{{ program.name }}</option>
-                </select></div>
-            <span class="filter-separator">›</span>
-            <div class="filter-item"><span class="filter-label">Semestre</span><select class="filter-select" disabled>
-                    <option>{{ survey.semester }}</option>
-                </select></div>
+
+        {% set ns_tf = namespace(names=[]) %}
+        {% for sn in sections %}{% if sections[sn].section_type == "ME" %}{% for mod in sections[sn]["modules"] %}{% for tn in sections[sn]["modules"][mod]["teachers"] %}{% if tn not in ns_tf.names %}{% set ns_tf.names = ns_tf.names + [tn] %}{% endif %}{% endfor %}{% endfor %}{% endif %}{% endfor %}
+        {% if ns_tf.names | length > 1 %}
+        <div class="teacher-filter-bar">
+            <label for="filter-teacher">Enseignant</label>
+            <select id="filter-teacher" onchange="filterByTeacher(this.value)">
+                <option value="">Tous</option>
+                {% for tn in ns_tf.names | sort %}
+                <option value="{{ tn }}">{{ tn }}</option>
+                {% endfor %}
+            </select>
         </div>
+        {% endif %}
 
         <div class="kpi-banner">
             <div class="kpi-right">
@@ -143,7 +157,7 @@
 
                 {% for module in sections[section_name]["modules"] %}
 
-                <div class="summary-row">
+                <div class="summary-row module-row">
                     <div class="summary-left-tag">
                         {% if sections[section_name]["modules"][module].ue %}
                         <span class="ue-tag">{{ sections[section_name]["modules"][module].ue }}</span>
@@ -155,15 +169,24 @@
                         </div>
                         {% for teacher_name in sections[section_name]["modules"][module]["teachers"] %}
                         {% set teacher = sections[section_name]["modules"][module]["teachers"][teacher_name] %}
+                        <div class="teacher-block" data-teacher="{{ teacher_name }}">
                         <div class="summary-score-inline"
                             onclick="toggleElement('detailled-section-{{ ns.section_counter }}')">
                             <span class="summary-subtitle">
 
                                 {{ teacher_name }}
 
-                                {% if teacher.attendance_count > 0 and "satisfaction_count" in teacher.keys() %}
-                                {% set satisfaction_score = (100*teacher.satisfaction_count / teacher.attendance_count)
-                                |round(1) %}
+                                {% if "satisfaction_count" in teacher.keys() %}
+                                {% if "attendance_count" in teacher.keys() and teacher.attendance_count > 0 %}
+                                {% set score_denom = teacher.attendance_count %}
+                                {% elif "satisfaction_responses_count" in teacher.keys() and
+                                teacher.satisfaction_responses_count > 0 %}
+                                {% set score_denom = teacher.satisfaction_responses_count %}
+                                {% else %}
+                                {% set score_denom = 0 %}
+                                {% endif %}
+                                {% if score_denom > 0 %}
+                                {% set satisfaction_score = (100*teacher.satisfaction_count / score_denom)|round(1) %}
                                 <div class="score-line">
                                     <div class="score-bar">
                                         <div class="score-fill {{ 'good' if satisfaction_score > 50 else 'warning' }}"
@@ -171,8 +194,9 @@
                                     </div>
                                     <span class="score-value {{ 'good' if satisfaction_score > 50 else 'warning' }}">{{
                                         satisfaction_score
-                                        }}% </span><span>({{ teacher.attendance_count}} 👤)</span>
+                                        }}% </span><span>({{ score_denom }} 👤)</span>
                                 </div>
+                                {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
                                 {% else %}<span class="score-placeholder">Non disponible</span>{% endif %}
 
 
@@ -181,7 +205,7 @@
                         </div>
 
                         <div class="detailled-section" id="detailled-section-{{ ns.section_counter }}">
-                            {% for question_idx in teacher.questions %}
+                            {% for question_idx in teacher.questions | sort %}
                             {% set question = teacher.questions[question_idx] %}
                             {% if question.question_type == "QCU_Attendance" %}
                             {% else %}
@@ -199,14 +223,14 @@
 
                                 {{ chart_block( ns.graph_counter , {"items":question.histo,
                                 "positive_list":question.is_positive,"allow_pie":True,
-                                "attendance_count":teacher['attendance_count'], "suffix_text":'des personnes ayant
+                                "attendance_count":teacher.get('attendance_count'), "suffix_text":'des personnes ayant
                                 eu cet.te enseignant.e.'} ) }}
                                 {% set ns.graph_counter = ns.graph_counter + 1 %}
 
                                 {% elif question.question_type == 'QCM_Insatisfaction' %}
                                 {{ chart_block( ns.graph_counter , {"items":question.histo,
                                 "positive_list":question.is_positive,"allow_pie":False, "sort_desc":true,
-                                "attendance_count":teacher['attendance_count'], "suffix_text":'des personnes ayant
+                                "attendance_count":teacher.get('attendance_count'), "suffix_text":'des personnes ayant
                                 eu cet.te enseignant.e.'} ) }}
                                 {% set ns.graph_counter = ns.graph_counter + 1 %}
 
@@ -253,6 +277,7 @@
                             {% endif %}
                             {% endfor %}
                         </div>
+                        </div>
 
                         {% set ns.section_counter = ns.section_counter + 1 %}
 
@@ -268,7 +293,7 @@
                 {% elif sections[section_name].section_type == "R" %}
                 {% else %}
 
-                <div class="summary-row">
+                <div class="summary-row section-row">
                     <div class="summary-left-tag"></div>
                     <div class="summary-main">
                         <div class="summary-title-line">
@@ -300,7 +325,7 @@
                         </div>
 
                         <div class="detailled-section" id="detailled-section-{{ ns.section_counter }}">
-                            {% for question_idx in sections[section_name].questions %}
+                            {% for question_idx in sections[section_name].questions | sort %}
                             {% set question = sections[section_name].questions[question_idx] %}
 
                             <article class="answer-question-card">
@@ -381,6 +406,34 @@
         </div>
 
     </div>
+    <script>
+        function filterByTeacher(name) {
+            document.querySelectorAll('.teacher-block').forEach(function (block) {
+                block.style.display = (!name || block.dataset.teacher === name) ? '' : 'none';
+            });
+            // Masquer les lignes de module qui ne contiennent plus aucun enseignant visible
+            document.querySelectorAll('.module-row').forEach(function (row) {
+                var anyVisible = Array.prototype.some.call(
+                    row.querySelectorAll('.teacher-block'),
+                    function (b) { return b.style.display !== 'none'; }
+                );
+                row.style.display = anyVisible ? '' : 'none';
+            });
+            // Quand un enseignant est filtré, masquer les sections Campus / Formation
+            document.querySelectorAll('.section-row').forEach(function (row) {
+                row.style.display = name ? 'none' : '';
+            });
+        }
+
+        // Pré-sélection depuis le paramètre ?teacher= (lien venant de l'analytique)
+        document.addEventListener('DOMContentLoaded', function () {
+            var t = new URLSearchParams(window.location.search).get('teacher');
+            if (!t) return;
+            var select = document.getElementById('filter-teacher');
+            if (select) select.value = t;
+            filterByTeacher(t);
+        });
+    </script>
 </body>
 
 </html>
