@@ -2062,7 +2062,7 @@ def create_app():
         ).first()
         roles = roles_query.split(",") if roles_query else ["student"]
 
-        if not check_role(roles, ["campus_manager"]):
+        if not check_role(roles, ["campus_manager", "program_manager"]):
             return RedirectResponse(url="/")
 
         # Scope : union des programmes accessibles selon les rôles de l'utilisateur
@@ -2102,35 +2102,65 @@ def create_app():
             .order_by(Answer.teacher, Survey.school_year.desc(), Module.survey_id.desc())
         ).all()
 
-        teachers: dict = {}
-        for teacher, survey_id, program, school_year, semester, status, total, positives in rows:
-            if teacher not in teachers:
-                teachers[teacher] = {"name": teacher, "surveys": []}
+        # Construction de la liste complète avant filtrage (pour les menus déroulants)
+        teachers_raw: dict = {}
+        for teacher, survey_id, prog, sy, sem, status, total, positives in rows:
+            if teacher not in teachers_raw:
+                teachers_raw[teacher] = {"name": teacher, "surveys": []}
             score = round(100 * positives / total, 1) if total and total > 0 else None
-            teachers[teacher]["surveys"].append(
+            teachers_raw[teacher]["surveys"].append(
                 {
                     "survey_id": survey_id,
-                    "program": program,
-                    "program_name": program_name_by_code.get(program, program),
-                    "school_year": school_year or "—",
-                    "semester": semester or "—",
+                    "program": prog,
+                    "program_name": program_name_by_code.get(prog, prog),
+                    "school_year": sy or "—",
+                    "semester": sem or "—",
                     "is_closed": (status != 1),
                     "score": score,
                     "total_answers": int(total) if total else 0,
                 }
             )
 
-        sorted_teachers = sorted(teachers.values(), key=lambda t: teacher_sort_key(t["name"]))
+        all_surveys = [s for t in teachers_raw.values() for s in t["surveys"]]
+        available_school_years = sorted(
+            {s["school_year"] for s in all_surveys if s["school_year"] != "—"}, reverse=True
+        )
+        seen_codes: set = set()
+        available_programs = []
+        for s in all_surveys:
+            if s["program"] and s["program"] not in seen_codes:
+                seen_codes.add(s["program"])
+                available_programs.append({"code": s["program"], "name": s["program_name"]})
+        available_programs.sort(key=lambda p: p["name"])
+
+        # Filtrage des surveys par enseignant ; on écarte les enseignants sans résultat
+        filtered_teachers = []
+        for t in teachers_raw.values():
+            filtered_surveys = [
+                s for s in t["surveys"]
+                if (not school_year or s["school_year"] == school_year)
+                and (not semester or s["semester"] == semester)
+                and (not program or s["program"] == program)
+            ]
+            if filtered_surveys:
+                filtered_teachers.append({"name": t["name"], "surveys": filtered_surveys})
+
+        sorted_teachers = sorted(filtered_teachers, key=lambda t: teacher_sort_key(t["name"]))
 
         context = {
             "user": user,
             "teachers": sorted_teachers,
-            "dashboard_navigation": get_dashboard_navigation(roles, "campus-manager"),
+            "available_school_years": available_school_years,
+            "available_programs": available_programs,
+            "selected_school_year": school_year or "",
+            "selected_semester": semester or "",
+            "selected_program": program or "",
+            "dashboard_navigation": get_dashboard_navigation(roles, ""),
         }
 
         return templates.TemplateResponse(
             request=request,
-            name="dashboard/prof.html",
+            name="dashboard/teacher.html",
             context=context,
         )
 
