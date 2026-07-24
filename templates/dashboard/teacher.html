@@ -181,7 +181,7 @@
           {% if survey.score is not none %}
           {% if survey.score <= 20 %}{% set color="red" %} {% elif survey.score <=50 %}{% set color="orange" %} {% else
             %}{% set color="green" %} {% endif %} {% else %} {% set color="neutral" %} {% endif %} <a
-            href="/api/surveys/{{ survey.survey_id }}/visualisation" class="prof-score prof-score-{{ color }}"
+            href="/api/surveys/{{ survey.survey_id }}/visualisation?teacher={{ teacher.name | urlencode }}" class="prof-score prof-score-{{ color }}"
             title="{{ survey.program_name }} — {{ survey.semester }} {{ survey.school_year }}{% if survey.score is not none %} : {{ survey.score }}%{% else %} : pas de données{% endif %}">
             <span class="prof-score-label">{{ survey.program }} · {{ survey.school_year }}</span>
             <span>{% if survey.score is not none %}{{ survey.score }}%{% else %}—{% endif %}</span>

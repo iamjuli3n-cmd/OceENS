@@ -2007,6 +2007,11 @@ def create_app():
                 seen_codes.add(s["program"])
                 available_programs.append({"code": s["program"], "name": s["program_name"]})
         available_programs.sort(key=lambda p: p["name"])
+        # Campus manager : seulement les sondages fermés avec au moins un répondant
+        surveys = [
+            s for s in surveys
+            if s["is_closed"] and s["respondents_count"] > 0
+        ]
         surveys = filter_surveys(surveys, school_year, semester, program)
 
         stats_by_survey = get_stats_by_survey(
@@ -2032,6 +2037,7 @@ def create_app():
             "can_generate_summaries": False,
             "can_view_visualisation": True,
             "can_export_survey": True,
+            "can_view_survey_link": False,
             "dashboard_navigation": get_dashboard_navigation(
                 roles, "campus-manager"
             ),

@@ -157,7 +157,7 @@
 
                 {% for module in sections[section_name]["modules"] %}
 
-                <div class="summary-row">
+                <div class="summary-row module-row">
                     <div class="summary-left-tag">
                         {% if sections[section_name]["modules"][module].ue %}
                         <span class="ue-tag">{{ sections[section_name]["modules"][module].ue }}</span>
@@ -205,7 +205,7 @@
                         </div>
 
                         <div class="detailled-section" id="detailled-section-{{ ns.section_counter }}">
-                            {% for question_idx in teacher.questions %}
+                            {% for question_idx in teacher.questions | sort %}
                             {% set question = teacher.questions[question_idx] %}
                             {% if question.question_type == "QCU_Attendance" %}
                             {% else %}
@@ -293,7 +293,7 @@
                 {% elif sections[section_name].section_type == "R" %}
                 {% else %}
 
-                <div class="summary-row">
+                <div class="summary-row section-row">
                     <div class="summary-left-tag"></div>
                     <div class="summary-main">
                         <div class="summary-title-line">
@@ -325,7 +325,7 @@
                         </div>
 
                         <div class="detailled-section" id="detailled-section-{{ ns.section_counter }}">
-                            {% for question_idx in sections[section_name].questions %}
+                            {% for question_idx in sections[section_name].questions | sort %}
                             {% set question = sections[section_name].questions[question_idx] %}
 
                             <article class="answer-question-card">
@@ -411,7 +411,28 @@
             document.querySelectorAll('.teacher-block').forEach(function (block) {
                 block.style.display = (!name || block.dataset.teacher === name) ? '' : 'none';
             });
+            // Masquer les lignes de module qui ne contiennent plus aucun enseignant visible
+            document.querySelectorAll('.module-row').forEach(function (row) {
+                var anyVisible = Array.prototype.some.call(
+                    row.querySelectorAll('.teacher-block'),
+                    function (b) { return b.style.display !== 'none'; }
+                );
+                row.style.display = anyVisible ? '' : 'none';
+            });
+            // Quand un enseignant est filtré, masquer les sections Campus / Formation
+            document.querySelectorAll('.section-row').forEach(function (row) {
+                row.style.display = name ? 'none' : '';
+            });
         }
+
+        // Pré-sélection depuis le paramètre ?teacher= (lien venant de l'analytique)
+        document.addEventListener('DOMContentLoaded', function () {
+            var t = new URLSearchParams(window.location.search).get('teacher');
+            if (!t) return;
+            var select = document.getElementById('filter-teacher');
+            if (select) select.value = t;
+            filterByTeacher(t);
+        });
     </script>
 </body>
 
