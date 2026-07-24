@@ -552,7 +552,7 @@ def require_roles(
         return user,roles
 
     # Aucun rôle autorisé ne correspond
-    return None
+    return None,None
 
 
 # ┌─ Fonctions utilitaires ──────────────────────────────────────────────┐
