@@ -70,28 +70,20 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
 - Python 3.12
 - Un fichier `.env` configuré (voir section [Configuration](#configuration))
 
-### Avec Docker (recommandé)
-
-**Build**
+### Avec Docker Compose (recommandé)
 
 ```bash
-docker build -t oceens:1.0 .
+docker compose up --build
 ```
 
-**Production** — code figé dans l'image, base persistée dans un volume :
+La base SQLite est persistée dans un répertoire local. Par défaut `./database/` ; pour pointer ailleurs, définir `LOCAL_DATABASE_DIR` dans `.env` ou dans l'environnement :
 
-```bash
-docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database oceens:1.0
+```env
+LOCAL_DATABASE_DIR=/chemin/vers/database
 ```
 
-**Développement** — code source monté en volume (les modifications sont prises en compte sans rebuild), données de seed disponibles :
-
-```bash
-docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/app/import -v .:/app oceens:1.0
-```
-
-> La base SQLite est persistée dans le volume Docker `oceens_db` (`/app/database`).
-> Le fichier `.env` n'est jamais copié dans l'image : il est passé via `--env-file` au lancement.
+> Le fichier `.env` n'est jamais copié dans l'image : il est chargé via `env_file` dans `docker-compose.yaml`.
+> Le service redémarre automatiquement (`restart: always`).
 
 ### Sans Docker (installation manuelle)
 
@@ -304,7 +296,7 @@ L'authentification seule n'autorise aucune action métier : chaque route vérifi
 - [ ] `https_only=True` dans le SessionMiddleware
 - [ ] Base de données présente (`database/db_oceens.db`) ou volume Docker monté
 - [ ] Variables d'environnement sécurisées, y compris `LLM_API_KEY`
-- [ ] **Docker** : `.env` passé via `--env-file`, jamais copié dans l'image
+- [ ] **Docker Compose** : `.env` chargé via `env_file`, jamais copié dans l'image ; `LOCAL_DATABASE_DIR` pointant vers le bon répertoire de base
 - [ ] Daemon `summaries_generator_daemon.py` lancé si les synthèses LLM sont utilisées
 
 ---
