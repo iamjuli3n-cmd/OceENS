@@ -8,10 +8,10 @@ from typing import List
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, func, select
-from auth import get_current_user
-from database import SessionDep
+from core.auth import get_current_user
+from core.database import SessionDep
 from models import Program, Respondent, Role, Survey, User
-from dependencies import logger
+from core.dependencies import logger
 
 
 VALID_ROLES = {

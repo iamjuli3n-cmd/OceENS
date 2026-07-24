@@ -8,11 +8,11 @@ COPY ./requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Fichiers source Python (structure plate, pas de sous-dossier app/)
-COPY main.py auth.py database.py models.py seed.py ./
-COPY dependencies.py security.py helpers.py schemas.py ./
+COPY main.py models.py seed.py schemas.py ./
 COPY sondage_loader.py survey_loader_from_xlsx.py summaries_generator_daemon.py ./
 
 # Répertoires applicatifs
+COPY ./core core
 COPY ./routers routers
 COPY ./services services
 COPY ./templates templates

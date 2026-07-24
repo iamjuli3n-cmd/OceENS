@@ -4,8 +4,8 @@ from typing import Optional
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import JSONResponse
 from sqlmodel import delete, func, select
-from auth import get_current_user
-from database import SessionDep
+from core.auth import get_current_user
+from core.database import SessionDep
 from models import Answer, Question, Role, Section, Template, User
 
 api_router = APIRouter(tags=["API"], prefix="/api")

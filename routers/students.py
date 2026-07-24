@@ -6,10 +6,10 @@ import re
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from sqlmodel import delete, func, select, Session
-from database import SessionDep
+from core.database import SessionDep
 from models import Respondent, Survey, User
 from schemas import SurveyStudentsAdd
-from security import can_manage_survey, require_roles
+from core.security import can_manage_survey, require_roles
 
 api_router = APIRouter(tags=["API"], prefix="/api")
 

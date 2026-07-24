@@ -4,10 +4,10 @@ from typing import Optional
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlmodel import delete, func, select
-from auth import get_current_user
-from database import SessionDep
+from core.auth import get_current_user
+from core.database import SessionDep
 from models import Prompt, Role, Summary, Survey, User
-from dependencies import templates
+from core.dependencies import templates
 
 api_router = APIRouter(tags=["API"], prefix="/api")
 backend_router = APIRouter(tags=["Backend"], prefix="/backend")

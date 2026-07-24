@@ -3,10 +3,10 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from sqlmodel import Session, delete, func, select
-from database import SessionDep
+from core.database import SessionDep
 from models import Program, Respondent, Role, Survey, User
 from schemas import RoleUpdate
-from security import check_role, parse_role_scopes, require_roles, VALID_ROLES
+from core.security import check_role, parse_role_scopes, require_roles, VALID_ROLES
 from typing import List
 
 api_router = APIRouter(tags=["API"], prefix="/api")

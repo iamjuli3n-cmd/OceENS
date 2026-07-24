@@ -5,13 +5,13 @@ from datetime import datetime
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlmodel import Session, delete, func, select
-from auth import get_current_user
-from database import SessionDep
+from core.auth import get_current_user
+from core.database import SessionDep
 from models import Answer, Module, Option, Program, Question, Respondent, Section, Submission, Survey, User
-from dependencies import logger, templates
+from core.dependencies import logger, templates
 from schemas import SurveyFullCreate, SurveySubmission
-from security import _check_sondage_access_and_status, can_manage_survey, get_results_program_codes, parse_rprm_formations, require_roles
-from helpers import delete_survey_with_relations
+from core.security import _check_sondage_access_and_status, can_manage_survey, get_results_program_codes, parse_rprm_formations, require_roles
+from services.helpers import delete_survey_with_relations
 from sondage_loader import load_sondage_complet
 from services.export_csv import generate_csv_response
 from services.visualisation_data import bilingual_text, get_visualisation_context2

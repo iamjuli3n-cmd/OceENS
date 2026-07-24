@@ -6,12 +6,12 @@ from typing import List, Optional
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import case, func, select
-from auth import get_current_user
-from database import SessionDep
+from core.auth import get_current_user
+from core.database import SessionDep
 from models import Answer, Module, Option, Program, Prompt, Question, Respondent, Role, Submission, Summary, Survey, Template, User
-from dependencies import templates
-from security import VALID_ROLES, can_duplicate_survey, check_role, get_allowed_campuses, get_campus_manager_program_codes, get_results_program_codes, get_student_dashboard_redirect, parse_role_scopes, parse_rprm_formations, require_roles, role_to_dashboard_slug
-from helpers import build_survey_prefill, filter_surveys, get_avg_stats, get_dashboard_navigation, get_stats_by_survey, teacher_sort_key
+from core.dependencies import templates
+from core.security import VALID_ROLES, can_duplicate_survey, check_role, get_allowed_campuses, get_campus_manager_program_codes, get_results_program_codes, get_student_dashboard_redirect, parse_role_scopes, parse_rprm_formations, require_roles, role_to_dashboard_slug
+from services.helpers import build_survey_prefill, filter_surveys, get_avg_stats, get_dashboard_navigation, get_stats_by_survey, teacher_sort_key
 
 router = APIRouter(tags=["Pages"])
 dashboard_router = APIRouter(tags=["Dashboard"], prefix="/dashboard")

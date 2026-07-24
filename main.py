@@ -23,9 +23,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
 
-from auth import router as auth_router
-from database import create_db_and_tables
-from dependencies import logger
+from core.auth import router as auth_router
+from core.database import create_db_and_tables
+from core.dependencies import logger
 from seed import seed_all_if_necessary
 
 from routers import (

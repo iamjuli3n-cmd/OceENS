@@ -3,11 +3,11 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlmodel import delete, insert, select
-from database import SessionDep
+from core.database import SessionDep
 from models import Answer, Question, Submission, Summary
-from dependencies import logger
+from core.dependencies import logger
 from schemas import SummaryRequest
-from security import _check_sondage_access_and_status, parse_rprm_formations, require_roles
+from core.security import _check_sondage_access_and_status, parse_rprm_formations, require_roles
 
 api_router = APIRouter(tags=["API"], prefix="/api")
 
