@@ -2069,8 +2069,8 @@ def create_app():
         program_name_by_code = {p.code: p.name for p in db_programs}
 
         # Score de satisfaction par (prof, sondage) :
-        # on filtre sur la section "P" (éval prof) et le type QCU_Satisfaction,
-        # on compte les réponses positives / total pour chaque (Answer.teacher, survey_id).
+        # on filtre sur QCU_Satisfaction avec Answer.teacher renseigné
+        # (ces réponses se trouvent dans les sections ME — évaluation de module/enseignant).
         rows = session.exec(
             select(
                 Answer.teacher,
@@ -2086,11 +2086,9 @@ def create_app():
             .join(Survey, Survey.survey_id == Module.survey_id)
             .join(Submission, Submission.submission_id == Answer.submission_id)
             .join(Question, Question.question_id == Answer.question_id)
-            .join(Section, Section.section_id == Question.section_id)
             .join(Option, Option.option_id == Answer.option_id)
             .where(
                 Survey.program.in_(program_codes),
-                Section.section_type == "P",
                 Question.question_type == "QCU_Satisfaction",
                 Answer.teacher.is_not(None),
                 Answer.teacher != "",
@@ -3614,5 +3612,4 @@ if __name__ == "__main__":
         "app:app",
         host="0.0.0.0",
         port=8000,
-        reload=False,
     )
