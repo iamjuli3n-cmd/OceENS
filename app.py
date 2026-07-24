@@ -2043,6 +2043,94 @@ def create_app():
             context=context,
         )
 
+    @dashboard_router.get("/campus-manager/prof", response_class=HTMLResponse)
+    async def campus_manager_prof(
+        request: Request,
+        session: SessionDep,
+    ):
+        user = get_current_user(request)
+        if not user:
+            return RedirectResponse(url="/")
+
+        roles_query = session.exec(
+            select(func.group_concat(Role.role))
+            .join(User, Role.user_id == User.user_id, isouter=True)
+            .where(User.mail == user["email"].casefold())
+        ).first()
+        roles = roles_query.split(",") if roles_query else ["student"]
+
+        if not check_role(roles, ["campus_manager"]):
+            return RedirectResponse(url="/")
+
+        program_codes = get_campus_manager_program_codes(session, roles)
+        db_programs = session.exec(
+            select(Program).where(Program.code.in_(program_codes))
+        ).all()
+        program_name_by_code = {p.code: p.name for p in db_programs}
+
+        # Score de satisfaction par (prof, sondage) :
+        # on filtre sur la section "P" (éval prof) et le type QCU_Satisfaction,
+        # on compte les réponses positives / total pour chaque (Answer.teacher, survey_id).
+        rows = session.exec(
+            select(
+                Answer.teacher,
+                Module.survey_id,
+                Survey.program,
+                Survey.school_year,
+                Survey.semester,
+                Survey.status,
+                func.count(Answer.answer_id).label("total"),
+                func.sum(case((Option.is_positive == 1, 1), else_=0)).label("positives"),
+            )
+            .join(Module, Module.module_id == Answer.module_id)
+            .join(Survey, Survey.survey_id == Module.survey_id)
+            .join(Submission, Submission.submission_id == Answer.submission_id)
+            .join(Question, Question.question_id == Answer.question_id)
+            .join(Section, Section.section_id == Question.section_id)
+            .join(Option, Option.option_id == Answer.option_id)
+            .where(
+                Survey.program.in_(program_codes),
+                Section.section_type == "P",
+                Question.question_type == "QCU_Satisfaction",
+                Answer.teacher.is_not(None),
+                Answer.teacher != "",
+            )
+            .group_by(Answer.teacher, Module.survey_id)
+            .order_by(Answer.teacher, Survey.school_year.desc(), Module.survey_id.desc())
+        ).all()
+
+        teachers: dict = {}
+        for teacher, survey_id, program, school_year, semester, status, total, positives in rows:
+            if teacher not in teachers:
+                teachers[teacher] = {"name": teacher, "surveys": []}
+            score = round(100 * positives / total, 1) if total and total > 0 else None
+            teachers[teacher]["surveys"].append(
+                {
+                    "survey_id": survey_id,
+                    "program": program,
+                    "program_name": program_name_by_code.get(program, program),
+                    "school_year": school_year or "—",
+                    "semester": semester or "—",
+                    "is_closed": (status != 1),
+                    "score": score,
+                    "total_answers": int(total) if total else 0,
+                }
+            )
+
+        sorted_teachers = sorted(teachers.values(), key=lambda t: teacher_sort_key(t["name"]))
+
+        context = {
+            "user": user,
+            "teachers": sorted_teachers,
+            "dashboard_navigation": get_dashboard_navigation(roles, "campus-manager"),
+        }
+
+        return templates.TemplateResponse(
+            request=request,
+            name="dashboard/prof.html",
+            context=context,
+        )
+
     @dashboard_router.get("/facilitator", response_class=HTMLResponse)
     async def facilitator_dashboard(
         request: Request,
