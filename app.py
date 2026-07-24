@@ -2050,6 +2050,7 @@ def create_app():
         school_year: Optional[str] = None,
         semester: Optional[str] = None,
         program: Optional[str] = None,
+        teacher: Optional[str] = None,
     ):
         user = get_current_user(request)
         if not user:
@@ -2103,12 +2104,14 @@ def create_app():
         ).all()
 
         # Construction de la liste complète avant filtrage (pour les menus déroulants)
+        selected_teacher = teacher or ""  # sauvegarder avant que la boucle réutilise le nom `teacher`
         teachers_raw: dict = {}
         for teacher, survey_id, prog, sy, sem, status, total, positives in rows:
-            if teacher not in teachers_raw:
-                teachers_raw[teacher] = {"name": teacher, "surveys": []}
+            teacher_key = teacher.title() if teacher else teacher
+            if teacher_key not in teachers_raw:
+                teachers_raw[teacher_key] = {"name": teacher_key, "surveys": []}
             score = round(100 * positives / total, 1) if total and total > 0 else None
-            teachers_raw[teacher]["surveys"].append(
+            teachers_raw[teacher_key]["surveys"].append(
                 {
                     "survey_id": survey_id,
                     "program": prog,
@@ -2132,6 +2135,7 @@ def create_app():
                 seen_codes.add(s["program"])
                 available_programs.append({"code": s["program"], "name": s["program_name"]})
         available_programs.sort(key=lambda p: p["name"])
+        available_teachers = sorted(teachers_raw.keys(), key=teacher_sort_key)
 
         # Filtrage des surveys par enseignant ; on écarte les enseignants sans résultat
         filtered_teachers = []
@@ -2141,6 +2145,7 @@ def create_app():
                 if (not school_year or s["school_year"] == school_year)
                 and (not semester or s["semester"] == semester)
                 and (not program or s["program"] == program)
+                and (not selected_teacher or t["name"] == selected_teacher)
             ]
             if filtered_surveys:
                 filtered_teachers.append({"name": t["name"], "surveys": filtered_surveys})
@@ -2152,9 +2157,11 @@ def create_app():
             "teachers": sorted_teachers,
             "available_school_years": available_school_years,
             "available_programs": available_programs,
+            "available_teachers": available_teachers,
             "selected_school_year": school_year or "",
             "selected_semester": semester or "",
             "selected_program": program or "",
+            "selected_teacher": selected_teacher,
             "dashboard_navigation": get_dashboard_navigation(roles, ""),
         }
 
