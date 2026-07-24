@@ -131,7 +131,7 @@ docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/
    Ou directement avec Uvicorn :
 
    ```bash
-   uvicorn app:app --host 0.0.0.0 --port 8000
+   uvicorn main:app --host 0.0.0.0 --port 8000
    ```
 
    En production, `launch.sh` lance l'application et le daemon de synthèses dans des sessions `screen` séparées.
@@ -151,7 +151,7 @@ docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/
 ## Journalisation
 
 Les logs applicatifs utilisent le module standard Python `logging` et le logger
-`uvicorn`. Cela permet aux messages d'`app.py`, `auth.py` et `seed.py` de reprendre
+`uvicorn`. Cela permet aux messages de l'application, d'`auth.py` et de `seed.py` de reprendre
 le format, les couleurs et les handlers déjà configurés par le serveur.
 
 Les niveaux sont utilisés selon leur gravité :
@@ -181,7 +181,7 @@ except Exception:
 
 Les nouveaux diagnostics doivent utiliser le logger approprié plutôt que
 `print()`. Le niveau applicatif est actuellement réglé sur `DEBUG` dans
-`app.py`. Les logs applicatifs passent par le handler Uvicorn, généralement
+`dependencies.py`. Les logs applicatifs passent par le handler Uvicorn, généralement
 écrit sur `stderr` ; avec une redirection séparée, utilisez par exemple
 `2> error.log` pour les récupérer.
 
@@ -215,7 +215,20 @@ LLM_API_KEY=your_llm_api_key_here
 
 ```
 OceENS/
-├── app.py                        # Fabrique FastAPI, routes, autorisations, orchestration métier
+├── main.py                       # Fabrique FastAPI, middlewares et assemblage des routeurs
+├── dependencies.py               # templates Jinja et logger partagés
+├── security.py                   # Authentification, rôles et périmètres
+├── helpers.py                    # Navigation, statistiques, filtres, tri
+├── schemas.py                    # Schémas Pydantic des corps de requête
+├── routers/                      # Routes découpées par domaine métier
+│   ├── pages.py                  #   Accueil et dashboards par rôle
+│   ├── surveys.py                #   Sondages : CRUD, statut, export, visualisation
+│   ├── students.py               #   Inscription des étudiants à un sondage
+│   ├── users.py                  #   Gestion des rôles utilisateurs
+│   ├── summaries.py              #   Déclenchement des synthèses LLM
+│   ├── prompts.py                #   Administration des prompts
+│   ├── survey_templates.py       #   Administration des modèles de sondage
+│   └── sections_questions.py     #   Administration des sections et questions
 ├── auth.py                       # Authentification Microsoft Entra ID (login, logout, callback)
 ├── database.py                   # Moteur SQLite et dépendance SessionDep
 ├── models.py                     # Schéma SQLModel (tables, relations)
@@ -336,8 +349,9 @@ Le dashboard `campus_manager` n'affiche que les sondages fermés ayant au moins 
 Le dépôt ne contient pas de suite de tests automatisés ni de CI. Avant de proposer un changement :
 
 ```bash
-python -m compileall -q app.py auth.py database.py models.py seed.py \
-  sondage_loader.py survey_loader_from_xlsx.py summaries_generator_daemon.py services
+python -m compileall -q main.py auth.py database.py models.py seed.py \
+  dependencies.py security.py helpers.py schemas.py \
+  sondage_loader.py survey_loader_from_xlsx.py summaries_generator_daemon.py routers services
 git diff --check
 ```
 

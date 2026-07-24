@@ -10,12 +10,12 @@ if [ ! -d venv ]; then
 	deactivate
 fi
 
-if [ $(ps -aux | grep "app.py" | wc -l) -gt 1 ]; then
+if [ $(ps -aux | grep "main.py" | wc -l) -gt 1 ]; then
 	echo "Website already launched"
 else
 
 	echo "Launching Website with screen"
-	screen -d -m bash -c "source venv/bin/activate && python -u app.py 2> >(tee -a app.error) | tee -a app.log"
+	screen -d -m bash -c "source venv/bin/activate && python -u main.py 2> >(tee -a app.error) | tee -a app.log"
 fi
 
 if [ $(ps -aux | grep "summaries_generator_daemon.py" | wc -l) -gt 1 ]; then
