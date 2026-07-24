@@ -21,7 +21,7 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
             question_id=question_id,
             option_id=option_id,
             module_id=module_id,
-            teacher=teacher.title(), # Capitalize first letter of each word
+            teacher=teacher.title() if teacher is not None else None, # Capitalize first letter of each word
         )
         session.add(answer)
         session.flush()
@@ -44,7 +44,7 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
                 question_id=question_id,
                 option_id=option_id,
                 module_id=module_id,
-                teacher=teacher.title(), # Capitalize first letter of each word
+                teacher=teacher.title()  if teacher is not None else None, # Capitalize first letter of each word
             )
             session.add(answer)
             session.flush()
@@ -59,7 +59,7 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
             question_id=question_id,
             value=answer_row,
             module_id=module_id,
-            teacher=teacher.title(), # Capitalize first letter of each word
+            teacher=teacher.title()  if teacher is not None else None, # Capitalize first letter of each word
         )
         session.add(answer)
         session.flush()
@@ -229,6 +229,6 @@ if __name__ == "__main__":
                     process_section(session,df,target_cols[0],12, module.module_id, teacher)
                     #exit(1)
         session.commit()
-        print(f"Nouveu sondage publié. (id:{survey_id})")
+        print(f"Nouveau sondage publié. (id:{survey_id})")
         
         
