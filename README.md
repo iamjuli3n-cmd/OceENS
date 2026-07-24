@@ -51,7 +51,7 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
 | `/api/surveys/{survey_id}/status` | Changement de statut d'un sondage. |
 | `/api/surveys/{survey_id}/students` | Gestion des étudiants inscrits à un sondage. |
 | `/api/surveys/{survey_id}/export` | Export CSV des réponses. |
-| `/api/surveys/{survey_id}/visualisation` | Visualisation des réponses. |
+| `/api/surveys/{survey_id}/visualisation` | Visualisation des réponses. Accepte `?teacher=<nom>` pour arriver déjà filtré sur un enseignant. |
 | `/api/surveys/{survey_id}/generate-summaries` | Lancement de la génération de synthèses LLM. |
 | `/api/surveys/{survey_id}/destroy-summaries` | Suppression des synthèses générées. |
 | `/api/users/{user_id}/role` | Modification du rôle d'un utilisateur. |
@@ -296,6 +296,26 @@ Le flux d'authentification repose sur **Microsoft Entra ID** via la bibliothèqu
 ```
 
 L'authentification seule n'autorise aucune action métier : chaque route vérifie ensuite le rôle et le périmètre (formation ou campus) via `require_roles()` et les helpers associés.
+
+---
+
+## Fonctionnalités notables
+
+### Analytique des enseignants
+
+La route `/dashboard/teachers/analytics` (`campus_manager`, `program_manager`) agrège le score de satisfaction par `(enseignant, sondage)` à partir des réponses `QCU_Satisfaction` renseignées d'un `Answer.teacher` (sections ME). La liste des enseignants est triée avec `teacher_sort_key()`, insensible à la casse et aux accents, et reste filtrable par année scolaire, semestre, formation et enseignant.
+
+### Filtre par enseignant dans la visualisation
+
+Un sélecteur côté client filtre la visualisation sans rechargement : seules les modules de l'enseignant choisi restent affichées, les sections Campus et Formation étant masquées. La page lit `?teacher=<nom>` au chargement pour se pré-filtrer ; les liens depuis l'analytique transmettent ce paramètre, si bien qu'un clic sur le score d'un enseignant ouvre directement sa vue.
+
+### Sondages importés via Excel
+
+Les sondages chargés par `survey_loader_from_xlsx.py` n'ont pas de question `QCU_Attendance` : `services/visualisation_data.py` utilise alors `satisfaction_responses_count` comme dénominateur de repli pour le score enseignant. Les noms d'enseignants sont normalisés en `.title()` à l'import comme à l'agrégation, pour fusionner les variantes de casse (`"GADEMER Antoine"` et `"Gademer Antoine"` = une seule entrée). Les questions sont triées par `question_id` dans le template, ce qui garantit les graphes avant les verbatims quel que soit l'ordre d'insertion.
+
+### Périmètre de la direction de campus
+
+Le dashboard `campus_manager` n'affiche que les sondages fermés ayant au moins un répondant. Le lien vers le questionnaire et le QR code y sont masqués (`can_view_survey_link=False`) : ce rôle consulte les résultats sans diffuser les sondages. Le garde `{% if can_view_survey_link | default(true) %}` laisse les autres dashboards inchangés.
 
 ---
 
