@@ -1,4 +1,4 @@
-from sqlmodel import Session, delete
+from sqlmodel import Session, delete, select
 from pathlib import Path
 import logging
 
@@ -18,6 +18,7 @@ from models import (
     Answer,
     Submission,
     Prompt,
+    LLMProvider,
     Stat,
 )
 from core.database import engine
@@ -929,6 +930,36 @@ def seed_answers(session: Session):
 
     session.commit()
 
+DEFAULT_PROVIDER_NAME = "Ollama EPF"
+
+
+def seed_llm_providers(session: Session):
+    """Crée le fournisseur LLM historique s'il n'existe pas.
+
+    Relançable sans doublon : la présence est testée sur `name`, qui sert de
+    clé fonctionnelle. Aucune clé d'API n'est écrite ici, uniquement le nom de
+    la variable d'environnement qui la porte.
+    """
+
+    existing = session.exec(
+        select(LLMProvider).where(LLMProvider.name == DEFAULT_PROVIDER_NAME)
+    ).first()
+    if existing:
+        return
+
+    session.add(
+        LLMProvider(
+            name=DEFAULT_PROVIDER_NAME,
+            api_type="ollama",
+            base_url="https://locallm.mde.epf.fr/ollama",
+            api_key_env="LLM_API_KEY",
+            default_model="gemma4:26b",
+            is_active=True,
+        )
+    )
+    session.commit()
+
+
 def seed_prompts(session: Session):
     """Remplit la table prompts."""
 
@@ -955,6 +986,11 @@ def seed_all_if_necessary():
     with Session(engine) as session:
         # Toujours synchroniser les programmes depuis le CSV
         seed_programs(session)
+
+        # Toujours garantir la présence du fournisseur LLM par défaut : les
+        # bases déjà déployées doivent l'obtenir sans repasser par un seed
+        # complet. La fonction est idempotente.
+        seed_llm_providers(session)
 
         # Seeder le reste uniquement si la base est vide
         if session.query(User).first():
