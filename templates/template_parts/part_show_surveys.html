@@ -245,6 +245,7 @@
     {% endif %}
   </div>
 
+  {% if can_view_survey_link | default(true) %}
   <a class="survey-link"
     onclick='openQRCodeModal(window.location.origin + "/api/surveys/{{ survey["survey_id"] }}", {{ survey["program_name"] | tojson }}, {{ (survey["school_year"] ~ " - " ~ survey["semester"]) | tojson }})'>
     QRCode
@@ -263,6 +264,7 @@
       <line x1="10" y1="14" x2="21" y2="3" />
     </svg>
   </a>
+  {% endif %}
 
   <div class="sondage-stats">
     <div class="sondage-stats-value">{% if survey['submissions_count'] != survey['answers_count'] %}<a

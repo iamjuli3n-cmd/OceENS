@@ -28,7 +28,13 @@
       <div class="banner-badge">RP-RM</div>
       <div class="banner-greeting">Bonjour, {{ user.name }} !</div>
     </div>
-    <a href="/dashboard/survey-create" class="btn-banner">+ Créer un questionnaire</a>
+    <div style="display:flex; gap:10px;">
+      <a href="/dashboard/teachers/analytics" class="btn-banner">
+        Enseignants
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="/dashboard/survey-create" class="btn-banner">+ Créer un questionnaire</a>
+    </div>
   </div>
 
   <div class="questionnaires-card">

@@ -182,6 +182,7 @@ def refresh_survey_stats(session: Session, survey_id: int) -> Dict[str, float]:
 
 
 def _build_question(dic, data_row, options, options_value, submissions_sets):
+    teacher_key = data_row["teacher"].title() if data_row["teacher"] else data_row["teacher"]
     if data_row["question_id"] not in dic["questions"].keys():
         dic["questions"][data_row["question_id"]] = {
             "text": bilingual_text(
@@ -202,17 +203,17 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
 
     if data_row["module_name"] not in submissions_sets:
         submissions_sets[data_row["module_name"]] = {}
-    if data_row["teacher"] not in submissions_sets[data_row["module_name"]]:
-        submissions_sets[data_row["module_name"]][data_row["teacher"]] = defaultdict(
+    if teacher_key not in submissions_sets[data_row["module_name"]]:
+        submissions_sets[data_row["module_name"]][teacher_key] = defaultdict(
             set
         )
     if (
         data_row["submission_id"]
-        not in submissions_sets[data_row["module_name"]][data_row["teacher"]][
+        not in submissions_sets[data_row["module_name"]][teacher_key][
             data_row["question_id"]
         ]
     ):  # Memorizing submissions_set
-        submissions_sets[data_row["module_name"]][data_row["teacher"]][
+        submissions_sets[data_row["module_name"]][teacher_key][
             data_row["question_id"]
         ].add(data_row["submission_id"])
         dic["questions"][data_row["question_id"]][
@@ -221,8 +222,10 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
     if data_row["question_type"] == "QCU_Satisfaction":  # SATIFACTION COUNT
         if "satisfaction_count" not in dic.keys():
             dic["satisfaction_count"] = 0
+            dic["satisfaction_responses_count"] = 0
         if options_value[data_row["option_id"]]["is_positive"]:  # Count the positive
             dic["satisfaction_count"] += 1
+        dic["satisfaction_responses_count"] += 1  # Total responses (fallback denominator)
     if data_row["question_type"] == "NPS":
         _add_recommendation_response(dic, data_row["answer_value"])
     if data_row["question_type"] == "QCU_Attendance":  # ATTENDANCE COUNT
@@ -409,19 +412,20 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
                         data_row["module_name"]
                     ] = {"ue": data_row["ue"], "teachers": {}}
                 if data_row["teacher"]:
+                    teacher_key = data_row["teacher"].title()
                     if (
-                        data_row["teacher"]
+                        teacher_key
                         not in data[data_row["section_name"]]["modules"][
                             data_row["module_name"]
                         ]["teachers"].keys()
                     ):
                         data[data_row["section_name"]]["modules"][
                             data_row["module_name"]
-                        ]["teachers"][data_row["teacher"]] = {"questions": {}}
+                        ]["teachers"][teacher_key] = {"questions": {}}
                     _build_question(
                         data[data_row["section_name"]]["modules"][
                             data_row["module_name"]
-                        ]["teachers"][data_row["teacher"]],
+                        ]["teachers"][teacher_key],
                         data_row,
                         options,
                         options_value,

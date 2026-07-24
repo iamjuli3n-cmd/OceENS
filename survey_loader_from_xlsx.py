@@ -74,11 +74,11 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
             question_id=question_id,
             value=answer_row,
             module_id=module_id,
-            teacher=teacher,
+            teacher=teacher.title() if teacher is not None else None,  # Cohérence de casse avec les autres blocs
         )
         session.add(answer)
         session.flush()
-    
+
     # Process answers Attendance
     if module_id:
         if rowsMask is not None:
@@ -91,8 +91,8 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
                         question_id=question_id,
                         option_id=option_id,
                         module_id=module_id,
-                        teacher=teacher
-                    
+                        teacher=teacher.title() if teacher is not None else None
+
                     )
                     session.add(answer)
                     session.flush()
@@ -111,8 +111,8 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
                         question_id=question_id,
                         option_id=option_id,
                         module_id=module_id,
-                        teacher=teacher
-                    
+                        teacher=teacher.title() if teacher is not None else None
+
                     )
                     session.add(answer)
                     session.flush()
@@ -125,8 +125,8 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
                         question_id=question_id,
                         option_id=option_id,
                         module_id=module_id,
-                        teacher=teacher
-                    
+                        teacher=teacher.title() if teacher is not None else None
+
                     )
                     session.add(answer)
                     session.flush()
