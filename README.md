@@ -211,6 +211,62 @@ LLM_API_KEY=your_llm_api_key_here
 
 ---
 
+## Fournisseurs LLM (synthèses de verbatims)
+
+Les synthèses de verbatims sont générées par un LLM. Le fournisseur est
+**configurable depuis l'interface** (`/backend/providers`, admin uniquement),
+sans toucher au code. Le fournisseur par défaut est **Ollama EPF**
+(`https://locallm.mde.epf.fr/ollama`), créé automatiquement au premier
+démarrage.
+
+### Types d'API supportés
+
+| `api_type` | Couvre |
+|------------|--------|
+| `ollama`    | Serveurs Ollama (local, EPF, tiers) |
+| `openai`    | OpenAI **et tout endpoint compatible OpenAI** : vLLM, Groq, Mistral, LM Studio… |
+| `anthropic` | API Claude (Anthropic) |
+
+### Principe de sécurité : aucune clé en base
+
+La base SQLite n'est pas chiffrée et part dans les sauvegardes. **Aucune clé
+d'API n'y est donc stockée.** La table `llm_providers` ne contient que le *nom*
+de la variable d'environnement (`api_key_env`, ex. `OPENAI_API_KEY`) ; la valeur
+reste dans le `.env` et n'est résolue qu'au moment de l'appel. Ce nom est validé
+contre une liste blanche (`LLM_*` ou `*_API_KEY`) pour empêcher de pointer vers
+un secret système (`SECRET_KEY`, `ENTRA_CLIENT_SECRET`…).
+
+### Ajouter un nouveau fournisseur
+
+1. **Ajouter la clé au `.env`** avec un nom conforme (`LLM_*` ou `*_API_KEY`) :
+
+   ```env
+   OPENAI_API_KEY=sk-...
+   ```
+
+2. **Redémarrer le daemon** de synthèses (les variables du `.env` ne sont lues
+   qu'au démarrage) :
+
+   ```bash
+   python summaries_generator_daemon.py
+   ```
+
+3. **Créer le fournisseur** dans `/backend/providers` → *+ Nouveau fournisseur* :
+   renseigner le nom, le type d'API, l'URL de base, le nom de la variable d'env
+   (`OPENAI_API_KEY`), et un modèle par défaut. L'indicateur **« clé présente /
+   absente »** confirme que la variable est bien chargée. Le bouton **Tester**
+   vérifie que l'URL et la clé répondent.
+
+4. **Relier un prompt** au fournisseur : dans `/backend/prompts`, un `<select>`
+   permet de choisir le fournisseur d'un prompt. Un prompt sans fournisseur
+   (`provider_id` NULL) retombe automatiquement sur Ollama EPF.
+
+> [!NOTE]
+> Un fournisseur référencé par au moins un prompt ne peut pas être supprimé
+> (pour ne pas casser la configuration de ces prompts).
+
+---
+
 ## Token Counting et Coûts Claude API
 
 OceENS inclut des outils pour estimer et tracker la consommation de tokens **pour Claude API** (support d'autres fournisseurs à venir).
@@ -283,6 +339,7 @@ OceENS/
 │   ├── users.py                  #   Gestion des rôles utilisateurs
 │   ├── summaries.py              #   Déclenchement des synthèses LLM
 │   ├── prompts.py                #   Administration des prompts
+│   ├── llm_providers.py          #   Administration des fournisseurs LLM (CRUD + test)
 │   ├── survey_templates.py       #   Administration des modèles de sondage
 │   └── sections_questions.py     #   Administration des sections et questions
 │
@@ -292,6 +349,7 @@ OceENS/
 ├── services/                     # Logique métier
 │   ├── helpers.py                # Navigation, statistiques, filtres, tri
 │   ├── visualisation_data.py     # Agrégations et contexte de visualisation
+│   ├── llm_client.py             # Client LLM multi-fournisseur (ollama/openai/anthropic)
 │   └── export_csv.py             # Export CSV des réponses
 │
 ├── llm-utils/                    # Outils pour intégrations LLM
