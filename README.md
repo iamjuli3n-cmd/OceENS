@@ -211,6 +211,45 @@ LLM_API_KEY=your_llm_api_key_here
 
 ---
 
+## Token Counting et Coûts Claude API
+
+OceENS inclut des outils pour estimer et tracker la consommation de tokens **pour Claude API** (support d'autres fournisseurs à venir).
+
+### Utilisation rapide
+
+```bash
+# Estimation rapide (fonctionne sans API key)
+./estimate-tokens.sh          # Unix/Linux/Mac
+estimate-tokens.bat           # Windows
+
+# Ou accès direct
+python llm-utils/token-counting/estimate_tokens_local.py
+```
+
+**Statistiques du projet :**
+- ~68K tokens pour l'intégralité du codebase
+- Coût estimé : $0.20 (Sonnet 5) pour une revue complète
+- Session type (5 tours) : ~$0.23
+
+### Configuration pour comptage exact
+
+Pour obtenir des comptages exacts via l'API Anthropic :
+
+```bash
+export ANTHROPIC_API_KEY='sk-...'
+python llm-utils/token-counting/estimate_tokens.py
+```
+
+### Documentation complète
+
+Voir `llm-utils/token-counting/TOKEN_COUNTING_GUIDE.md` pour :
+- Guide d'intégration Claude Desktop
+- Stratégies de réduction de coûts
+- Tarification détaillée par modèle
+- Recommandations de modèles (Haiku, Sonnet 5, Opus)
+
+---
+
 ## Structure du projet
 
 ```
@@ -254,6 +293,15 @@ OceENS/
 │   ├── helpers.py                # Navigation, statistiques, filtres, tri
 │   ├── visualisation_data.py     # Agrégations et contexte de visualisation
 │   └── export_csv.py             # Export CSV des réponses
+│
+├── llm-utils/                    # Outils pour intégrations LLM
+│   ├── README.md                 # Documentation des utilitaires LLM
+│   └── token-counting/           # Estimation des tokens et coûts Claude API
+│       ├── estimate_tokens_local.py       # Estimation rapide (sans API key)
+│       ├── estimate_tokens.py             # Comptage exact (requiert ANTHROPIC_API_KEY)
+│       ├── estimate-tokens.sh/.bat        # Wrappers de convenance
+│       ├── TOKEN_COUNTING_GUIDE.md        # Guide complet et optimisations
+│       └── README_TOKENS.md               # Référence rapide
 │
 ├── templates/                    # Templates HTML (Jinja2)
 │   ├── index.html                     # Page d'accueil / login
