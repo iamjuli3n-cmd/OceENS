@@ -1,26 +1,49 @@
 """Sondages : creation, lecture, modification, statut, suppression, export, visualisation."""
 
-from typing import Dict
+from typing import Dict, List, Optional
 from datetime import datetime
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from pydantic import BaseModel
 from sqlmodel import Session, delete, func, select
 from core.auth import get_current_user
 from core.database import SessionDep
 from models import Answer, Module, Option, Program, Question, Respondent, Section, Submission, Survey, User
 from core.dependencies import logger, templates
-from schemas import SurveyFullCreate, SurveySubmission
 from core.security import _check_sondage_access_and_status, can_manage_survey, get_results_program_codes, parse_rprm_formations, require_roles
 from services.helpers import delete_survey_with_relations
 from sondage_loader import load_sondage_complet
 from services.export_csv import generate_csv_response
 from services.visualisation_data import bilingual_text, get_visualisation_context2
 
-api_router = APIRouter(tags=["API"], prefix="/api")
+router = APIRouter(tags=["API"], prefix="/api")
+
+
+class ModuleCreate(BaseModel):
+    id: int
+    name: str
+    one_teacher_in_list: bool = False
+    teachers: List[str]
+
+
+class UECreate(BaseModel):
+    id: int
+    name: str
+    modules: List[ModuleCreate]
+
+
+class SurveyFullCreate(BaseModel):
+    template_id: int
+    campus: str
+    program: str
+    semester: str
+    school_year: str
+    ues: List[UECreate]
+    students: List[str]
 
 
 # ┌─ API : Création d'un survey (accès restreint Admin + RP-RM) ────┐
-@api_router.post("/surveys")
+@router.post("/surveys")
 async def create_survey(
     request: Request,
     session: SessionDep,
@@ -210,7 +233,7 @@ async def create_survey(
 
 
 # ┌─ Page questionnaire ─────────────────────────────────────────────┐
-@api_router.get("/surveys/{survey_id}", response_class=HTMLResponse)
+@router.get("/surveys/{survey_id}", response_class=HTMLResponse)
 def questionnaire_page(request: Request, survey_id: int, session: SessionDep):
     survey = session.exec(
         select(Survey).where(
@@ -394,7 +417,7 @@ def questionnaire_page(request: Request, survey_id: int, session: SessionDep):
     ues_list = list(ues_data.values())
     return templates.TemplateResponse(
         request=request,
-        name="survey.html",
+        name="dashboard/survey.html",
         context={
             "request": request,
             "survey": {
@@ -424,8 +447,21 @@ def questionnaire_page(request: Request, survey_id: int, session: SessionDep):
 # └────────────────────────────────────────────────────────────────┘
 
 
+class AnswerItem(BaseModel):
+    section_id: int
+    question_id: int
+    value: str
+    option_id: Optional[int] = None
+    module_id: Optional[int] = None
+    teacher: Optional[str] = None
+
+
+class SurveySubmission(BaseModel):
+    answers: List[AnswerItem]
+
+
 # ┌─ API : Soumission des réponses du questionnaire ─────────────────┐
-@api_router.post("/surveys/{survey_id}")
+@router.post("/surveys/{survey_id}")
 def submit_reponses(
     request: Request,
     survey_id: int,
@@ -598,7 +634,7 @@ def submit_reponses(
     }
 
 
-@api_router.post("/surveys/{survey_id}/status")
+@router.post("/surveys/{survey_id}/status")
 def update_survey_status(
     survey_id: int,
     request: Request,
@@ -656,8 +692,8 @@ def update_survey_status(
 
 
 
-@api_router.delete("/surveys/{survey_id}")
-@api_router.post("/surveys/{survey_id}/delete")
+@router.delete("/surveys/{survey_id}")
+@router.post("/surveys/{survey_id}/delete")
 def delete_survey(
     survey_id: int,
     request: Request,
@@ -708,7 +744,7 @@ def delete_survey(
 # ┌─ Route : Dashboards par rôle ────────────────────────────────────┐
 
 
-@api_router.get("/surveys/{survey_id}/export")
+@router.get("/surveys/{survey_id}/export")
 def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
     user,roles = require_roles(
         request,
@@ -739,7 +775,7 @@ def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
     return resp
 
 
-@api_router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
+@router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
 def visualisation_page(request: Request, survey_id: int, session: SessionDep):
     user,roles = require_roles(
         request,
@@ -774,7 +810,7 @@ def visualisation_page(request: Request, survey_id: int, session: SessionDep):
     context["back_url"] = referer if referer and referer != current_path else "/"
 
     return templates.TemplateResponse(
-        request=request, name="visualisation.html", context=context
+        request=request, name="dashboard/visualisation.html", context=context
     )
 
 # └───────────────────────────────────────────────────────────────────┘

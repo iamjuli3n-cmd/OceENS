@@ -8,7 +8,7 @@ COPY ./requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Fichiers source Python (structure plate, pas de sous-dossier app/)
-COPY main.py seed.py schemas.py ./
+COPY main.py ./
 COPY sondage_loader.py survey_loader_from_xlsx.py summaries_generator_daemon.py ./
 
 # Répertoires applicatifs

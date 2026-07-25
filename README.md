@@ -181,7 +181,7 @@ except Exception:
 
 Les nouveaux diagnostics doivent utiliser le logger approprié plutôt que
 `print()`. Le niveau applicatif est actuellement réglé sur `DEBUG` dans
-`dependencies.py`. Les logs applicatifs passent par le handler Uvicorn, généralement
+`core/dependencies.py`. Les logs applicatifs passent par le handler Uvicorn, généralement
 écrit sur `stderr` ; avec une redirection séparée, utilisez par exemple
 `2> error.log` pour les récupérer.
 
@@ -216,8 +216,6 @@ LLM_API_KEY=your_llm_api_key_here
 ```
 OceENS/
 ├── main.py                       # Fabrique FastAPI, middlewares et assemblage des routeurs
-├── schemas.py                    # Schémas Pydantic des corps de requête
-├── seed.py                       # Données initiales et synchronisation des formations
 ├── sondage_loader.py             # Chargement d'un sondage complet pour l'export
 ├── survey_loader_from_xlsx.py    # Import de sondages depuis un fichier Excel
 ├── summaries_generator_daemon.py # Traitement asynchrone des synthèses LLM (processus séparé)
@@ -232,7 +230,8 @@ OceENS/
 │   ├── auth.py                   #   Authentification Microsoft Entra ID (login, logout, callback)
 │   ├── database.py               #   Moteur SQLite et dépendance SessionDep
 │   ├── security.py               #   Rôles, périmètres, contrôle d'accès
-│   └── dependencies.py           #   templates Jinja et logger partagés
+│   ├── dependencies.py           #   templates Jinja et logger partagés
+│   └── seed.py                   #   Données initiales et synchronisation des formations
 │
 ├── models/                       # Schéma SQLModel, un fichier par table
 │   ├── __init__.py               #   Ré-exporte toutes les classes (voir sa docstring)
@@ -258,16 +257,16 @@ OceENS/
 │
 ├── templates/                    # Templates HTML (Jinja2)
 │   ├── index.html                     # Page d'accueil / login
-│   ├── survey.html                    # Réponse au sondage
-│   ├── survey_create.html             # Création de sondage
-│   ├── visualisation.html             # Visualisation des réponses
 │   ├── dashboard/
 │   │   ├── admin.html
 │   │   ├── student.html
 │   │   ├── program_manager.html
 │   │   ├── facilitator.html
 │   │   ├── campus_manager.html
-│   │   └── prof.html                     # Satisfaction des enseignants (campus_manager, program_manager)
+│   │   ├── teachers-analytics.html       # Satisfaction des enseignants (campus_manager, program_manager)
+│   │   ├── survey.html                   # Réponse au sondage
+│   │   ├── survey_create.html            # Création de sondage
+│   │   └── visualisation.html            # Visualisation des réponses
 │   ├── backend/                       # Pages d'administration (admin only)
 │   │   ├── prompts.html               # Liste des prompts LLM
 │   │   └── prompt_form.html           # Formulaire create/edit partagé
@@ -355,7 +354,7 @@ Le dashboard `campus_manager` n'affiche que les sondages fermés ayant au moins 
 Le dépôt ne contient pas de suite de tests automatisés ni de CI. Avant de proposer un changement :
 
 ```bash
-python -m compileall -q main.py seed.py schemas.py \
+python -m compileall -q main.py \
   sondage_loader.py survey_loader_from_xlsx.py summaries_generator_daemon.py \
   core models routers services
 git diff --check

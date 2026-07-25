@@ -2,17 +2,21 @@
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from sqlmodel import Session, delete, func, select
 from core.database import SessionDep
 from models import Program, Respondent, Role, Survey, User
-from schemas import RoleUpdate
 from core.security import check_role, parse_role_scopes, require_roles, VALID_ROLES
 from typing import List
 
-api_router = APIRouter(tags=["API"], prefix="/api")
+router = APIRouter(tags=["API"], prefix="/api")
 
 
-@api_router.put("/users/{user_id}/role")
+class RoleUpdate(BaseModel):
+    roles: List[str]
+
+
+@router.put("/users/{user_id}/role")
 def update_user_role(
     request: Request, user_id: int, body: RoleUpdate, session: SessionDep
 ):

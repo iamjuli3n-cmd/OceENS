@@ -6,10 +6,9 @@ Fabrique l'application et assemble les routeurs. La logique métier vit dans
 les modules dédiés :
 
 - `routers/` : les routes, découpées par domaine ;
-- `security.py` : authentification, rôles et périmètres ;
-- `helpers.py` : navigation, statistiques, filtres, tri ;
-- `schemas.py` : corps de requête Pydantic ;
-- `dependencies.py` : `templates` et `logger` partagés ;
+- `core/security.py` : authentification, rôles et périmètres ;
+- `core/dependencies.py` : `templates` et `logger` partagés ;
+- `services/helpers.py` : navigation, statistiques, filtres, tri ;
 - `services/` : agrégations, export CSV, client LLM.
 """
 
@@ -26,7 +25,7 @@ import uvicorn
 from core.auth import router as auth_router
 from core.database import create_db_and_tables
 from core.dependencies import logger
-from seed import seed_all_if_necessary
+from core.seed import seed_all_if_necessary
 
 from routers import (
     pages,
@@ -91,8 +90,10 @@ def create_app():
     # puis backend. La page d'accueil reste sans préfixe.
     app.include_router(pages.router)
 
-    for module in (surveys, students, users, summaries, prompts,
-                   survey_templates, sections_questions):
+    for module in (surveys, students, users, summaries, sections_questions):
+        app.include_router(module.router)
+
+    for module in (prompts, survey_templates):
         app.include_router(module.api_router)
 
     app.include_router(pages.dashboard_router)

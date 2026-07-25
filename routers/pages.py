@@ -50,12 +50,6 @@ async def index(request: Request, session: SessionDep):
 
 # └────────────────────────────────────────────────────────────────┘
 
-dashboard_router = APIRouter(tags=["Dashboard"], prefix="/dashboard")
-
-api_router = APIRouter(tags=["API"], prefix="/api")
-
-backend_router = APIRouter(tags=["Backend"], prefix="/backend")
-
 
 # ┌─ Route : Paramétrage (accès restreint Admin + RP-RM) ──────────────┐
 @dashboard_router.get("/survey-create", response_class=HTMLResponse)
@@ -151,7 +145,7 @@ def surveys_create(
 
     return templates.TemplateResponse(
         request=request,
-        name="survey_create.html",
+        name="dashboard/survey_create.html",
         context={
             "request": request,
             "survey_templates": survey_templates,
@@ -654,7 +648,7 @@ async def teachers_analytics(
 
     return templates.TemplateResponse(
         request=request,
-        name="dashboard/teacher.html",
+        name="dashboard/teachers-analytics.html",
         context=context,
     )
 

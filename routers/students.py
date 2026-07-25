@@ -3,18 +3,19 @@
 import os
 import re
 
+from typing import List
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from sqlmodel import delete, func, select, Session
 from core.database import SessionDep
 from models import Respondent, Survey, User
-from schemas import SurveyStudentsAdd
 from core.security import can_manage_survey, require_roles
 
-api_router = APIRouter(tags=["API"], prefix="/api")
+router = APIRouter(tags=["API"], prefix="/api")
 
 
-@api_router.get("/surveys/{survey_id}/students")
+@router.get("/surveys/{survey_id}/students")
 def get_survey_students(
     survey_id: int,
     request: Request,
@@ -28,7 +29,11 @@ def get_survey_students(
     return _get_survey_students_payload(session, survey_id)
 
 
-@api_router.post("/surveys/{survey_id}/students")
+class SurveyStudentsAdd(BaseModel):
+    emails: List[str]
+
+
+@router.post("/surveys/{survey_id}/students")
 def add_survey_students(
     survey_id: int,
     body: SurveyStudentsAdd,
@@ -140,7 +145,7 @@ def add_survey_students(
     return result
 
 
-@api_router.delete("/surveys/{survey_id}/students")
+@router.delete("/surveys/{survey_id}/students")
 def remove_survey_student(
     survey_id: int,
     email: str,

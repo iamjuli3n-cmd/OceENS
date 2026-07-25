@@ -8,11 +8,11 @@ from core.auth import get_current_user
 from core.database import SessionDep
 from models import Answer, Question, Role, Section, Template, User
 
-api_router = APIRouter(tags=["API"], prefix="/api")
+router = APIRouter(tags=["API"], prefix="/api")
 
 
 # ┌─ API : CRUD Sections (admin only) ──────────────────────────────────┐
-@api_router.post("/sections")
+@router.post("/sections")
 def create_section(
     request: Request,
     session: SessionDep,
@@ -58,7 +58,7 @@ def create_section(
     return JSONResponse({"ok": True, "section_id": sec.section_id})
 
 
-@api_router.put("/sections/{section_id}")
+@router.put("/sections/{section_id}")
 def update_section(
     request: Request,
     section_id: int,
@@ -102,7 +102,7 @@ def update_section(
     return JSONResponse({"ok": True})
 
 
-@api_router.delete("/sections/{section_id}")
+@router.delete("/sections/{section_id}")
 def delete_section(request: Request, section_id: int, session: SessionDep):
     user = get_current_user(request)
     if not user:
@@ -150,7 +150,7 @@ def delete_section(request: Request, section_id: int, session: SessionDep):
 
 
 # ┌─ API : CRUD Questions (admin only) ─────────────────────────────────┐
-@api_router.post("/questions")
+@router.post("/questions")
 def create_question(
     request: Request,
     session: SessionDep,
@@ -201,7 +201,7 @@ def create_question(
     return JSONResponse({"ok": True, "question_id": q.question_id})
 
 
-@api_router.put("/questions/{question_id}")
+@router.put("/questions/{question_id}")
 def update_question(
     request: Request,
     question_id: int,
@@ -259,7 +259,7 @@ def update_question(
     return JSONResponse({"ok": True})
 
 
-@api_router.delete("/questions/{question_id}")
+@router.delete("/questions/{question_id}")
 def delete_question(request: Request, question_id: int, session: SessionDep):
     user = get_current_user(request)
     if not user:
