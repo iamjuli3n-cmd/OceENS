@@ -446,6 +446,22 @@ Les sondages chargés par `survey_loader_from_xlsx.py` n'ont pas de question `QC
 
 Le dashboard `campus_manager` n'affiche que les sondages fermés ayant au moins un répondant. Le lien vers le questionnaire et le QR code y sont masqués (`can_view_survey_link=False`) : ce rôle consulte les résultats sans diffuser les sondages. Le garde `{% if can_view_survey_link | default(true) %}` laisse les autres dashboards inchangés.
 
+### Nettoyage des étudiants orphelins
+
+Lors de la suppression d'un sondage, les étudiants qui ne sont plus rattachés à
+**aucun autre** sondage sont également supprimés, pour éviter d'accumuler des
+comptes inutilisés (`services/helpers.py`, `_delete_orphan_students`). Un
+garde-fou protège les utilisateurs à rôle privilégié (`admin`,
+`program_manager`, `facilitator`, `campus_manager`) : un enseignant ou un
+gestionnaire ayant répondu à un sondage n'est jamais effacé.
+
+### Ajout d'un utilisateur par mail
+
+L'onglet « Utilisateurs » du dashboard administrateur propose un bouton
+**« + Ajouter un utilisateur »** : un mail suffit pour créer le compte, avec le
+rôle `student` par défaut (`POST /api/users`, admin uniquement). Le mail est
+validé (format + domaine autorisé) et les doublons sont refusés.
+
 ---
 
 ## Checklist de déploiement
