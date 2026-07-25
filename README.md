@@ -213,7 +213,7 @@ LLM_API_KEY=your_llm_api_key_here
 
 ## Token Counting et Coûts Claude API
 
-OceENS inclut des outils pour estimer et tracker la consommation de tokens lors de l'utilisation de Claude pour les synthèses LLM.
+OceENS inclut des outils pour estimer et tracker la consommation de tokens **pour Claude API** (support d'autres fournisseurs à venir).
 
 ### Utilisation rapide
 
