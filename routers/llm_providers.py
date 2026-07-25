@@ -214,3 +214,122 @@ def create_provider(
     # Redirection 303 (See Other) vers la liste avec paramètre de succès
     # Le paramètre ?success=created permet au template d'afficher un message
     return RedirectResponse(url="/backend/providers?success=created", status_code=303)
+
+
+@backend_router.get("/providers/{provider_id}/edit", response_class=HTMLResponse)
+def backend_provider_edit(request: Request, provider_id: int, session: SessionDep):
+    """Formulaire d'édition d'un fournisseur existant.
+
+    Réutilise le même template que la création, mais en lui passant le
+    fournisseur à modifier (le template bascule alors en mode édition).
+    """
+    # 1. AUTHENTIFICATION + contrôle admin
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/")
+
+    roles_query = session.exec(
+        select(func.group_concat(Role.role))
+        .join(User, Role.user_id == User.user_id, isouter=True)
+        .where(User.mail == user["email"].casefold())
+    ).first()
+    roles = roles_query.split(",") if roles_query else ["student"]
+
+    if "admin" not in roles:
+        return RedirectResponse(url="/")
+
+    # 2. Charger le fournisseur ; introuvable → retour à la liste avec erreur
+    provider = session.get(LLMProvider, provider_id)
+    if not provider:
+        return RedirectResponse(
+            url="/backend/providers?error=introuvable", status_code=303
+        )
+
+    # 3. Afficher le formulaire pré-rempli avec le fournisseur
+    return templates.TemplateResponse("backend/provider_form.html", {
+        "request": request,
+        "provider": provider,
+    })
+
+
+@backend_router.post("/providers/{provider_id}/update")
+def update_provider(
+    request: Request,
+    provider_id: int,
+    session: SessionDep,
+    name: str = Form(...),  # Libellé du fournisseur (ex: "OpenAI")
+    api_type: str = Form(...),  # Type: "ollama", "openai", ou "anthropic"
+    base_url: str = Form(...),  # URL racine (ex: https://api.openai.com)
+    api_key_env: str = Form(...),  # Nom var env (ex: OPENAI_API_KEY)
+    default_model: str = Form(""),  # Modèle par défaut (optionnel)
+    is_active: bool = Form(False),  # Fournisseur actif ou pas?
+):
+    """Met à jour un fournisseur LLM existant après validation.
+
+    Étapes:
+    1. Vérifier que l'utilisateur est auth et admin
+    2. Charger le fournisseur à modifier
+    3. Valider api_key_env contre la whitelist de sécurité
+    4. Vérifier que le nom reste unique (hors ce fournisseur)
+    5. Appliquer les modifications et sauvegarder
+    6. Rediriger vers la liste avec message de succès
+    """
+    # 1. AUTHENTIFICATION
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/")
+
+    roles_query = session.exec(
+        select(func.group_concat(Role.role))
+        .join(User, Role.user_id == User.user_id, isouter=True)
+        .where(User.mail == user["email"].casefold())
+    ).first()
+    roles = roles_query.split(",") if roles_query else ["student"]
+
+    # Vérifier admin - sinon refuser avec 403 (Forbidden)
+    if "admin" not in roles:
+        return RedirectResponse(url="/", status_code=403)
+
+    # 2. Charger le fournisseur à modifier
+    provider = session.get(LLMProvider, provider_id)
+    if not provider:
+        return RedirectResponse(
+            url="/backend/providers?error=introuvable", status_code=303
+        )
+
+    # 3. VALIDATION - api_key_env (même règle que la création)
+    valid, error_msg = _validate_api_key_env(api_key_env)
+    if not valid:
+        return templates.TemplateResponse("backend/provider_form.html", {
+            "request": request,
+            "provider": provider,
+            "error": error_msg,
+        }, status_code=400)  # 400 = Bad Request
+
+    # 4. VALIDATION - Unicité du nom, en excluant CE fournisseur
+    #    (sinon on se bloquerait soi-même en gardant le même nom)
+    existing = session.exec(
+        select(LLMProvider).where(
+            LLMProvider.name == name,
+            LLMProvider.provider_id != provider_id,
+        )
+    ).first()
+    if existing:
+        return templates.TemplateResponse("backend/provider_form.html", {
+            "request": request,
+            "provider": provider,
+            "error": f"Un autre fournisseur nommé '{name}' existe déjà",
+        }, status_code=400)
+
+    # 5. MISE À JOUR des champs
+    provider.name = name
+    provider.api_type = api_type
+    provider.base_url = base_url.rstrip("/")  # Normalisation: enlever le / final
+    provider.api_key_env = api_key_env
+    provider.default_model = default_model if default_model else None
+    provider.is_active = is_active
+    session.add(provider)
+    session.commit()  # Persister les modifications
+
+    # 6. REDIRECTION vers la liste avec message de succès
+    return RedirectResponse(url="/backend/providers?success=updated", status_code=303)
