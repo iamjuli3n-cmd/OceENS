@@ -33,3 +33,16 @@ class Prompt(SQLModel, table=True):
 
     # Le texte du prompt, contient le marqueur {ANSWERS} à substituer
     prompt_text: Optional[str] = Field(sa_column=Column("prompt_text", Text))
+
+    # Fournisseur LLM à utiliser (FK nullable vers llm_providers).
+    # NULL = repli sur le fournisseur par défaut (Ollama EPF) : les prompts
+    # créés avant la config multi-fournisseur continuent de fonctionner.
+    provider_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            "provider_id",
+            Integer,
+            ForeignKey("llm_providers.provider_id"),
+            nullable=True,
+        ),
+    )

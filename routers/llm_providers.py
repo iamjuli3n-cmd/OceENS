@@ -333,3 +333,50 @@ def update_provider(
 
     # 6. REDIRECTION vers la liste avec message de succès
     return RedirectResponse(url="/backend/providers?success=updated", status_code=303)
+
+
+@backend_router.post("/providers/{provider_id}/delete")
+def delete_provider(request: Request, provider_id: int, session: SessionDep):
+    """Supprime un fournisseur, sauf s'il est référencé par un prompt (409).
+
+    Même principe de verrou que pour les prompts utilisés par des synthèses :
+    on refuse la suppression tant qu'au moins un prompt pointe sur ce
+    fournisseur, pour ne pas casser la configuration de ces prompts.
+    """
+    # 1. AUTHENTIFICATION + contrôle admin
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/")
+
+    roles_query = session.exec(
+        select(func.group_concat(Role.role))
+        .join(User, Role.user_id == User.user_id, isouter=True)
+        .where(User.mail == user["email"].casefold())
+    ).first()
+    roles = roles_query.split(",") if roles_query else ["student"]
+
+    if "admin" not in roles:
+        return RedirectResponse(url="/", status_code=403)
+
+    # 2. Charger le fournisseur ; introuvable → retour liste avec erreur
+    provider = session.get(LLMProvider, provider_id)
+    if not provider:
+        return RedirectResponse(
+            url="/backend/providers?error=introuvable", status_code=303
+        )
+
+    # 3. VERROU : refuser si au moins un prompt utilise ce fournisseur
+    in_use = session.exec(
+        select(Prompt).where(Prompt.provider_id == provider_id).limit(1)
+    ).first()
+    if in_use:
+        return RedirectResponse(
+            url="/backend/providers?error=utilise_par_prompt", status_code=303
+        )
+
+    # 4. SUPPRESSION
+    session.delete(provider)
+    session.commit()
+
+    # 5. REDIRECTION vers la liste avec message de succès
+    return RedirectResponse(url="/backend/providers?success=deleted", status_code=303)
