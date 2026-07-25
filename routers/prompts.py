@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlmodel import delete, func, select
 from core.auth import get_current_user
 from core.database import SessionDep
-from models import Prompt, Role, Summary, Survey, User
+from models import LLMProvider, Prompt, Role, Summary, Survey, User
 from core.dependencies import templates
 
 # Deux routeurs : /api pour les mutations (form/fetch), /backend pour les pages
@@ -90,10 +90,17 @@ def backend_prompt_new(request: Request, session: SessionDep):
     if "admin" not in roles:
         return RedirectResponse(url="/")
 
+    # Fournisseurs actifs proposés dans le <select> du formulaire
+    providers = session.exec(
+        select(LLMProvider)
+        .where(LLMProvider.is_active == True)
+        .order_by(LLMProvider.name)
+    ).all()
+
     return templates.TemplateResponse(
         request=request,
         name="backend/prompt_form.html",
-        context={"user": user, "prompt": None},
+        context={"user": user, "prompt": None, "providers": providers},
     )
 
 
@@ -132,13 +139,34 @@ def backend_prompt_edit(request: Request, prompt_id: int, session: SessionDep):
             status_code=303,
         )
 
+    # Fournisseurs actifs proposés dans le <select> du formulaire
+    providers = session.exec(
+        select(LLMProvider)
+        .where(LLMProvider.is_active == True)
+        .order_by(LLMProvider.name)
+    ).all()
+
     return templates.TemplateResponse(
         request=request,
         name="backend/prompt_form.html",
-        context={"user": user, "prompt": prompt},
+        context={"user": user, "prompt": prompt, "providers": providers},
     )
 
 # └────────────────────────────────────────────────────────────────────┘
+
+
+def _parse_provider_id(raw: Optional[str]) -> Optional[int]:
+    """Convertit la valeur du <select> fournisseur en int ou None.
+
+    Le formulaire envoie "" pour l'option « Par défaut » : on la traduit en
+    None (repli sur le fournisseur par défaut côté daemon).
+    """
+    if not raw or not raw.strip():
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
 
 
 # ┌─ API : CRUD Prompts via formulaires HTML (admin only) ──────────────┐
@@ -149,6 +177,7 @@ def create_prompt(
     description: Optional[str] = Form(None),
     model: Optional[str] = Form(None),
     prompt_text: Optional[str] = Form(None),
+    provider_id: Optional[str] = Form(None),
 ):
     """Crée un prompt depuis le formulaire, puis redirige vers la liste."""
     user = get_current_user(request)
@@ -169,6 +198,7 @@ def create_prompt(
         description=description or None,
         model=model or None,
         prompt_text=prompt_text or None,
+        provider_id=_parse_provider_id(provider_id),
     )
     try:
         session.add(prompt)
@@ -191,6 +221,7 @@ def update_prompt(
     description: Optional[str] = Form(None),
     model: Optional[str] = Form(None),
     prompt_text: Optional[str] = Form(None),
+    provider_id: Optional[str] = Form(None),
 ):
     """Met à jour un prompt, sauf s'il est déjà référencé par une synthèse (409)."""
     user = get_current_user(request)
@@ -227,6 +258,7 @@ def update_prompt(
     prompt.description = description or None
     prompt.model = model or None
     prompt.prompt_text = prompt_text or None
+    prompt.provider_id = _parse_provider_id(provider_id)
 
     try:
         session.add(prompt)
