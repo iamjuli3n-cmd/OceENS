@@ -1,208 +1,112 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if provider %}Éditer{% else %}Ajouter{% endif %} un fournisseur LLM</title>
-    {% include "template_parts/part_site_header.html" %}
-    <link rel="stylesheet" href="/static/css/admin.css">
-</head>
-<body>
-    <div class="container">
-        {% include "template_parts/part_site_header.html" %}
-
-        <main class="main-content">
-            <div class="form-header">
-                <h1>{% if provider %}Éditer{% else %}Ajouter{% endif %} un fournisseur LLM</h1>
-                <a href="/backend/providers" class="btn btn-secondary">Retour</a>
-            </div>
-
-            {% if error %}
-            <div class="alert alert-danger">
-                {{ error }}
-            </div>
-            {% endif %}
-
-            <form method="POST" action="{% if provider %}/backend/providers/{{ provider.provider_id }}/update{% else %}/backend/providers/create{% endif %}" class="form-container">
-                <fieldset>
-                    <legend>Configuration du fournisseur</legend>
-
-                    <div class="form-group">
-                        <label for="name">Nom du fournisseur <span class="required">*</span></label>
-                        <input type="text" id="name" name="name" required value="{{ provider.name if provider else '' }}"
-                               placeholder="ex: OpenAI, Ollama EPF, Anthropic">
-                        <small>Libellé affiché dans l'interface</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="api_type">Type d'API <span class="required">*</span></label>
-                        <select id="api_type" name="api_type" required>
-                            <option value="">-- Choisir --</option>
-                            <option value="ollama" {% if provider and provider.api_type == 'ollama' %}selected{% endif %}>Ollama</option>
-                            <option value="openai" {% if provider and provider.api_type == 'openai' %}selected{% endif %}>OpenAI (+ compatibles)</option>
-                            <option value="anthropic" {% if provider and provider.api_type == 'anthropic' %}selected{% endif %}>Anthropic</option>
-                        </select>
-                        <small>Détermine le protocole d'appel. OpenAI couvre aussi vLLM, Groq, Mistral, LM Studio.</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="base_url">URL de base <span class="required">*</span></label>
-                        <input type="url" id="base_url" name="base_url" required value="{{ provider.base_url if provider else '' }}"
-                               placeholder="ex: https://api.openai.com, http://localhost:11434">
-                        <small>Point d'accès racine du service</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="api_key_env">Nom de la variable d'environnement <span class="required">*</span></label>
-                        <input type="text" id="api_key_env" name="api_key_env" required value="{{ provider.api_key_env if provider else '' }}"
-                               placeholder="ex: OPENAI_API_KEY, ANTHROPIC_API_KEY"
-                               pattern="[A-Z0-9_]+" title="Majuscules, chiffres, underscores uniquement">
-                        <small>Nom de la variable (ex: LLM_API_KEY). Doit commencer par LLM_ ou finir par _API_KEY. La valeur doit être définie dans .env.</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="default_model">Modèle par défaut (optionnel)</label>
-                        <input type="text" id="default_model" name="default_model" value="{{ provider.default_model if provider else '' }}"
-                               placeholder="ex: gpt-4, claude-opus-4-8, llama2">
-                        <small>Modèle proposé par défaut. Laissez vide si non applicable.</small>
-                    </div>
-
-                    <div class="form-group checkbox">
-                        <input type="checkbox" id="is_active" name="is_active" value="1"
-                               {% if not provider or provider.is_active %}checked{% endif %}>
-                        <label for="is_active">Fournisseur actif</label>
-                        <small>Seuls les fournisseurs actifs sont proposés dans les formulaires</small>
-                    </div>
-                </fieldset>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">
-                        {% if provider %}Mettre à jour{% else %}Créer{% endif %}
-                    </button>
-                    <a href="/backend/providers" class="btn btn-secondary">Annuler</a>
-                </div>
-            </form>
-        </main>
-    </div>
-
+    <title>{% if provider %}Modifier le fournisseur #{{ provider.provider_id }}{% else %}Nouveau fournisseur{% endif %} – OCEENS II</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/prompt_form.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}">
     <style>
-        .form-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .form-container {
-            max-width: 600px;
-        }
-
-        fieldset {
-            border: 1px solid var(--color-border, #ddd);
-            border-radius: 4px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        legend {
-            padding: 0 0.5rem;
-            font-weight: 600;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .form-group input[type="text"],
-        .form-group input[type="url"],
-        .form-group select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid var(--color-border, #ddd);
-            border-radius: 4px;
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--color-link, #0066cc);
-            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
-        }
-
-        .form-group small {
-            display: block;
-            margin-top: 0.25rem;
-            color: var(--color-text-secondary, #666);
-            font-size: 0.875rem;
-        }
-
-        .form-group.checkbox {
+        .checkbox-row {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 8px;
         }
 
-        .form-group.checkbox input[type="checkbox"] {
+        .checkbox-row input {
             width: auto;
-            margin: 0;
         }
 
-        .form-group.checkbox label {
-            margin: 0;
-        }
-
-        .required {
-            color: #dc3545;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .alert {
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-        }
-
-        .alert-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        @media (max-width: 768px) {
-            .form-header {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .form-container {
-                max-width: 100%;
-            }
-
-            fieldset {
-                padding: 1rem;
-            }
-
-            .form-actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
+        .field-hint {
+            display: block;
+            margin-top: 4px;
+            font-size: .78rem;
+            color: var(--text-muted, #7f8fa6);
         }
     </style>
+</head>
+
+<body class="page-admin">
+
+    {% set header_title_fr = "Administration" %}
+    {% set header_back_url = "/backend/providers" %}
+    {% include 'template_parts/part_site_header.html' %}
+
+    <div class="form-main">
+        <h1>{% if provider %}Modifier le fournisseur #{{ provider.provider_id }}{% else %}Nouveau fournisseur{% endif %}</h1>
+
+        {% if error %}
+        <div class="notice error">{{ error }}</div>
+        {% endif %}
+
+        <div class="card">
+            {# Création → POST /create ; édition → POST /{id}/update #}
+            <form method="POST"
+                action="{% if provider %}/backend/providers/{{ provider.provider_id }}/update{% else %}/backend/providers/create{% endif %}">
+
+                <div class="form-group">
+                    <label for="name">Nom du fournisseur</label>
+                    <input type="text" id="name" name="name" required
+                        value="{{ provider.name or '' if provider else '' }}"
+                        placeholder="Ex. : OpenAI, Ollama EPF, Anthropic">
+                </div>
+
+                <div class="form-group">
+                    <label for="api_type">Type d'API</label>
+                    <select id="api_type" name="api_type" required>
+                        <option value="ollama" {% if provider and provider.api_type == 'ollama' %}selected{% endif %}>Ollama</option>
+                        <option value="openai" {% if provider and provider.api_type == 'openai' %}selected{% endif %}>OpenAI (+ compatibles)</option>
+                        <option value="anthropic" {% if provider and provider.api_type == 'anthropic' %}selected{% endif %}>Anthropic</option>
+                    </select>
+                    <span class="field-hint">« OpenAI » couvre aussi les endpoints compatibles (vLLM, Groq, Mistral, LM Studio).</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="base_url">URL de base</label>
+                    <input type="url" id="base_url" name="base_url" required
+                        value="{{ provider.base_url or '' if provider else '' }}"
+                        placeholder="Ex. : https://api.openai.com, http://localhost:11434">
+                </div>
+
+                <div class="form-group">
+                    <label for="api_key_env">Variable d'environnement de la clé</label>
+                    <input type="text" id="api_key_env" name="api_key_env" required
+                        value="{{ provider.api_key_env or '' if provider else '' }}"
+                        placeholder="Ex. : OPENAI_API_KEY, LLM_API_KEY">
+                    <span class="field-hint">Nom de la variable (jamais la valeur). Doit commencer par LLM_ ou finir par _API_KEY, et être définie dans le .env.</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="default_model">Modèle par défaut (optionnel)</label>
+                    <input type="text" id="default_model" name="default_model"
+                        value="{{ provider.default_model or '' if provider else '' }}"
+                        placeholder="Ex. : gpt-4o, claude-opus-4-8, llama3">
+                </div>
+
+                <div class="form-group checkbox-row">
+                    <input type="checkbox" id="is_active" name="is_active" value="true"
+                        {% if not provider or provider.is_active %}checked{% endif %}>
+                    <label for="is_active">Fournisseur actif (proposé dans les formulaires de prompt)</label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <a href="/backend/providers" class="btn btn-secondary">Annuler</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
 </body>
+
 </html>

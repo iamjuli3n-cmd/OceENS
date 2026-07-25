@@ -2,12 +2,14 @@
 
 import os
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from requests.exceptions import RequestException
 from sqlmodel import func, select
 from core.auth import get_current_user
 from core.database import SessionDep
 from models import LLMProvider, Prompt, Role, User
-from core.dependencies import templates
+from core.dependencies import logger, templates
+from services.llm_client import LLMConfigError, list_models
 
 backend_router = APIRouter(tags=["Backend"], prefix="/backend")
 
@@ -65,7 +67,7 @@ def backend_providers(request: Request, session: SessionDep):
         })
 
     # 6. Renvoyer le template HTML avec les données
-    return templates.TemplateResponse("backend/providers.html", {
+    return templates.TemplateResponse(request, "backend/providers.html", {
         "request": request,
         "providers": provider_data,
     })
@@ -88,7 +90,7 @@ def backend_provider_new(request: Request, session: SessionDep):
     if "admin" not in roles:
         return RedirectResponse(url="/")
 
-    return templates.TemplateResponse("backend/provider_form.html", {
+    return templates.TemplateResponse(request, "backend/provider_form.html", {
         "request": request,
         "provider": None,
     })
@@ -176,7 +178,7 @@ def create_provider(
     valid, error_msg = _validate_api_key_env(api_key_env)
     if not valid:
         # Si validation échoue, renvoyer le formulaire avec le message d'erreur
-        return templates.TemplateResponse("backend/provider_form.html", {
+        return templates.TemplateResponse(request, "backend/provider_form.html", {
             "request": request,
             "provider": None,
             "error": error_msg,
@@ -189,7 +191,7 @@ def create_provider(
     ).first()
     if existing:
         # Si le nom existe déjà, refuser la création
-        return templates.TemplateResponse("backend/provider_form.html", {
+        return templates.TemplateResponse(request, "backend/provider_form.html", {
             "request": request,
             "provider": None,
             "error": f"Un fournisseur nommé '{name}' existe déjà",
@@ -246,7 +248,7 @@ def backend_provider_edit(request: Request, provider_id: int, session: SessionDe
         )
 
     # 3. Afficher le formulaire pré-rempli avec le fournisseur
-    return templates.TemplateResponse("backend/provider_form.html", {
+    return templates.TemplateResponse(request, "backend/provider_form.html", {
         "request": request,
         "provider": provider,
     })
@@ -300,7 +302,7 @@ def update_provider(
     # 3. VALIDATION - api_key_env (même règle que la création)
     valid, error_msg = _validate_api_key_env(api_key_env)
     if not valid:
-        return templates.TemplateResponse("backend/provider_form.html", {
+        return templates.TemplateResponse(request, "backend/provider_form.html", {
             "request": request,
             "provider": provider,
             "error": error_msg,
@@ -315,7 +317,7 @@ def update_provider(
         )
     ).first()
     if existing:
-        return templates.TemplateResponse("backend/provider_form.html", {
+        return templates.TemplateResponse(request, "backend/provider_form.html", {
             "request": request,
             "provider": provider,
             "error": f"Un autre fournisseur nommé '{name}' existe déjà",
@@ -380,3 +382,58 @@ def delete_provider(request: Request, provider_id: int, session: SessionDep):
 
     # 5. REDIRECTION vers la liste avec message de succès
     return RedirectResponse(url="/backend/providers?success=deleted", status_code=303)
+
+
+@backend_router.get("/providers/{provider_id}/test")
+def test_provider(request: Request, provider_id: int, session: SessionDep):
+    """Teste la connexion à un fournisseur en listant ses modèles (JSON).
+
+    Appelé en fetch depuis la liste. Renvoie {"ok": true, "count": N} si le
+    fournisseur répond, sinon {"ok": false, "error": "..."}. Le message
+    d'erreur reste générique côté navigateur ; le détail (clé, URL, exception)
+    n'est écrit que dans les logs serveur — jamais renvoyé au client.
+    """
+    # 1. AUTHENTIFICATION + contrôle admin
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"ok": False, "error": "Non authentifié."}, status_code=401)
+
+    roles_query = session.exec(
+        select(func.group_concat(Role.role))
+        .join(User, Role.user_id == User.user_id, isouter=True)
+        .where(User.mail == user["email"].casefold())
+    ).first()
+    roles = roles_query.split(",") if roles_query else ["student"]
+
+    if "admin" not in roles:
+        return JSONResponse({"ok": False, "error": "Accès refusé."}, status_code=403)
+
+    # 2. Charger le fournisseur
+    provider = session.get(LLMProvider, provider_id)
+    if not provider:
+        return JSONResponse({"ok": False, "error": "Fournisseur introuvable."}, status_code=404)
+
+    # 3. Tenter de lister les modèles (test de connexion en lecture)
+    try:
+        models = list_models(provider)
+    except LLMConfigError as error:
+        # Mauvaise config (clé absente/non autorisée, type d'API inconnu)
+        logger.warning("Test fournisseur %s : config invalide : %s", provider.name, error)
+        return JSONResponse(
+            {"ok": False, "error": "Configuration invalide (voir les logs serveur)."}
+        )
+    except RequestException as error:
+        # Serveur injoignable, timeout, réponse HTTP en erreur
+        logger.warning("Test fournisseur %s : serveur injoignable : %s", provider.name, error)
+        return JSONResponse(
+            {"ok": False, "error": "Serveur injoignable (voir les logs serveur)."}
+        )
+    except Exception:
+        # Filet de sécurité : rien ne doit fuiter vers le navigateur
+        logger.exception("Test fournisseur %s : erreur inattendue", provider.name)
+        return JSONResponse(
+            {"ok": False, "error": "Erreur inattendue (voir les logs serveur)."}
+        )
+
+    # 4. Succès : renvoyer le nombre de modèles disponibles
+    return JSONResponse({"ok": True, "count": len(models)})

@@ -264,6 +264,18 @@ def _list_models(provider, session):
     return extract(response.json())
 
 
+def list_models(provider, session=None):
+    """Retourne la liste des modèles exposés par le fournisseur (test de connexion).
+
+    Wrapper public de `_list_models` : valide d'abord le type d'API. Sert au
+    bouton « Tester la connexion » de l'administration, qui vérifie ainsi que
+    l'URL et la clé du fournisseur répondent. Lève `LLMConfigError` si mal
+    configuré, laisse remonter les exceptions `requests` si serveur injoignable.
+    """
+    _check_api_type(provider)
+    return _list_models(provider, session)
+
+
 def check_model(provider, model, session=None):
     """Vrai si `model` est disponible chez `provider`.
 

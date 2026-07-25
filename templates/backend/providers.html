@@ -1,199 +1,304 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des fournisseurs LLM</title>
-    {% include "template_parts/part_site_header.html" %}
-    <link rel="stylesheet" href="/static/css/admin.css">
-</head>
-<body>
-    <div class="container">
-        {% include "template_parts/part_site_header.html" %}
-
-        <main class="main-content">
-            <div class="admin-header">
-                <h1>Fournisseurs LLM</h1>
-                <a href="/backend/providers/new" class="btn btn-primary">Ajouter un fournisseur</a>
-            </div>
-
-            {% if providers %}
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Type d'API</th>
-                        <th>URL de base</th>
-                        <th>Modèle par défaut</th>
-                        <th>Clé d'env</th>
-                        <th>Clé présente</th>
-                        <th>Prompts</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in providers %}
-                    <tr>
-                        <td><strong>{{ item.provider.name }}</strong></td>
-                        <td><code>{{ item.provider.api_type }}</code></td>
-                        <td><code>{{ item.provider.base_url }}</code></td>
-                        <td>{{ item.provider.default_model or "—" }}</td>
-                        <td><code>{{ item.provider.api_key_env }}</code></td>
-                        <td>
-                            {% if item.key_present %}
-                            <span class="badge badge-success">✓ Présente</span>
-                            {% else %}
-                            <span class="badge badge-warning">✗ Absente</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if item.prompt_count > 0 %}
-                            <strong>{{ item.prompt_count }}</strong>
-                            {% else %}
-                            <em>—</em>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if item.provider.is_active %}
-                            <span class="badge badge-active">Actif</span>
-                            {% else %}
-                            <span class="badge badge-inactive">Inactif</span>
-                            {% endif %}
-                        </td>
-                        <td class="actions">
-                            <a href="/backend/providers/{{ item.provider.provider_id }}/edit" class="btn-link">Éditer</a>
-                            {% if item.prompt_count == 0 %}
-                            <form method="POST" action="/backend/providers/{{ item.provider.provider_id }}/delete"
-                                  style="display: inline;"
-                                  onsubmit="return confirm('Supprimer ce fournisseur ?');">
-                                <button type="submit" class="btn-link btn-danger">Supprimer</button>
-                            </form>
-                            {% else %}
-                            <span class="btn-link disabled" title="Utilisé par {{ item.prompt_count }} prompt(s)">Supprimer</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p class="empty-state">Aucun fournisseur LLM configuré.</p>
-            {% endif %}
-        </main>
-    </div>
-
+    <title>Gestion des fournisseurs LLM – OCEENS II</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}">
     <style>
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
+        .backend-main {
+            max-width: 1100px;
+            margin: 32px auto;
+            padding: 0 24px;
         }
 
-        .admin-table {
+        .backend-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .backend-header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .notice {
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: .88rem;
+        }
+
+        .notice.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .notice.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 1rem;
+            background: var(--card-bg, white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
         }
 
-        .admin-table thead {
-            background-color: var(--color-bg-secondary, #f5f5f5);
-        }
-
-        .admin-table th,
-        .admin-table td {
-            padding: 0.75rem;
+        th,
+        td {
+            padding: 11px 16px;
             text-align: left;
-            border-bottom: 1px solid var(--color-border, #ddd);
+            border-bottom: 1px solid var(--border, #dce4ec);
+            font-size: .88rem;
         }
 
-        .admin-table th {
+        th {
+            background: var(--bg, #f0f4f8);
             font-weight: 600;
+            color: var(--text-muted, #7f8fa6);
+            text-transform: uppercase;
+            font-size: .75rem;
+            letter-spacing: .04em;
         }
 
-        .admin-table tbody tr:hover {
-            background-color: var(--color-bg-hover, #f9f9f9);
+        code {
+            font-family: 'DM Mono', monospace;
+            font-size: .78rem;
         }
 
         .badge {
             display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 3px;
-            font-size: 0.875rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: .75rem;
             font-weight: 500;
         }
 
-        .badge-success {
-            background-color: #d4edda;
-            color: #155724;
+        .badge-ok {
+            background: #d1fae5;
+            color: #065f46;
         }
 
-        .badge-warning {
-            background-color: #fff3cd;
-            color: #856404;
+        .badge-warn {
+            background: #fef3c7;
+            color: #92400e;
         }
 
-        .badge-active {
-            background-color: #d4edda;
-            color: #155724;
+        .badge-muted {
+            background: var(--bg, #f0f4f8);
+            color: var(--text-muted, #7f8fa6);
         }
 
-        .badge-inactive {
-            background-color: #e2e3e5;
-            color: #383d41;
-        }
-
-        .actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn-link {
-            color: var(--color-link, #0066cc);
-            text-decoration: none;
+        .btn {
+            display: inline-block;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 0.875rem;
+            font-family: inherit;
+            font-size: .82rem;
+            font-weight: 500;
+            text-decoration: none;
         }
 
-        .btn-link:hover {
-            text-decoration: underline;
+        .btn-primary {
+            background: var(--purple, #470a68);
+            color: white;
         }
 
-        .btn-link.disabled {
-            color: #ccc;
+        .btn-primary:hover {
+            opacity: .88;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border, #dce4ec);
+            color: var(--text, #2c3e50);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg, #f0f4f8);
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid #df231d;
+            color: #df231d;
+        }
+
+        .btn-danger:hover {
+            background: #fef2f2;
+        }
+
+        .btn:disabled,
+        .btn.disabled {
+            opacity: .45;
             cursor: not-allowed;
         }
 
-        .btn-link.btn-danger {
-            color: #dc3545;
+        .row-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
 
-        .empty-state {
+        .empty {
+            color: var(--text-muted, #7f8fa6);
             text-align: center;
-            color: var(--color-text-secondary, #666);
-            padding: 2rem;
+            padding: 48px 0;
         }
 
-        @media (max-width: 768px) {
-            .admin-header {
-                flex-direction: column;
-                gap: 1rem;
-            }
+        .test-result {
+            display: block;
+            margin-top: 6px;
+            font-size: .78rem;
+            font-weight: 500;
+        }
 
-            .admin-table {
-                font-size: 0.875rem;
-            }
+        .test-result.ok {
+            color: #065f46;
+        }
 
-            .admin-table th,
-            .admin-table td {
-                padding: 0.5rem;
-            }
+        .test-result.ko {
+            color: #991b1b;
+        }
 
-            .actions {
-                flex-direction: column;
-            }
+        .test-result.pending {
+            color: var(--text-muted, #7f8fa6);
         }
     </style>
+</head>
+
+<body class="page-admin">
+
+    {% set header_title_fr = "Administration" %}
+    {% set header_back_url = "/dashboard/admin" %}
+    {% include 'template_parts/part_site_header.html' %}
+
+    <div class="backend-main">
+        <div class="backend-header">
+            <h1>Fournisseurs LLM</h1>
+            <a href="/backend/providers/new" class="btn btn-primary">+ Nouveau fournisseur</a>
+        </div>
+
+        {# Messages de succès / erreur passés en paramètre d'URL #}
+        {% if request.query_params.get("success") %}
+        <div class="notice success">Opération réussie ({{ request.query_params.get("success") }}).</div>
+        {% endif %}
+        {% if request.query_params.get("error") %}
+        <div class="notice error">Erreur : {{ request.query_params.get("error") }}.</div>
+        {% endif %}
+
+        {% if providers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>URL de base</th>
+                    <th>Modèle par défaut</th>
+                    <th>Variable de clé</th>
+                    <th>Clé</th>
+                    <th>Statut</th>
+                    <th style="width:180px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in providers %}
+                <tr>
+                    <td><strong>{{ item.provider.name }}</strong></td>
+                    <td><code>{{ item.provider.api_type }}</code></td>
+                    <td><code>{{ item.provider.base_url }}</code></td>
+                    <td>{{ item.provider.default_model or "—" }}</td>
+                    <td><code>{{ item.provider.api_key_env }}</code></td>
+                    <td>
+                        {% if item.key_present %}
+                        <span class="badge badge-ok">présente</span>
+                        {% else %}
+                        <span class="badge badge-warn">absente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.provider.is_active %}
+                        <span class="badge badge-ok">actif</span>
+                        {% else %}
+                        <span class="badge badge-muted">inactif</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <button type="button" class="btn btn-secondary"
+                                data-test-id="{{ item.provider.provider_id }}"
+                                onclick="testProvider({{ item.provider.provider_id }})">Tester</button>
+                            <a href="/backend/providers/{{ item.provider.provider_id }}/edit"
+                                class="btn btn-secondary">Modifier</a>
+                            {% if item.prompt_count == 0 %}
+                            <form method="POST" action="/backend/providers/{{ item.provider.provider_id }}/delete"
+                                onsubmit="return confirm('Supprimer ce fournisseur ?');">
+                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                            </form>
+                            {% else %}
+                            <button class="btn btn-danger disabled" disabled
+                                title="Utilisé par {{ item.prompt_count }} prompt(s)">Supprimer</button>
+                            {% endif %}
+                        </div>
+                        {# Résultat du test affiché sous les boutons #}
+                        <span class="test-result" data-test-result="{{ item.provider.provider_id }}"></span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty">Aucun fournisseur LLM configuré.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        // Teste la connexion à un fournisseur (liste ses modèles côté serveur)
+        async function testProvider(id) {
+            const btn = document.querySelector(`[data-test-id="${id}"]`);
+            const result = document.querySelector(`[data-test-result="${id}"]`);
+
+            // État "en cours"
+            btn.disabled = true;
+            result.className = 'test-result pending';
+            result.textContent = 'Test en cours…';
+
+            try {
+                const r = await fetch(`/backend/providers/${id}/test`);
+                const data = await r.json();
+                if (data.ok) {
+                    result.className = 'test-result ok';
+                    result.textContent = `✓ Connecté — ${data.count} modèle(s) disponible(s)`;
+                } else {
+                    result.className = 'test-result ko';
+                    result.textContent = `✗ ${data.error}`;
+                }
+            } catch (e) {
+                result.className = 'test-result ko';
+                result.textContent = '✗ Erreur réseau';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+
 </body>
+
 </html>
