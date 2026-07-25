@@ -28,6 +28,7 @@ from core.dependencies import logger
 from core.seed import seed_all_if_necessary
 
 from routers import (
+    llm_providers,
     pages,
     prompts,
     sections_questions,
@@ -98,7 +99,7 @@ def create_app():
 
     app.include_router(pages.dashboard_router)
 
-    for module in (prompts, survey_templates):
+    for module in (prompts, survey_templates, llm_providers):
         app.include_router(module.backend_router)
     # └────────────────────────────────────────────────────────────────────┘
 
