@@ -9,17 +9,25 @@ from core.database import SessionDep
 from models import Prompt, Role, Summary, Survey, User
 from core.dependencies import templates
 
+# Deux routeurs : /api pour les mutations (form/fetch), /backend pour les pages
 api_router = APIRouter(tags=["API"], prefix="/api")
 backend_router = APIRouter(tags=["Backend"], prefix="/backend")
+
+# NB : chaque route ci-dessous répète le même contrôle d'accès admin :
+#   1. get_current_user → connecté ?
+#   2. group_concat des rôles → l'utilisateur est-il "admin" ?
+#   3. sinon redirection vers l'accueil.
 
 
 # ┌─ Pages : Gestion des prompts (admin only) ──────────────────────────┐
 @backend_router.get("/prompts", response_class=HTMLResponse)
 def backend_prompts(request: Request, session: SessionDep):
+    """Page listant tous les prompts + les sondages qui les utilisent."""
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/")
 
+    # Récupérer les rôles concaténés (voir note plus haut)
     roles_query = session.exec(
         select(func.group_concat(Role.role))
         .join(User, Role.user_id == User.user_id, isouter=True)
@@ -33,6 +41,7 @@ def backend_prompts(request: Request, session: SessionDep):
     prompts = session.exec(select(Prompt).order_by(Prompt.prompt_id)).all()
 
     # Pour chaque prompt, liste des sondages distincts qui ont des synthèses utilisant ce prompt
+    # (sert à afficher où le prompt est utilisé et à bloquer sa modification)
     prompt_surveys: dict = {}
     if prompts:
         rows = session.exec(
@@ -66,6 +75,7 @@ def backend_prompts(request: Request, session: SessionDep):
 
 @backend_router.get("/prompts/new", response_class=HTMLResponse)
 def backend_prompt_new(request: Request, session: SessionDep):
+    """Affiche le formulaire de création d'un prompt (prompt=None)."""
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/")
@@ -89,6 +99,11 @@ def backend_prompt_new(request: Request, session: SessionDep):
 
 @backend_router.get("/prompts/{prompt_id}/edit", response_class=HTMLResponse)
 def backend_prompt_edit(request: Request, prompt_id: int, session: SessionDep):
+    """Affiche le formulaire d'édition d'un prompt, sauf s'il est déjà utilisé.
+
+    Un prompt référencé par des synthèses existantes est verrouillé : le
+    modifier changerait le sens des synthèses déjà générées.
+    """
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/")
@@ -107,6 +122,7 @@ def backend_prompt_edit(request: Request, prompt_id: int, session: SessionDep):
     if not prompt:
         return RedirectResponse(url="/backend/prompts?error=Prompt+introuvable.", status_code=303)
 
+    # Verrou : refuser l'édition si au moins une synthèse utilise ce prompt
     in_use = session.exec(
         select(Summary).where(Summary.prompt_id == prompt_id).limit(1)
     ).first()
@@ -134,6 +150,7 @@ def create_prompt(
     model: Optional[str] = Form(None),
     prompt_text: Optional[str] = Form(None),
 ):
+    """Crée un prompt depuis le formulaire, puis redirige vers la liste."""
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/", status_code=303)
@@ -175,6 +192,7 @@ def update_prompt(
     model: Optional[str] = Form(None),
     prompt_text: Optional[str] = Form(None),
 ):
+    """Met à jour un prompt, sauf s'il est déjà référencé par une synthèse (409)."""
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/", status_code=303)
@@ -225,6 +243,7 @@ def update_prompt(
 
 @api_router.delete("/prompts/{prompt_id}")
 def delete_prompt(request: Request, prompt_id: int, session: SessionDep):
+    """Supprime un prompt, sauf s'il est référencé par une synthèse (409)."""
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)

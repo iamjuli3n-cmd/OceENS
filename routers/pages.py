@@ -49,7 +49,7 @@ async def index(request: Request, session: SessionDep):
     return templates.TemplateResponse(request=request, name="index.html")
 
 # └────────────────────────────────────────────────────────────────┘
-
+ 
 
 # ┌─ Route : Paramétrage (accès restreint Admin + RP-RM) ──────────────┐
 @dashboard_router.get("/survey-create", response_class=HTMLResponse)
@@ -58,6 +58,11 @@ def surveys_create(
     session: SessionDep,
     duplicate_from: Optional[int] = None,
 ):
+    """Page de création/paramétrage d'un sondage (admin, RP).
+
+    Le paramètre optionnel `duplicate_from` pré-remplit le formulaire à partir
+    d'un sondage existant (fonction de duplication).
+    """
     # ── Sécurité : vérifier que l'utilisateur est Admin ou RP-RM ──
     auth_result = require_roles(request, session, ["admin", "program_manager"])
     if auth_result is None:
@@ -163,6 +168,7 @@ def surveys_create(
 
 @dashboard_router.get("/student", response_class=HTMLResponse)
 async def student_dashboard(request: Request, session: SessionDep):
+    """Dashboard étudiant : liste des sondages auxquels il est convié."""
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/")
@@ -231,6 +237,11 @@ async def program_manager_dashboard(
     semester: Optional[str] = None,
     program: Optional[str] = None,
 ):
+    """Dashboard responsable de programme : sondages de ses filières.
+
+    Les paramètres optionnels (année, semestre, filière) filtrent la liste
+    affichée, dans la limite du périmètre de l'utilisateur.
+    """
     user = get_current_user(request)
 
     if not user:
@@ -400,6 +411,11 @@ async def campus_manager_dashboard(
     semester: Optional[str] = None,
     program: Optional[str] = None,
 ):
+    """Dashboard direction de campus : sondages fermés avec répondants.
+
+    Ce rôle consulte les résultats à l'échelle du campus sans diffuser les
+    sondages (lien questionnaire et QR code masqués côté template).
+    """
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/")
@@ -533,6 +549,11 @@ async def teachers_analytics(
     program: Optional[str] = None,
     teacher: Optional[str] = None,
 ):
+    """Score de satisfaction agrégé par enseignant (campus_manager, RP).
+
+    Filtrable par année, semestre, filière et enseignant, dans le périmètre
+    du rôle de l'utilisateur.
+    """
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/")
@@ -661,6 +682,7 @@ async def facilitator_dashboard(
     semester: Optional[str] = None,
     program: Optional[str] = None,
 ):
+    """Dashboard animateur : sondages des filières qu'il anime (filtrable)."""
     user = get_current_user(request)
 
     if not user:
@@ -819,17 +841,19 @@ async def facilitator_dashboard(
     )
 
 def extract_name(email):
+    """Déduit un nom affichable depuis un mail : "jean.dupont@x" → "Jean Dupont"."""
     local_part = email.split("@")[0]
     return " ".join(local_part.split(".")).title()
 
 def extract_initials(email):
+    """Déduit les initiales depuis un mail : "jean.dupont@x" → "JD"."""
     local_part = email.split("@")[0]
 
-    # (?:^|[.\-\@]) -> Non-capturing group: Match start of string OR a delimiter
-    # ([a-zA-Z])    -> Capturing group: Match and "keep" the first letter found
+    # (?:^|[.\-\@]) -> Groupe non capturant : début de chaîne OU un séparateur
+    # ([a-zA-Z])    -> Groupe capturant : la première lettre qui suit
     pattern = r"(?:^|[.\-\@])([a-zA-Z])"
 
-    # Find all matches, join them, and convert to uppercase
+    # Récupérer toutes les premières lettres, les concaténer en majuscules
     matches = re.findall(pattern, local_part)
     return "".join(matches).upper()
 
@@ -842,6 +866,7 @@ async def admin_dashboard(
     semester: Optional[str] = None,
     program: Optional[str] = None,
 ):
+    """Dashboard administrateur : vue globale de tous les sondages (filtrable)."""
     user = get_current_user(request)
 
     if not user:

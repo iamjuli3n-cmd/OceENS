@@ -1,3 +1,11 @@
+"""Chargement d'un sondage complet en mémoire, pour l'export CSV.
+
+Assemble en un seul objet `FullSurvey` (structure de dataclasses) toute la
+hiérarchie d'un sondage : modules, sections, questions, options et réponses.
+Cet objet sait ensuite s'aplatir en lignes de tableau (une par réponse) via
+`to_flat_dataframe_records()`, consommées par services/export_csv.py.
+"""
+
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -17,8 +25,12 @@ def clean_mojibake(text: Any) -> str:
         return text
 
 
+# Les dataclasses ci-dessous forment la structure en arbre du sondage chargé :
+# FullSurvey → SectionData → QuestionData → (OptionData, AnswerData).
+
 @dataclass
 class OptionData:
+    """Une option de réponse (libellé bilingue + indicateur positif)."""
     option_id: int
     text_fr: str
     text_en: str
@@ -79,6 +91,11 @@ class FullSurvey:
     sections: List[SectionData] = field(default_factory=list)
 
     def to_flat_dataframe_records(self) -> List[Dict[str, Any]]:
+        """Aplatit l'arbre du sondage en une liste de lignes (une par réponse).
+
+        Parcourt sections → questions → réponses et produit un dict plat par
+        réponse, prêt à devenir une ligne de DataFrame/CSV.
+        """
         records: List[Dict[str, Any]] = []
         for section in self.sections:
             for question in section.questions:

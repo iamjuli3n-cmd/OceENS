@@ -12,10 +12,20 @@ from core.dependencies import templates
 api_router = APIRouter(tags=["API"], prefix="/api")
 backend_router = APIRouter(tags=["Backend"], prefix="/backend")
 
+# Comme ailleurs, chaque route commence par le même contrôle admin
+# (get_current_user + group_concat des rôles). Règle métier récurrente :
+# un template "actif" (utilisé) ne peut pas être modifié ni supprimé.
+
 
 # ┌─ Page : Gestion des templates (admin only) ─────────────────────────┐
 @backend_router.get("/templates", response_class=HTMLResponse)
 def backend_templates_page(request: Request, session: SessionDep):
+    """Page d'admin listant les templates avec leurs sections/questions/sondages.
+
+    Charge tout en une passe puis reconstruit la hiérarchie en mémoire
+    (sections par template, questions par section) pour éviter les requêtes
+    imbriquées dans le template HTML.
+    """
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/")
@@ -84,6 +94,7 @@ def create_template(
     session: SessionDep,
     name: Optional[str] = Form(None),
 ):
+    """Crée un nouveau template vide."""
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)
@@ -117,6 +128,7 @@ def update_template(
     session: SessionDep,
     name: Optional[str] = Form(None),
 ):
+    """Renomme un template (interdit s'il est actif)."""
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)
@@ -151,6 +163,7 @@ def update_template(
 
 @api_router.delete("/templates/{template_id}")
 def delete_template(request: Request, template_id: int, session: SessionDep):
+    """Supprime un template et sa hiérarchie, sauf s'il sert à des sondages (409)."""
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)
@@ -169,6 +182,7 @@ def delete_template(request: Request, template_id: int, session: SessionDep):
     if not tpl:
         return JSONResponse({"error": "Template introuvable."}, status_code=404)
 
+    # Garde-fou : un template référencé par un sondage ne peut pas être supprimé
     in_use = session.exec(
         select(Survey).where(Survey.template_id == template_id).limit(1)
     ).first()
@@ -201,6 +215,11 @@ def delete_template(request: Request, template_id: int, session: SessionDep):
 
 @api_router.post("/templates/{template_id}/toggle-active")
 def toggle_template_active(request: Request, template_id: int, session: SessionDep):
+    """Bascule l'état actif/inactif d'un template.
+
+    Activer un template le verrouille (plus modifiable) ; le désactiver le
+    rend de nouveau éditable.
+    """
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)
@@ -232,6 +251,12 @@ def toggle_template_active(request: Request, template_id: int, session: SessionD
 
 @api_router.post("/templates/{template_id}/duplicate")
 def duplicate_template(request: Request, template_id: int, session: SessionDep):
+    """Duplique un template en profondeur : sections → questions → options.
+
+    Crée une copie inactive du template et recopie toute sa hiérarchie. On
+    utilise session.flush() après chaque insertion pour récupérer les IDs
+    générés et les rattacher aux enfants.
+    """
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)

@@ -1,3 +1,13 @@
+"""Peuplement initial de la base de données (seed).
+
+Ce module remplit la base avec des données de départ : filières (toujours
+synchronisées depuis un CSV), fournisseur LLM par défaut (idempotent), puis un
+jeu de données de démonstration (utilisateurs, sondages, réponses...) UNIQUEMENT
+si la base est vide.
+
+Point d'entrée : `seed_all_if_necessary()`, appelé au démarrage de l'app.
+"""
+
 from sqlmodel import Session, delete, select
 from pathlib import Path
 import logging
@@ -524,6 +534,11 @@ def seed_options(session: Session):
 
 
 def _normalize_header(value: str) -> str:
+    """Normalise un en-tête de colonne CSV pour comparaison robuste.
+
+    Minuscules, accents retirés, espaces → underscores. Permet de retrouver une
+    colonne quelle que soit sa casse ou son accentuation ("Numéro" == "numero").
+    """
     return (
         (value or "")
         .strip()
@@ -537,8 +552,15 @@ def _normalize_header(value: str) -> str:
 
 
 def _get_csv_value(row: dict, *possible_names: str) -> str:
+    """Récupère une valeur de ligne CSV en tolérant les variantes d'en-tête.
+
+    Essaie plusieurs noms de colonne possibles (après normalisation) et renvoie
+    la première valeur trouvée, ou "" si aucune ne correspond.
+    """
+    # Réindexer la ligne avec des clés normalisées
     normalized_row = {_normalize_header(key): value for key, value in row.items()}
 
+    # Tester chaque nom candidat jusqu'à en trouver un présent
     for name in possible_names:
         key = _normalize_header(name)
         if key in normalized_row:
@@ -983,6 +1005,12 @@ Réponses : ```{ANSWERS}```
 
 
 def seed_all_if_necessary():
+    """Point d'entrée du seed, appelé au démarrage de l'application.
+
+    Toujours exécuté : synchro des filières et du fournisseur LLM par défaut
+    (idempotents). Le jeu de données de démo n'est inséré que si la base est
+    vide (test: présence d'au moins un utilisateur).
+    """
     with Session(engine) as session:
         # Toujours synchroniser les programmes depuis le CSV
         seed_programs(session)

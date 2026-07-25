@@ -10,6 +10,13 @@ from models import Answer, Question, Role, Section, Template, User
 
 router = APIRouter(tags=["API"], prefix="/api")
 
+# Deux garde-fous reviennent dans toutes les routes de ce module :
+#   1. Contrôle admin (get_current_user + group_concat des rôles).
+#   2. "Template actif → interdit de modifier" : on ne touche pas à un modèle
+#      en cours d'utilisation ; il faut d'abord le désactiver.
+#   3. Pour les questions : "réponses existantes → interdit de modifier/supprimer"
+#      pour ne pas casser des réponses déjà collectées.
+
 
 # ┌─ API : CRUD Sections (admin only) ──────────────────────────────────┐
 @router.post("/sections")
@@ -21,6 +28,7 @@ def create_section(
     order: int = Form(0),
     section_type: Optional[str] = Form(None),
 ):
+    """Crée une section dans un template (qui doit être inactif)."""
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)
@@ -67,6 +75,7 @@ def update_section(
     order: int = Form(0),
     section_type: Optional[str] = Form(None),
 ):
+    """Met à jour une section (template parent devant être inactif)."""
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)
@@ -85,6 +94,7 @@ def update_section(
     if not sec:
         return JSONResponse({"error": "Section introuvable."}, status_code=404)
 
+    # Garde-fou : interdit de modifier une section d'un template actif
     tpl = session.get(Template, sec.template_id)
     if tpl and tpl.active:
         return JSONResponse({"error": "Désactivez le template avant de le modifier."}, status_code=409)
@@ -104,6 +114,7 @@ def update_section(
 
 @router.delete("/sections/{section_id}")
 def delete_section(request: Request, section_id: int, session: SessionDep):
+    """Supprime une section, sauf si ses questions ont déjà des réponses (409)."""
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)
@@ -126,6 +137,7 @@ def delete_section(request: Request, section_id: int, session: SessionDep):
     if tpl and tpl.active:
         return JSONResponse({"error": "Désactivez le template avant de le modifier."}, status_code=409)
 
+    # Garde-fou : si une question de la section a des réponses, refuser (409)
     questions = session.exec(select(Question).where(Question.section_id == section_id)).all()
     if questions:
         q_ids = [q.question_id for q in questions]
@@ -161,6 +173,7 @@ def create_question(
     text_en: Optional[str] = Form(None),
     is_optional: int = Form(0),
 ):
+    """Crée une question dans une section (template parent devant être inactif)."""
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)
@@ -212,6 +225,7 @@ def update_question(
     text_en: Optional[str] = Form(None),
     is_optional: int = Form(0),
 ):
+    """Met à jour une question, sauf si elle a déjà des réponses (409)."""
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)
@@ -230,11 +244,13 @@ def update_question(
     if not q:
         return JSONResponse({"error": "Question introuvable."}, status_code=404)
 
+    # Garde-fou : template parent doit être inactif
     sec = session.get(Section, q.section_id)
     tpl = session.get(Template, sec.template_id) if sec else None
     if tpl and tpl.active:
         return JSONResponse({"error": "Désactivez le template avant de le modifier."}, status_code=409)
 
+    # Garde-fou : question déjà répondue → non modifiable
     in_use = session.exec(
         select(Answer).where(Answer.question_id == question_id).limit(1)
     ).first()
@@ -261,6 +277,7 @@ def update_question(
 
 @router.delete("/questions/{question_id}")
 def delete_question(request: Request, question_id: int, session: SessionDep):
+    """Supprime une question, sauf si elle a déjà des réponses (409)."""
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Non authentifié."}, status_code=401)

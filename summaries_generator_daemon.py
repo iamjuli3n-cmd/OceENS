@@ -29,7 +29,7 @@ from markdown_it import MarkdownIt
 from requests.exceptions import RequestException
 from sqlmodel import Session, select
 
-from database import engine
+from core.database import engine
 from models import Answer, LLMProvider, Prompt, Submission, Summary
 from services.llm_client import (
     LLMConfigError,
@@ -61,6 +61,7 @@ STATUS_CONFIG_ERROR = 500
 
 
 def signal_handler(signal_number, frame):
+    """Arrête proprement le daemon sur Ctrl+C (SIGINT)."""
     logger.info("Arrêt du daemon de synthèses.")
     sys.exit(0)
 
@@ -264,12 +265,18 @@ def process_summary(session, summary_row, http_session, md, checked_models):
 
 
 def main():
+    """Boucle principale du daemon : dépile la file `summaries` en continu.
+
+    Tant qu'il y a une ligne à http_status=0, on la traite ; sinon on attend
+    POLL_INTERVAL_SECONDS avant de re-vérifier. Toute exception inattendue est
+    rattrapée pour ne jamais arrêter le daemon ni bloquer une ligne.
+    """
     logging.basicConfig(
         level=logging.INFO,
         format="%(levelname)s:     %(message)s",
     )
 
-    md = MarkdownIt()
+    md = MarkdownIt()  # convertisseur markdown → HTML pour le rendu final
     http_session = build_cache_session("cache_llm.db")
 
     # Disponibilité des modèles, mémorisée par (fournisseur, modèle) pour la

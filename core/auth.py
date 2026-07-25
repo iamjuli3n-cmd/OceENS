@@ -164,7 +164,7 @@ async def auth_callback(request: Request):
     5. Stocker l'utilisateur en session
     6. Rediriger vers le dashboard
     """
-    from database import get_or_create_user
+    from core.database import get_or_create_user
 
     # Récupère le state que Microsoft a renvoyé
     received_state = request.query_params.get("state")

@@ -44,6 +44,11 @@ load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Cycle de vie de l'application : setup au démarrage, teardown à l'arrêt.
+
+    Avant le `yield` : création des tables et seed initial de la base.
+    Après le `yield` (à l'arrêt) : journalisation de la fermeture.
+    """
     logger.info("Initialisation de la base de données...")
     create_db_and_tables()
     seed_all_if_necessary()

@@ -14,6 +14,7 @@ from models import Program, Respondent, Role, Survey, User
 from core.dependencies import logger
 
 
+# Ensemble des rôles valides reconnus par l'application
 VALID_ROLES = {
     "admin",
     "student",
@@ -24,12 +25,19 @@ VALID_ROLES = {
 
 
 def check_role(roles: list[str], allowed_roles: list[str]):
+    """Vrai si au moins un des rôles de l'utilisateur est dans les rôles autorisés.
+
+    Les rôles peuvent porter un périmètre après `:` (ex: "program_manager:INFO").
+    On ne compare que la partie AVANT le `:` (le nom du rôle), pas le périmètre.
+    """
     logger.info("CHECK %s %s", roles, allowed_roles)
     for role_and_program in roles:
+        # Isoler le nom du rôle en retirant le périmètre éventuel (après ":")
         if ":" in role_and_program:
             role = role_and_program.split(":")[0]
         else:
             role = role_and_program
+        # Dès qu'un rôle correspond, l'accès est accordé
         if role in allowed_roles:
             return True
     return False
@@ -64,11 +72,13 @@ def require_roles(
             return RedirectResponse(url="/")
         user,roles = auth_result
     """
+    # 1. L'utilisateur est-il connecté ?
     user = get_current_user(request)
     if not user:
         return None,None
 
-    # Get all roles (or student if None)
+    # 2. Récupérer tous les rôles de l'utilisateur, concaténés en une chaîne
+    #    group_concat renvoie ex: "admin,program_manager:INFO". Défaut: student.
     roles_query = session.exec(
         select(func.group_concat(Role.role))
         .join(User, Role.user_id == User.user_id, isouter=True)
@@ -79,6 +89,7 @@ def require_roles(
     else:
         roles = ["student"]
 
+    # 3. Un des rôles est-il autorisé ? Si oui, renvoyer (user, roles)
     if check_role(roles, allowed_roles):
         return user,roles
 
@@ -90,10 +101,16 @@ def require_roles(
 
 
 def parse_role_scopes(role: str) -> list[str]:
-    """Extract the non-empty scopes stored after a role name."""
+    """Extrait les périmètres (non vides) stockés après le nom d'un rôle.
+
+    Ex: "program_manager:INFO;GEN" → ["INFO", "GEN"]. Le périmètre est la
+    partie après ":", découpée par ";".
+    """
+    # Pas de ":" → pas de périmètre
     if not role or not isinstance(role, str) or ":" not in role:
         return []
 
+    # Découper la partie après ":" par ";" et nettoyer les espaces
     return [
         scope.strip()
         for scope in role.split(":", 1)[1].split(";")
@@ -102,17 +119,23 @@ def parse_role_scopes(role: str) -> list[str]:
 
 
 def get_role_scopes(roles: list[str], role_name: str) -> list[str]:
-    """Return the distinct scopes associated with one role, in input order."""
+    """Renvoie les périmètres distincts d'un rôle donné, dans l'ordre d'entrée.
+
+    Parcourt tous les rôles de l'utilisateur, ne garde que ceux dont le nom
+    correspond à `role_name`, et agrège leurs périmètres sans doublon.
+    """
     scopes: list[str] = []
-    seen_scopes: set[str] = set()
-    
+    seen_scopes: set[str] = set()  # pour dédoublonner tout en gardant l'ordre
+
     if not roles:
         return scopes
 
     for role in roles:
+        # Ignorer les rôles dont le nom ne correspond pas
         if not isinstance(role, str) or role.split(":", 1)[0] != role_name:
             continue
 
+        # Ajouter chaque périmètre non encore vu
         for scope in parse_role_scopes(role):
             if scope not in seen_scopes:
                 seen_scopes.add(scope)
@@ -122,17 +145,18 @@ def get_role_scopes(roles: list[str], role_name: str) -> list[str]:
 
 
 def get_allowed_campuses(roles: list[str]) -> list[str]:
-    """Return the campuses assigned to a campus manager."""
+    """Renvoie les campus gérés par un campus_manager (ses périmètres)."""
     return get_role_scopes(roles, "campus_manager")
 
 
 def get_program_codes_for_campuses(
     session: Session, campuses: list[str]
 ) -> list[str]:
-    """Resolve all program codes belonging to the provided campuses."""
+    """Résout tous les codes de filières appartenant aux campus fournis."""
     if not campuses:
         return []
 
+    # Toutes les filières dont le campus est dans la liste
     return list(
         session.exec(
             select(Program.code)
@@ -145,14 +169,23 @@ def get_program_codes_for_campuses(
 def get_campus_manager_program_codes(
     session: Session, roles: list[str]
 ) -> list[str]:
-    """Resolve the programs accessible through campus manager roles."""
+    """Résout les filières accessibles via les rôles campus_manager.
+
+    Un campus_manager gère des campus ; on convertit ces campus en la liste
+    des filières qui y sont rattachées.
+    """
     return get_program_codes_for_campuses(session, get_allowed_campuses(roles))
 
 
 def get_results_program_codes(
     session: Session, roles: list[str]
 ) -> list[str]:
-    """Resolve programs whose survey results can be viewed or exported."""
+    """Résout les filières dont les résultats sont consultables/exportables.
+
+    Combine les filières des rôles program_manager (accès direct) et celles
+    déduites des rôles campus_manager, en dédoublonnant (dict.fromkeys garde
+    l'ordre).
+    """
     program_codes = get_role_scopes(roles, "program_manager")
     program_codes.extend(get_campus_manager_program_codes(session, roles))
     return list(dict.fromkeys(program_codes))
@@ -259,7 +292,12 @@ def _check_sondage_access_and_status(
     roles: list[str],
     allowed_programs: list[str],
 ):
-    """Helper pour vérifier les accès et le statut de participation"""
+    """Helper : vérifie l'accès à un sondage et calcule ses compteurs.
+
+    Renvoie un tuple (survey, message_erreur, nb_convies, nb_repondants).
+    En cas d'erreur, survey vaut None et le 2e élément décrit l'erreur.
+    """
+    # 1. Charger le sondage ; introuvable → erreur 409
     survey = session.exec(
         select(Survey).where(Survey.survey_id == survey_id)
     ).first()
@@ -271,6 +309,7 @@ def _check_sondage_access_and_status(
             None,
         )
 
+    # 2. Vérifier le périmètre : un non-admin ne peut accéder qu'à ses filières
     if "admin" not in roles and survey.program not in allowed_programs:
         return (
             None,
@@ -282,6 +321,7 @@ def _check_sondage_access_and_status(
             None,
         )
 
+    # 3. Compter le nombre total d'étudiants conviés au sondage
     respondents_count = (
         session.exec(
             select(func.count(Respondent.user_id)).where(
@@ -290,18 +330,17 @@ def _check_sondage_access_and_status(
         ).first()
         or 0
     )
+    # 4. Compter ceux qui ont réellement répondu (submission_date renseignée)
     answers_count = (
         session.exec(
             select(func.count(Respondent.user_id)).where(
                 Respondent.survey_id == survey_id,
                 Respondent.submission_date
-                != None,  # submission_date NOT NULL = has_answered
+                != None,  # submission_date NON NULL = a répondu
             )
         ).first()
         or 0
     )
-
-
 
     warning_msg = None
 

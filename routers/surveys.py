@@ -19,6 +19,9 @@ from services.visualisation_data import bilingual_text, get_visualisation_contex
 router = APIRouter(tags=["API"], prefix="/api")
 
 
+# ── Modèles de corps de requête pour la création d'un sondage complet ──
+# Structure imbriquée : un sondage contient des UE, qui contiennent des
+# modules, qui listent leurs enseignants ; plus la liste des étudiants conviés.
 class ModuleCreate(BaseModel):
     id: int
     name: str
@@ -235,6 +238,13 @@ async def create_survey(
 # ┌─ Page questionnaire ─────────────────────────────────────────────┐
 @router.get("/surveys/{survey_id}", response_class=HTMLResponse)
 def questionnaire_page(request: Request, survey_id: int, session: SessionDep):
+    """Affiche le questionnaire à remplir par un étudiant convié.
+
+    Vérifie que l'étudiant est bien un respondent du sondage, puis assemble
+    tout le contexte d'affichage : sections, questions, options (bilingues),
+    modules groupés par UE. Cas particulier : une question NPS sans options
+    génère une échelle 0–10 à la volée.
+    """
     survey = session.exec(
         select(Survey).where(
             Survey.survey_id == survey_id,
@@ -447,6 +457,7 @@ def questionnaire_page(request: Request, survey_id: int, session: SessionDep):
 # └────────────────────────────────────────────────────────────────┘
 
 
+# Une réponse individuelle envoyée par le front (choix ou texte libre)
 class AnswerItem(BaseModel):
     section_id: int
     question_id: int
@@ -456,6 +467,7 @@ class AnswerItem(BaseModel):
     teacher: Optional[str] = None
 
 
+# L'ensemble des réponses soumises pour un sondage
 class SurveySubmission(BaseModel):
     answers: List[AnswerItem]
 
@@ -468,6 +480,13 @@ def submit_reponses(
     submission: SurveySubmission,
     session: SessionDep,
 ):
+    """Enregistre les réponses d'un étudiant à un sondage.
+
+    Contrôles successifs : connecté, connu en base, sondage existant et ouvert,
+    étudiant convié, pas déjà répondu, questions/options valides. Puis crée une
+    Submission + les Answer, et marque le Respondent comme ayant répondu.
+    Le tout dans une transaction (rollback en cas d'erreur).
+    """
     # 1. Authentification : récupérer l'utilisateur connecté (Azure Entra ID)
     user = get_current_user(request)
     if not user:
@@ -533,6 +552,8 @@ def submit_reponses(
             status_code=409,
         )
 
+    # 6. Sécurité anti-triche : vérifier que toutes les questions soumises
+    #    appartiennent bien au template de ce sondage (pas d'injection d'IDs)
     submitted_question_ids = {rep.question_id for rep in submission.answers}
     valid_question_ids = set()
     if submitted_question_ids:
@@ -557,6 +578,7 @@ def submit_reponses(
             status_code=422,
         )
 
+    # 7. Vérifier que chaque option choisie existe ET correspond à sa question
     submitted_option_ids = {
         rep.option_id for rep in submission.answers if rep.option_id is not None
     }
@@ -641,6 +663,7 @@ def update_survey_status(
     session: SessionDep,
     status: int = Form(...),
 ):
+    """Ouvre (1) ou ferme (0) un sondage, selon le périmètre de l'utilisateur."""
     auth_result = require_roles(request, session, ["admin", "program_manager"])
     if auth_result is None:
         return JSONResponse(
@@ -699,6 +722,12 @@ def delete_survey(
     request: Request,
     session: SessionDep,
 ):
+    """Supprime un sondage et toutes ses données liées.
+
+    Accessible via DELETE (fetch API → réponse JSON) ou POST (formulaire →
+    redirection dashboard). La suppression en cascade est déléguée à
+    delete_survey_with_relations().
+    """
     auth_result = require_roles(request, session, ["admin", "program_manager"])
     if auth_result is None:
         return JSONResponse(
@@ -746,6 +775,7 @@ def delete_survey(
 
 @router.get("/surveys/{survey_id}/export")
 def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
+    """Exporte les réponses d'un sondage au format CSV (rôles résultats)."""
     user,roles = require_roles(
         request,
         session,
@@ -777,6 +807,7 @@ def export_sondage_csv(request: Request, survey_id: int, session: SessionDep):
 
 @router.get("/surveys/{survey_id}/visualisation", response_class=HTMLResponse)
 def visualisation_page(request: Request, survey_id: int, session: SessionDep):
+    """Affiche la page de visualisation des résultats d'un sondage."""
     user,roles = require_roles(
         request,
         session,

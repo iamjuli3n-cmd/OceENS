@@ -128,6 +128,7 @@ def has_api_key(provider):
 
 
 def _base(provider):
+    """Renvoie l'URL de base du fournisseur, sans slash final."""
     return (provider.base_url or "").rstrip("/")
 
 

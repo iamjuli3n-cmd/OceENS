@@ -1,3 +1,13 @@
+"""Script d'import d'un sondage depuis des fichiers Excel (syllabus + réponses).
+
+Outil en ligne de commande (hors application web) : crée un sondage, ses
+modules (depuis le syllabus) et toutes les réponses (depuis l'export du
+formulaire). Les colonnes du fichier de réponses sont repérées par mots-clés,
+et chaque bloc de questions est lu par décalage de colonnes/d'IDs.
+
+Usage : python survey_loader_from_xlsx.py SYLLABUS FORMS PROGRAM SEMESTER YEAR
+"""
+
 import pandas as pd
 import sys
 import re
@@ -6,6 +16,20 @@ from sqlmodel import Session, select, func
 from models import  Survey, Submission, Answer, Option,Module,Program
 
 def process_section(session,df,column_name, initial_question_id, module_id=None, teacher=None, rowsMask=None):
+    """Importe un bloc de questions à partir d'une colonne de départ du fichier.
+
+    Un "bloc" suit toujours le même schéma de colonnes consécutives à partir de
+    `column_name` (satisfaction, insatisfaction, questions ouvertes...). Les
+    question_id sont dérivés de `initial_question_id` par décalage (+1, +2, +4)
+    et les colonnes par décalage depuis `loc` (loc+1, loc+2, ...).
+
+    Args:
+        column_name: colonne de départ du bloc dans le DataFrame.
+        initial_question_id: id de la première question du bloc.
+        module_id/teacher: renseignés pour les blocs module/enseignant.
+        rowsMask: filtre optionnel de lignes (ex: réponses d'un enseignant précis).
+    """
+    # Restreindre aux lignes concernées (ex: un enseignant donné)
     if rowsMask is not None:
         df=df[rowsMask]
     loc = df.columns.get_loc(column_name)
@@ -133,11 +157,13 @@ def process_section(session,df,column_name, initial_question_id, module_id=None,
         
        
 if __name__ == "__main__":
+    # 1. Valider les arguments de la ligne de commande
     if len(sys.argv) < 6:
         print(f"{sys.argv[0]} SYLLABUS_FILE FORMS_FILE PROGRAM SEMESTER SCHOOL_YEAR")
         exit(0)
     syllabus_file,forms_file,program,semester,school_year=sys.argv[1:6]
     session=Session(engine)
+    # 2. Vérifier que la filière existe
     program_row = session.exec(select(Program).where(Program.code==program)).first()
     if not program_row:
         print(f"Le code {program} n'existe pas dans la base Program. Merci de vérifier.")
@@ -148,6 +174,7 @@ if __name__ == "__main__":
     if survey is not None:
         print(f"Un sondage existe déjà pour la même formation/même semestre/même année.\nid:{survey.survey_id}")
         exit(1)
+    # 3. Créer le sondage (fermé par défaut)
     survey=Survey(template_id=1,
                     program=program,
                     semester=semester,
@@ -157,6 +184,7 @@ if __name__ == "__main__":
     session.flush()  # Pour obtenir le survey_id généré
     survey_id = survey.survey_id
 
+    # 4. Importer les modules depuis le syllabus
     if syllabus_file:
         df = pd.read_excel(syllabus_file)
         modules={}
@@ -172,9 +200,11 @@ if __name__ == "__main__":
             session.flush()
             modules[module.name]=module
     
+    # 5. Importer les réponses depuis l'export du formulaire
     if forms_file:
         df = pd.read_excel(forms_file)
 
+        # Une soumission par ligne du fichier (horodatée par "Heure de fin")
         submission_ids=[]
         for created_at in df['Heure de fin']:
             submission = Submission(survey_id=survey_id,created_at=created_at.strftime('%Y-%m-%d %X'))
@@ -183,6 +213,8 @@ if __name__ == "__main__":
             submission_ids.append(submission.submission_id)
 
         #df.replace(r"\xa0", '*', regex=True)
+        # Retirer les colonnes techniques du formulaire (notes, identité, méta)
+        # pour ne garder que les colonnes de réponses à traiter
         try:
             df = df[df.columns.drop(list(df.filter(regex='Feedback -')))]
             df = df[df.columns.drop(list(df.filter(regex='Points -')))]
@@ -191,7 +223,9 @@ if __name__ == "__main__":
         except KeyError as e:
             print(f'{e}')
 
-        # Section Campus        
+        # Chaque section est repérée par mots-clés dans les intitulés de colonnes,
+        # puis déléguée à process_section avec l'id de sa première question.
+        # Section Campus
         mask = df.columns.str.contains("expérience étudiante") & df.columns.str.contains("campus")
         target_cols = df.columns[mask].tolist()
         process_section(session,df,target_cols[0],1)

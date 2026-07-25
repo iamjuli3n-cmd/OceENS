@@ -138,15 +138,26 @@ def delete_survey_with_relations(session: Session, survey_id: int) -> None:
 
 
 def _get_color(color_scale:dict,score:float):
+    """Renvoie la couleur associée à un score selon une échelle de seuils.
+
+    color_scale mappe un seuil (max) → couleur. On renvoie la couleur du
+    premier seuil que le score ne dépasse pas. None si aucun seuil ne convient.
+    """
     color = None
     for threshold in color_scale:
         if (score <= float(threshold)):
             return color_scale[threshold]
-       
+
     return color
 
 
 def get_stats_by_survey(session: Session, surveys: List) -> Dict[int, Dict]:
+    """Renvoie les stats calculées par sondage (uniquement les sondages fermés).
+
+    Les sondages ouverts n'ont pas encore de StatValue ; on les ignore. Pour
+    chaque sondage fermé, on joint StatValue à Stat pour enrichir chaque valeur
+    de ses métadonnées d'affichage (couleur, libellé, suffixe...).
+    """
     if not surveys:
         return {}
     
@@ -208,6 +219,11 @@ def filter_surveys(
 
 
 def parse_name(full_name: Optional[str], fallback_id: int) -> Dict[str, Optional[str]]:
+    """Découpe un nom complet en prénom / nom.
+
+    Le premier mot est le prénom, le reste le nom. Renvoie un dict avec un id
+    de repli si le nom est vide.
+    """
     if not full_name:
         return {"id": fallback_id, "firstname": None, "name": None}
     parts = full_name.strip().split()
@@ -217,6 +233,11 @@ def parse_name(full_name: Optional[str], fallback_id: int) -> Dict[str, Optional
 
 
 def teacher_sort_key(name: str) -> str:
+    """Clé de tri d'un nom d'enseignant, insensible à la casse et aux accents.
+
+    Normalise en retirant les accents (NFD + suppression des diacritiques) et
+    en compactant les espaces, pour trier "Éric" et "eric" au même endroit.
+    """
     normalized = unicodedata.normalize("NFD", name.casefold())
     without_accents = "".join(
         char for char in normalized if unicodedata.category(char) != "Mn"

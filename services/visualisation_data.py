@@ -1,3 +1,10 @@
+"""Agrégations et contexte pour la page de visualisation des résultats.
+
+Ce module calcule les statistiques d'un sondage (satisfaction campus/formation,
+score NPS de recommandation) et assemble le contexte complet consommé par le
+template de visualisation : sections, questions, options, comptages de réponses.
+"""
+
 from collections import defaultdict
 from typing import Any, Dict, Optional
 import json
@@ -21,6 +28,8 @@ from models import (
 )
 
 
+# Seuils de couleur par statistique : chaque seuil (max) → couleur affichée.
+# Ex: une satisfaction <=20 est rouge, <=50 orange, sinon verte.
 STAT_COLOR_THRESHOLDS = {
     "campus_satisfaction": {20: "red", 50: "orange", 100: "green"},
     "program_satisfaction": {20: "red", 50: "orange", 100: "green"},
@@ -29,6 +38,7 @@ STAT_COLOR_THRESHOLDS = {
 
 
 def _serialize_color_thresholds(stat_name: str) -> str:
+    """Sérialise en JSON les seuils de couleur d'une stat (pour stockage en base)."""
     return json.dumps(STAT_COLOR_THRESHOLDS[stat_name])
 
 
@@ -81,6 +91,11 @@ def _calculate_nps(container: Dict[str, Any]) -> Optional[float]:
 def _calculate_satisfaction_score(
     section: Dict[str, Any], submissions_count: int
 ) -> Optional[float]:
+    """Score de satisfaction d'une section = % de réponses positives.
+
+    None si aucune soumission ou si la section n'a pas de compteur de
+    satisfaction.
+    """
     if submissions_count <= 0 or "satisfaction_count" not in section:
         return None
     return 100 * section["satisfaction_count"] / submissions_count
@@ -89,8 +104,12 @@ def _calculate_satisfaction_score(
 def _calculate_survey_stats(
     sections: Dict[str, Dict[str, Any]], submissions_count: int, session:Session, sections_list:dict, survey_id:int
 ) -> Dict[str, float]:
-    
-    
+    """Calcule et persiste toutes les StatValue d'un sondage.
+
+    Pour chaque définition de Stat, selon son type de section : satisfaction
+    (types C=campus, P=programme) ou NPS (type R=recommandation). Les valeurs
+    obtenues sont enregistrées (merge) dans stat_values.
+    """
     stats = session.exec(select(Stat)).all()
 
     for stat in stats:
@@ -113,6 +132,10 @@ def _calculate_survey_stats(
 def _sync_survey_stats(
     session: Session, survey_id: int, stats: Dict[str, float]
 ) -> None:
+    """Synchronise les stats persistées d'un sondage avec celles recalculées.
+
+    Supprime les stats devenues obsolètes puis met à jour/insère les nouvelles.
+    """
     existing_stats = session.exec(
         select(Stat).where(Stat.survey_id == survey_id)
     ).all()
@@ -132,6 +155,13 @@ def _sync_survey_stats(
 
 
 def refresh_survey_stats(session: Session, survey_id: int) -> Dict[str, float]:
+    """Recalcule les statistiques d'un sondage fermé à partir des réponses.
+
+    Ne fait rien pour un sondage encore ouvert (status==1) ou inexistant.
+    Agrège les réponses de satisfaction et NPS par type de section, puis
+    délègue le calcul et la persistance à _calculate_survey_stats.
+    """
+    # Un sondage ouvert n'a pas de stats consolidées : on ne calcule rien
     survey_status = session.exec(
         select(Survey.status).where(Survey.survey_id == survey_id)
     ).first()
@@ -182,6 +212,13 @@ def refresh_survey_stats(session: Session, survey_id: int) -> Dict[str, float]:
 
 
 def _build_question(dic, data_row, options, options_value, submissions_sets):
+    """Agrège une ligne de réponse dans la structure de visualisation.
+
+    Appelée pour chaque réponse : met à jour l'histogramme de la question, les
+    compteurs de soumissions (dédoublonnés via submissions_sets), et les
+    compteurs métier (satisfaction, NPS, présence). Modifie `dic` en place.
+    """
+    # Normaliser le nom d'enseignant (Title Case) pour fusionner les variantes
     teacher_key = data_row["teacher"].title() if data_row["teacher"] else data_row["teacher"]
     if data_row["question_id"] not in dic["questions"].keys():
         dic["questions"][data_row["question_id"]] = {
@@ -251,6 +288,11 @@ def _build_question(dic, data_row, options, options_value, submissions_sets):
         ] += 1  # Counting the number of appearance of each value
 
 def _replace_brackets_in_question(question, program, row):
+    """Remplace les marqueurs [CAMPUS]/[FORMATION]/[ENSEIGNANT]/[MODULE] d'une question.
+
+    Permet des libellés de question génériques personnalisés à l'affichage avec
+    le contexte réel (nom du campus, de la formation, de l'enseignant, du module).
+    """
     if '[' in question:
         if program["campus"]:
             question = question.replace("[CAMPUS]", program["campus"])
@@ -263,6 +305,12 @@ def _replace_brackets_in_question(question, program, row):
     return question
 
 def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
+    """Assemble tout le contexte de la page de visualisation d'un sondage.
+
+    Charge le sondage, sa formation, ses sections/questions/options et toutes
+    les réponses, puis agrège le tout (via _build_question) en une structure
+    prête à afficher. Renvoie None si le sondage n'existe pas.
+    """
     context = {}
     with Session(engine) as session:
 

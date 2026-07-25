@@ -14,11 +14,20 @@ backend_router = APIRouter(tags=["Backend"], prefix="/backend")
 
 @backend_router.get("/providers", response_class=HTMLResponse)
 def backend_providers(request: Request, session: SessionDep):
-    """Liste tous les fournisseurs LLM avec statut des clés."""
+    """Liste tous les fournisseurs LLM avec statut des clés.
+
+    Affiche une table avec:
+    - Les infos de chaque fournisseur (nom, type API, URL, etc)
+    - Indicateur: clé d'env présente dans le système ou pas
+    - Nombre de prompts qui utilisent ce fournisseur
+    - Boutons Éditer/Supprimer (supprimer bloqué si prompts utilisent ce fournisseur)
+    """
+    # 1. Vérifier que l'utilisateur est connecté
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/")
 
+    # 2. Récupérer les rôles de l'utilisateur depuis la base
     roles_query = session.exec(
         select(func.group_concat(Role.role))
         .join(User, Role.user_id == User.user_id, isouter=True)
@@ -26,30 +35,36 @@ def backend_providers(request: Request, session: SessionDep):
     ).first()
     roles = roles_query.split(",") if roles_query else ["student"]
 
+    # 3. Vérifier que c'est un admin - sinon le rediriger
     if "admin" not in roles:
         return RedirectResponse(url="/")
 
-    # Charger tous les fournisseurs
+    # 4. Charger tous les fournisseurs depuis la base, triés par ID
     providers = session.exec(select(LLMProvider).order_by(LLMProvider.provider_id)).all()
 
-    # Pour chaque fournisseur, vérifier la clé d'env et compter les prompts qui l'utilisent
+    # 5. Pour chaque fournisseur, enrichir les données avec info utiles
     provider_data = []
     for provider in providers:
+        # Vérifier si la clé d'env (ex: OPENAI_API_KEY) existe dans l'environnement
+        # Important: on ne récupère jamais la VALEUR, juste son existence
         key_present = os.getenv(provider.api_key_env) is not None
 
-        # Compter les prompts qui utilisent ce fournisseur
+        # Compter combien de prompts utilisent ce fournisseur
+        # Utile pour empêcher la suppression si le fournisseur est référencé
         prompt_count = session.exec(
             select(func.count(Prompt.prompt_id)).where(
                 Prompt.provider_id == provider.provider_id
             )
         ).first() or 0
 
+        # Créer un dict avec les infos enrichies pour le template
         provider_data.append({
-            "provider": provider,
-            "key_present": key_present,
-            "prompt_count": prompt_count,
+            "provider": provider,  # L'objet fournisseur complet
+            "key_present": key_present,  # Booléen: clé présente ou pas
+            "prompt_count": prompt_count,  # Nombre: combien de prompts l'utilisent
         })
 
+    # 6. Renvoyer le template HTML avec les données
     return templates.TemplateResponse("backend/providers.html", {
         "request": request,
         "providers": provider_data,
@@ -84,21 +99,38 @@ ALLOWED_API_KEY_PATTERNS = ("LLM_", "_API_KEY")
 
 
 def _validate_api_key_env(value: str) -> tuple[bool, str]:
-    """Valide le nom de la variable d'environnement contre une whitelist."""
+    """Valide le nom de la variable d'environnement contre une whitelist.
+
+    Sécurité critique: empêcher un admin malveillant de pointer un fournisseur
+    vers une clé sensible (SECRET_KEY, ENTRA_CLIENT_SECRET, etc) et la divulguer
+    à un serveur externe.
+
+    La clé elle-même n'est jamais affichée, mais si on la laisse l'admin pointer
+    à n'importe quelle variable, il pourrait voler les secrets du système.
+
+    Retourne: (est_valide: bool, message_erreur: str)
+    """
+    # Vérifier que la variable n'est pas vide
     if not value:
         return False, "La variable d'environnement est requise"
 
+    # Vérifier format: seulement majuscules, chiffres, underscores
+    # "value.replace("_", "").isalnum()" = après enlever underscores, c'est alphanumérique?
+    # "not value.isupper()" = contient au moins une minuscule?
     if not value.replace("_", "").isalnum() or not value.isupper():
         return False, "Doit contenir uniquement des majuscules, chiffres et underscores"
 
+    # Vérifier que ça commence par LLM_ OU finit par _API_KEY
+    # Exemples acceptés: LLM_API_KEY, OPENAI_API_KEY, LLM_ANTHROPIC_KEY
     if not any(value.startswith(p) or value.endswith(p) for p in ALLOWED_API_KEY_PATTERNS):
         return False, f"Doit commencer par LLM_ ou finir par _API_KEY"
 
-    # Interdire les variables sensibles
+    # Blacklist: interdire les variables sensibles du système
     forbidden = ("SECRET_KEY", "ENTRA_CLIENT_ID", "ENTRA_CLIENT_SECRET", "ENTRA_TENANT_ID")
     if value in forbidden:
         return False, f"La variable {value} est réservée au système"
 
+    # Tout est bon!
     return True, ""
 
 
@@ -106,18 +138,28 @@ def _validate_api_key_env(value: str) -> tuple[bool, str]:
 def create_provider(
     request: Request,
     session: SessionDep,
-    name: str = Form(...),
-    api_type: str = Form(...),
-    base_url: str = Form(...),
-    api_key_env: str = Form(...),
-    default_model: str = Form(""),
-    is_active: bool = Form(False),
+    name: str = Form(...),  # Libellé du fournisseur (ex: "OpenAI")
+    api_type: str = Form(...),  # Type: "ollama", "openai", ou "anthropic"
+    base_url: str = Form(...),  # URL racine (ex: https://api.openai.com)
+    api_key_env: str = Form(...),  # Nom var env (ex: OPENAI_API_KEY)
+    default_model: str = Form(""),  # Modèle par défaut (optionnel)
+    is_active: bool = Form(False),  # Fournisseur actif ou pas?
 ):
-    """Crée un nouveau fournisseur LLM."""
+    """Crée un nouveau fournisseur LLM après validation.
+
+    Étapes:
+    1. Vérifier que l'utilisateur est auth et admin
+    2. Valider api_key_env contre la whitelist de sécurité
+    3. Vérifier que le nom est unique
+    4. Créer l'objet et l'enregistrer en base
+    5. Rediriger vers la liste avec message de succès
+    """
+    # 1. AUTHENTIFICATION
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/")
 
+    # Récupérer les rôles
     roles_query = session.exec(
         select(func.group_concat(Role.role))
         .join(User, Role.user_id == User.user_id, isouter=True)
@@ -125,39 +167,50 @@ def create_provider(
     ).first()
     roles = roles_query.split(",") if roles_query else ["student"]
 
+    # Vérifier admin - sinon refuser avec 403 (Forbidden)
     if "admin" not in roles:
         return RedirectResponse(url="/", status_code=403)
 
-    # Validation de api_key_env
+    # 2. VALIDATION - api_key_env
+    # Appeler la fonction de validation avec whitelist
     valid, error_msg = _validate_api_key_env(api_key_env)
     if not valid:
+        # Si validation échoue, renvoyer le formulaire avec le message d'erreur
         return templates.TemplateResponse("backend/provider_form.html", {
             "request": request,
             "provider": None,
             "error": error_msg,
-        }, status_code=400)
+        }, status_code=400)  # 400 = Bad Request
 
-    # Vérifier que le nom est unique
+    # 3. VALIDATION - Unicité du nom
+    # Vérifier qu'aucun autre fournisseur n'a ce nom
     existing = session.exec(
         select(LLMProvider).where(LLMProvider.name == name)
     ).first()
     if existing:
+        # Si le nom existe déjà, refuser la création
         return templates.TemplateResponse("backend/provider_form.html", {
             "request": request,
             "provider": None,
             "error": f"Un fournisseur nommé '{name}' existe déjà",
         }, status_code=400)
 
-    # Créer le fournisseur
+    # 4. CRÉATION
+    # Créer l'objet LLMProvider avec les données du formulaire
     provider = LLMProvider(
         name=name,
         api_type=api_type,
-        base_url=base_url.rstrip("/"),  # Retirer slash trailing
+        base_url=base_url.rstrip("/"),  # Normalisation: enlever le / à la fin
         api_key_env=api_key_env,
+        # Si default_model est vide, le mettre à None (pas une chaîne vide)
         default_model=default_model if default_model else None,
         is_active=is_active,
     )
+    # Ajouter à la session et valider
     session.add(provider)
-    session.commit()
+    session.commit()  # Persister en base
 
+    # 5. REDIRECTION
+    # Redirection 303 (See Other) vers la liste avec paramètre de succès
+    # Le paramètre ?success=created permet au template d'afficher un message
     return RedirectResponse(url="/backend/providers?success=created", status_code=303)
