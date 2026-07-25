@@ -7,7 +7,7 @@ import unicodedata
 from typing import Dict, List, Optional
 from fastapi.responses import JSONResponse
 from sqlmodel import Session, delete, func, select
-from models import Answer, Module, Respondent, Stat, StatValue, Submission, Summary, Survey
+from models import Answer, Module, Respondent, Role, Stat, StatValue, Submission, Summary, Survey, User
 
 
 DASHBOARD_NAVIGATION = (
@@ -112,8 +112,52 @@ def build_survey_prefill(survey: Survey, modules: list[Module]) -> dict:
     }
 
 
+# Rôles à privilège : un utilisateur qui en possède un n'est jamais considéré
+# comme un simple étudiant, donc jamais supprimé par le nettoyage des orphelins.
+PRIVILEGED_ROLES = ("admin", "program_manager", "facilitator", "campus_manager")
+
+
+def _delete_orphan_students(session: Session, user_ids: set[int]) -> None:
+    """Supprime les étudiants devenus orphelins après le retrait d'un sondage.
+
+    Un utilisateur de `user_ids` est supprimé s'il remplit TOUTES ces conditions :
+    - il n'est plus respondent d'aucun autre sondage ;
+    - il n'a aucun rôle à privilège (admin, RP, animateur, direction de campus).
+
+    Ce garde-fou évite d'effacer un enseignant/gestionnaire qui aurait aussi
+    répondu à un sondage. La suppression de ses lignes `roles` (ex: "student")
+    précède celle de l'utilisateur pour respecter la clé étrangère.
+    """
+    for user_id in user_ids:
+        # Encore rattaché à un autre sondage ? → on garde
+        still_respondent = session.exec(
+            select(Respondent.user_id)
+            .where(Respondent.user_id == user_id)
+            .limit(1)
+        ).first()
+        if still_respondent:
+            continue
+
+        # Possède-t-il un rôle à privilège ? → on garde
+        roles = session.exec(
+            select(Role.role).where(Role.user_id == user_id)
+        ).all()
+        if any(role.split(":", 1)[0] in PRIVILEGED_ROLES for role in roles):
+            continue
+
+        # Étudiant orphelin : supprimer ses rôles éventuels puis l'utilisateur
+        session.exec(delete(Role).where(Role.user_id == user_id))
+        user = session.get(User, user_id)
+        if user:
+            session.delete(user)
+
+
 def delete_survey_with_relations(session: Session, survey_id: int) -> None:
-    """Supprime les données propres au sondage sans supprimer son modèle partagé."""
+    """Supprime les données propres au sondage sans supprimer son modèle partagé.
+
+    Nettoie aussi les étudiants devenus orphelins (plus rattachés à aucun autre
+    sondage) — voir `_delete_orphan_students`.
+    """
     submission_ids = select(Submission.submission_id).where(
         Submission.survey_id == survey_id
     )
@@ -121,12 +165,24 @@ def delete_survey_with_relations(session: Session, survey_id: int) -> None:
     # Les réponses référencent les soumissions et les modules : elles doivent
     # donc être supprimées avant ces deux tables.
     try:
+        # Mémoriser les étudiants conviés AVANT de les détacher du sondage,
+        # pour pouvoir ensuite repérer ceux devenus orphelins.
+        respondent_user_ids = set(
+            session.exec(
+                select(Respondent.user_id).where(Respondent.survey_id == survey_id)
+            ).all()
+        )
+
         session.exec(delete(Answer).where(Answer.submission_id.in_(submission_ids)))
         session.exec(delete(Respondent).where(Respondent.survey_id == survey_id))
         session.exec(delete(Summary).where(Summary.survey_id == survey_id))
         session.exec(delete(Module).where(Module.survey_id == survey_id))
         session.exec(delete(Submission).where(Submission.survey_id == survey_id))
         session.exec(delete(Survey).where(Survey.survey_id == survey_id))
+
+        # Bonus : nettoyer les étudiants qui ne sont plus rattachés à aucun sondage
+        _delete_orphan_students(session, respondent_user_ids)
+
         session.commit()
 
     except Exception as e:

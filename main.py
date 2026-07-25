@@ -14,6 +14,8 @@ les modules dédiés :
 
 from contextlib import asynccontextmanager
 import os
+import sys
+import subprocess
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -42,17 +44,51 @@ from routers import (
 load_dotenv()
 
 
+# Valeurs de RUN_SUMMARIES_DAEMON interprétées comme "activé"
+_TRUTHY = {"1", "true", "yes", "on"}
+
+
+def _maybe_start_summaries_daemon():
+    """Lance le daemon de synthèses en process séparé si demandé par l'env.
+
+    Activé uniquement si RUN_SUMMARIES_DAEMON est vrai (1/true/yes/on). En
+    production, `launch.sh` s'en charge déjà : on ne veut donc pas le lancer
+    systématiquement. Retourne le Popen (ou None si non lancé).
+    """
+    if os.environ.get("RUN_SUMMARIES_DAEMON", "").strip().lower() not in _TRUTHY:
+        return None
+
+    logger.info("Démarrage du daemon de synthèses (RUN_SUMMARIES_DAEMON activé)...")
+    # sys.executable = le même interpréteur Python que celui d'uvicorn
+    return subprocess.Popen([sys.executable, "summaries_generator_daemon.py"])
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Cycle de vie de l'application : setup au démarrage, teardown à l'arrêt.
 
-    Avant le `yield` : création des tables et seed initial de la base.
-    Après le `yield` (à l'arrêt) : journalisation de la fermeture.
+    Avant le `yield` : création des tables, seed initial, et lancement optionnel
+    du daemon de synthèses en parallèle (si RUN_SUMMARIES_DAEMON est activé).
+    Après le `yield` (à l'arrêt) : arrêt du daemon puis journalisation.
     """
     logger.info("Initialisation de la base de données...")
     create_db_and_tables()
     seed_all_if_necessary()
+
+    # Lancer le daemon de synthèses en parallèle d'uvicorn (optionnel)
+    daemon_process = _maybe_start_summaries_daemon()
+
     yield
+
+    # Arrêter proprement le daemon à la fermeture de l'application
+    if daemon_process is not None:
+        logger.info("Arrêt du daemon de synthèses...")
+        daemon_process.terminate()  # SIGTERM : le daemon quitte sa boucle
+        try:
+            daemon_process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            daemon_process.kill()  # forcer si toujours vivant après 10s
+
     logger.info("Fermeture de la connexion...")
 
 

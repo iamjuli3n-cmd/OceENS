@@ -1,5 +1,8 @@
 """Gestion des roles utilisateurs."""
 
+import os
+import re
+
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -11,10 +14,71 @@ from typing import List
 
 router = APIRouter(tags=["API"], prefix="/api")
 
+# Regex de validation basique d'une adresse mail
+_EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+
 
 # Corps de requête PUT : la nouvelle liste de rôles à appliquer
 class RoleUpdate(BaseModel):
     roles: List[str]
+
+
+# Corps de requête POST : le mail de l'utilisateur à créer
+class UserCreate(BaseModel):
+    email: str
+
+
+@router.post("/users")
+def create_user(request: Request, body: UserCreate, session: SessionDep):
+    """Crée un utilisateur à partir d'un mail, avec le rôle 'student' par défaut.
+
+    Réservé aux admins. Valide le format du mail et son domaine (mêmes règles
+    que l'inscription des étudiants), refuse les doublons.
+    """
+    # ── Sécurité : admin uniquement ──
+    auth_result = require_roles(request, session, ["admin"])
+    if auth_result is None:
+        return JSONResponse(
+            content={"error": "Accès refusé. Rôle Admin requis."}, status_code=403
+        )
+
+    # Normaliser et valider le mail
+    email = body.email.strip().casefold()
+    allowed_domains = {
+        domain.strip().casefold()
+        for domain in os.environ.get("ALLOWED_DOMAINS", "epf.fr,epfedu.fr").split(",")
+        if domain.strip()
+    }
+    domain = email.rsplit("@", 1)[-1] if "@" in email else ""
+    if not _EMAIL_PATTERN.fullmatch(email) or domain not in allowed_domains:
+        return JSONResponse(
+            content={"error": "Adresse e-mail invalide ou domaine non autorisé."},
+            status_code=422,
+        )
+
+    # Refuser si l'utilisateur existe déjà
+    existing = session.exec(
+        select(User).where(func.lower(User.mail) == email)
+    ).first()
+    if existing:
+        return JSONResponse(
+            content={"error": "Cet utilisateur existe déjà."}, status_code=409
+        )
+
+    # Créer l'utilisateur puis lui attribuer le rôle 'student'
+    try:
+        user = User(mail=email)
+        session.add(user)
+        session.flush()  # pour obtenir l'user_id généré
+        session.add(Role(user_id=user.user_id, role="student"))
+        session.commit()
+    except Exception:
+        session.rollback()
+        return JSONResponse(
+            content={"error": "Impossible de créer cet utilisateur."}, status_code=500
+        )
+
+    return {"user_id": user.user_id, "mail": user.mail, "roles": ["student"]}
 
 
 @router.put("/users/{user_id}/role")
