@@ -1,34 +1,39 @@
 # LLM Utilities for OceENS
 
-Utilities for working with LLM providers (Claude, etc.) in the OceENS project.
+Outils annexes autour des fournisseurs LLM du projet OceENS.
 
-## Folders
+## Le suivi des coûts a été déplacé dans l'application
 
-### `token-counting/`
-Token estimation and cost tracking tools for Claude API usage.
+Ce dossier contenait `token-counting/`, qui estimait le nombre de tokens du
+**code source du dépôt** (`*.py`) et le multipliait par un tarif codé en dur.
+Cette mesure ne disait rien de ce que l'application dépense réellement : les
+synthèses de verbatims consomment des tokens de *prompts et de réponses*, pas
+de fichiers Python, et l'approximation « 4 caractères = 1 token » ne
+correspond au tokenizer d'aucun fournisseur.
 
-**Contents:**
-- `estimate_tokens_local.py` — Quick token estimation (no API key needed)
-- `estimate_tokens.py` — Exact token counts (requires API key)
-- `estimate-tokens.sh` — Bash wrapper for Unix/Linux/Mac
-- `estimate-tokens.bat` — Batch wrapper for Windows
-- `TOKEN_COUNTING_GUIDE.md` — Full documentation and tips
-- `README_TOKENS.md` — Quick reference guide
+Le suivi des coûts est désormais **mesuré, pas estimé**, et intégré à
+l'application :
 
-**Quick start:**
-```bash
-cd token-counting
-python estimate_tokens_local.py
-```
+| Où | Quoi |
+| --- | --- |
+| `services/llm_costs.py` | Calcul du coût à partir des tokens réellement consommés |
+| `/backend/llm/prices` | Grille tarifaire par modèle, éditable (admin) |
+| `/backend/llm/costs` | Coût global, détaillé par sondage et par modèle (admin) |
+| Bouton 💰 sur une ligne de sondage | Coût des synthèses de ce sondage |
 
-See `token-counting/README_TOKENS.md` for details.
+Le daemon enregistre les compteurs renvoyés par le fournisseur
+(`Summary.input_tokens` / `output_tokens` / `model_used`) au moment de la
+génération : c'est la seule occasion de les capturer, aucune API ne permet de
+les redemander après coup.
+
+Voir la section « Coût des synthèses » du README racine.
 
 ---
 
-## Future LLM Utilities
+## Utilitaires à venir
 
-This folder is organized to hold other LLM-related tools:
-- Prompt management
-- LLM evaluation tools
-- Provider integration helpers
-- Model switching utilities
+Ce dossier reste destiné aux outils LLM hors application :
+
+- gestion et versionnage de prompts ;
+- évaluation comparative de modèles ;
+- scripts de bascule entre fournisseurs.

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coût des synthèses LLM – OCEENS II</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/llm_backend.css') }}">
+</head>
+
+<body class="page-admin">
+
+    {% set header_title_fr = "Administration" %}
+    {% set header_back_url = "/dashboard/admin" %}
+    {% include 'template_parts/part_site_header.html' %}
+
+    <div class="backend-main">
+        <div class="backend-header">
+            <h1>Coût des synthèses</h1>
+            <div class="header-links">
+                <a href="/backend/providers" class="btn btn-secondary">Fournisseurs</a>
+                <a href="/backend/llm/prices" class="btn btn-secondary">Tarifs</a>
+            </div>
+        </div>
+
+        <div class="cost-tiles">
+            <div class="cost-tile">
+                <div class="label">Coût total</div>
+                <div class="value">{{ total_label }}</div>
+            </div>
+            <div class="cost-tile">
+                <div class="label">Tokens en entrée</div>
+                <div class="value">{{ "{:,}".format(total.input_tokens).replace(",", " ") }}</div>
+            </div>
+            <div class="cost-tile">
+                <div class="label">Tokens en sortie</div>
+                <div class="value">{{ "{:,}".format(total.output_tokens).replace(",", " ") }}</div>
+            </div>
+            <div class="cost-tile">
+                <div class="label">Synthèses chiffrées</div>
+                <div class="value {% if total.summaries_unpriced %}warn{% endif %}">
+                    {{ total.summaries_priced }}/{{ total.summaries_total }}
+                </div>
+            </div>
+        </div>
+
+        {% if total.summaries_unpriced %}
+        <div class="notice error">
+            {{ total.summaries_unpriced }} synthèse(s) ne sont pas chiffrables : compteurs de
+            tokens absents (synthèses générées avant le suivi des coûts) ou modèle sans tarif
+            enregistré. Le total ci-dessus est donc <strong>partiel</strong> — il n'inclut que
+            ce qui a pu être mesuré. Complétez la
+            <a href="/backend/llm/prices">grille tarifaire</a> pour couvrir les modèles manquants.
+        </div>
+        {% endif %}
+
+        <p class="hint">
+            Les montants sont calculés à partir des tokens réellement consommés, tels que
+            renvoyés par le fournisseur au moment de la génération, multipliés par la grille
+            tarifaire. Rien n'est estimé : une synthèse dont le coût est inconnu est comptée
+            à part plutôt qu'approximée.
+        </p>
+
+        <h2 class="section-title">Par modèle</h2>
+        {% if models %}
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Modèle</th>
+                        <th class="numeric">Synthèses</th>
+                        <th class="numeric">Tokens entrée</th>
+                        <th class="numeric">Tokens sortie</th>
+                        <th class="numeric">Coût</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in models %}
+                    <tr>
+                        <td><code>{{ row.model }}</code>
+                            {% if row.unpriced %}
+                            <span class="badge badge-warn">{{ row.unpriced }} non chiffrée(s)</span>
+                            {% endif %}
+                        </td>
+                        <td class="numeric">{{ row.summaries }}</td>
+                        <td class="numeric">{{ row.input_tokens }}</td>
+                        <td class="numeric">{{ row.output_tokens }}</td>
+                        <td class="numeric">{{ row.cost_label }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty">Aucune synthèse générée pour l'instant.</p>
+        {% endif %}
+
+        <h2 class="section-title">Par sondage</h2>
+        {% if surveys %}
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sondage</th>
+                        <th class="numeric">Synthèses</th>
+                        <th class="numeric">Tokens entrée</th>
+                        <th class="numeric">Tokens sortie</th>
+                        <th class="numeric">Coût</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in surveys %}
+                    <tr>
+                        <td>
+                            {% if row.survey %}
+                            {{ row.survey.school_year }} — {{ row.survey.semester }}
+                            <span class="muted">(#{{ row.survey_id }})</span>
+                            {% else %}
+                            Sondage #{{ row.survey_id }}
+                            {% endif %}
+                            {% if row.report.summaries_unpriced %}
+                            <span class="badge badge-warn">{{ row.report.summaries_unpriced }} non chiffrée(s)</span>
+                            {% endif %}
+                        </td>
+                        <td class="numeric">{{ row.report.summaries_total }}</td>
+                        <td class="numeric">{{ row.report.input_tokens }}</td>
+                        <td class="numeric">{{ row.report.output_tokens }}</td>
+                        <td class="numeric">{{ row.cost_label }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty">Aucune synthèse générée pour l'instant.</p>
+        {% endif %}
+    </div>
+
+</body>
+
+</html>

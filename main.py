@@ -30,7 +30,6 @@ from core.dependencies import logger
 from core.seed import seed_all_if_necessary
 
 from routers import (
-    llm_providers,
     pages,
     prompts,
     sections_questions,
@@ -40,6 +39,9 @@ from routers import (
     surveys,
     users,
 )
+from routers.llm import costs as llm_costs
+from routers.llm import prices as llm_prices
+from routers.llm import providers as llm_providers
 
 load_dotenv()
 
@@ -135,12 +137,12 @@ def create_app():
     for module in (surveys, students, users, summaries, sections_questions):
         app.include_router(module.router)
 
-    for module in (prompts, survey_templates):
+    for module in (prompts, survey_templates, llm_costs):
         app.include_router(module.api_router)
 
     app.include_router(pages.dashboard_router)
 
-    for module in (prompts, survey_templates, llm_providers):
+    for module in (prompts, survey_templates, llm_providers, llm_prices, llm_costs):
         app.include_router(module.backend_router)
     # └────────────────────────────────────────────────────────────────────┘
 

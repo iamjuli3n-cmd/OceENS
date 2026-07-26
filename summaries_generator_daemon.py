@@ -91,16 +91,33 @@ def get_provider(session, prompt_row):
     ).first()
 
 
-def finish_summary(session, summary_row, status, summary_text=None, metadata_text=None):
+def finish_summary(
+    session,
+    summary_row,
+    status,
+    summary_text=None,
+    metadata_text=None,
+    metadata=None,
+):
     """Écrit le résultat d'une synthèse et la sort de la file d'attente.
 
     Toute sortie de `process_summary()` passe par ici : une ligne dont le
     traitement échoue doit quand même quitter l'état `0`, sinon le daemon la
     reprend indéfiniment et la file n'avance plus.
+
+    `metadata` porte les compteurs de tokens du fournisseur. Ils sont recopiés
+    en colonnes dédiées : c'est la seule occasion de les capturer, l'API ne
+    permet pas de les redemander après coup.
     """
     summary_row.summary_text = summary_text
     summary_row.metadata_text = metadata_text
     summary_row.http_status = status
+
+    if metadata:
+        summary_row.model_used = metadata.get("model")
+        summary_row.input_tokens = metadata.get("prompt_count")
+        summary_row.output_tokens = metadata.get("eval_count")
+
     session.add(summary_row)
     session.commit()
 
@@ -270,6 +287,7 @@ def process_summary(session, summary_row, http_session, md, checked_models):
         status_code,
         summary_text=md.render(answer),
         metadata_text=metadata_text,
+        metadata=metadata,
     )
 
 

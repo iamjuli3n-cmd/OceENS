@@ -356,6 +356,18 @@
     {% endif %}
     {% endif %}
 
+    {# Coût des synthèses de ce sondage. N'apparaît qu'une fois au moins une
+       synthèse générée : avant, il n'y a rien à facturer et le bouton
+       n'afficherait qu'un zéro trompeur. #}
+    {% if can_generate_summaries %}
+    {% set survey_done = summaries.get(survey['survey_id'], {}).get('summaries_done', 0) %}
+    {% if survey_done > 0 %}
+    <button type="button" class="row-icon row-icon-cost" title="Coût des synthèses de ce sondage"
+      aria-label="Coût des synthèses de ce sondage"
+      data-cost-survey="{{ survey['survey_id'] }}"
+      onclick="showSurveyCost({{ survey['survey_id'] }}, this)">💰</button>
+    {% endif %}
+    {% endif %}
 
     {% if can_view_visualisation | default(true) %}
     <a href="/api/surveys/{{ survey['survey_id'] }}/visualisation" class="row-icon" title="Visualisation"
@@ -402,3 +414,50 @@
   </div>
 
   {% endfor %}
+
+  <script>
+    // Coût des synthèses d'un sondage, calculé côté serveur à partir des
+    // tokens réellement consommés au moment de la génération.
+    async function showSurveyCost(surveyId, button) {
+      const previous = button.textContent;
+      button.disabled = true;
+      button.textContent = '⏳';
+
+      try {
+        const response = await fetch(`/api/surveys/${surveyId}/cost`);
+        const data = await response.json();
+
+        if (!data.ok) {
+          button.title = `Coût indisponible : ${data.error}`;
+          alert(`Coût indisponible : ${data.error}`);
+          return;
+        }
+
+        const lines = [
+          `Coût des synthèses : ${data.cost_label}`,
+          `${data.summaries_total} synthèse(s) — ${data.input_tokens} tokens en entrée, ${data.output_tokens} en sortie`,
+        ];
+        if (data.models.length) {
+          lines.push(`Modèle(s) : ${data.models.join(', ')}`);
+        }
+        // Un total partiel doit se présenter comme tel : sans cette mention,
+        // un montant amputé passerait pour le coût complet.
+        if (data.summaries_unpriced) {
+          lines.push('');
+          lines.push(
+            `⚠️ ${data.summaries_unpriced} synthèse(s) non chiffrable(s) ` +
+            `(compteurs de tokens ou tarif manquants) : ce total est partiel.`
+          );
+        }
+
+        const text = lines.join('\n');
+        button.title = text;
+        alert(text);
+      } catch (error) {
+        alert('Coût indisponible : erreur réseau.');
+      } finally {
+        button.disabled = false;
+        button.textContent = previous;
+      }
+    }
+  </script>

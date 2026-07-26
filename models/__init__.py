@@ -15,6 +15,7 @@ référence de classe, donc il n'y a pas de risque d'import circulaire ici.
 """
 
 from models.Answer import Answer
+from models.LLMModelPrice import LLMModelPrice
 from models.LLMProvider import LLMProvider
 from models.Module import Module
 from models.Option import Option
@@ -34,6 +35,7 @@ from models.User import User
 
 __all__ = [
     "Answer",
+    "LLMModelPrice",
     "LLMProvider",
     "Module",
     "Option",

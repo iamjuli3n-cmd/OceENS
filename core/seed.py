@@ -28,6 +28,7 @@ from models import (
     Answer,
     Submission,
     Prompt,
+    LLMModelPrice,
     LLMProvider,
     Stat,
 )
@@ -982,6 +983,54 @@ def seed_llm_providers(session: Session):
     session.commit()
 
 
+# Tarifs de départ, en dollars par million de tokens (entrée, sortie).
+#
+# Seuls des tarifs vérifiables sont pré-remplis : les modèles Anthropic (grille
+# publique) et le serveur Ollama de l'école, gratuit à l'appel puisque
+# auto-hébergé. Les autres fournisseurs (OpenAI, Mistral, Groq…) sont laissés
+# à saisir dans `/backend/llm/prices` : inventer un tarif afficherait un
+# montant faux avec l'autorité d'un montant réel.
+#
+# `provider_id` reste NULL : ces tarifs valent pour le nom de modèle quel que
+# soit l'endpoint qui le sert.
+DEFAULT_MODEL_PRICES = (
+    ("claude-opus-5", 5.00, 25.00, "Grille publique Anthropic"),
+    ("claude-sonnet-5", 3.00, 15.00, "Grille publique Anthropic"),
+    ("claude-haiku-4-5", 1.00, 5.00, "Grille publique Anthropic"),
+    ("gemma4:26b", 0.00, 0.00, "Ollama auto-hébergé (EPF) : pas de coût à l'appel"),
+)
+
+
+def seed_model_prices(session: Session):
+    """Insère les tarifs connus, sans écraser ceux déjà saisis.
+
+    Relançable : la présence est testée sur le couple (modèle, fournisseur
+    générique). Un tarif corrigé à la main en administration n'est donc jamais
+    réécrit au redémarrage suivant.
+    """
+    for model, price_in, price_out, note in DEFAULT_MODEL_PRICES:
+        existing = session.exec(
+            select(LLMModelPrice).where(
+                LLMModelPrice.model == model,
+                LLMModelPrice.provider_id.is_(None),
+            )
+        ).first()
+        if existing:
+            continue
+
+        session.add(
+            LLMModelPrice(
+                model=model,
+                provider_id=None,
+                input_price_per_mtok=price_in,
+                output_price_per_mtok=price_out,
+                note=note,
+            )
+        )
+
+    session.commit()
+
+
 def seed_prompts(session: Session):
     """Remplit la table prompts."""
 
@@ -1019,6 +1068,10 @@ def seed_all_if_necessary():
         # bases déjà déployées doivent l'obtenir sans repasser par un seed
         # complet. La fonction est idempotente.
         seed_llm_providers(session)
+
+        # Idem pour la grille tarifaire : les bases déjà déployées doivent
+        # obtenir les tarifs connus sans repasser par un seed complet.
+        seed_model_prices(session)
 
         # Seeder le reste uniquement si la base est vide
         if session.query(User).first():

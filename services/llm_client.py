@@ -169,8 +169,15 @@ def _headers(provider):
     return headers
 
 
-def _metadata(model, created_at, duration_s, eval_count):
-    """Forme normalisée des métadonnées, commune aux trois adaptateurs."""
+def _metadata(model, created_at, duration_s, eval_count, prompt_count=None):
+    """Forme normalisée des métadonnées, commune aux trois adaptateurs.
+
+    `eval_count` (tokens générés) et `prompt_count` (tokens consommés en
+    entrée) sont les deux compteurs facturés : les remonter séparément est ce
+    qui permet de calculer un coût, l'entrée et la sortie n'étant jamais au
+    même tarif. `None` quand le fournisseur ne les expose pas — un compteur
+    manquant doit rester visible, pas devenir un zéro trompeur.
+    """
     tokens_per_s = None
     if eval_count and duration_s and duration_s >= _MIN_DURATION_FOR_RATE:
         tokens_per_s = eval_count / duration_s
@@ -180,6 +187,7 @@ def _metadata(model, created_at, duration_s, eval_count):
         "created_at": created_at,
         "duration_s": duration_s,
         "eval_count": eval_count,
+        "prompt_count": prompt_count,
         "tokens_per_s": tokens_per_s,
     }
 
@@ -485,6 +493,7 @@ def _ask_ollama(provider, model, prompt, session, timeout, seed, max_tokens):
         created_at=_parse_iso(data.get("created_at")),
         duration_s=duration_s,
         eval_count=eval_count,
+        prompt_count=data.get("prompt_eval_count"),
     )
     # Le débit d'Ollama se calcule sur la seule phase de génération, pas sur la
     # durée totale : on écrase la valeur par défaut quand l'info est présente.
@@ -522,11 +531,13 @@ def _ask_openai(provider, model, prompt, session, timeout, seed, max_tokens):
         datetime.fromtimestamp(created, tz=timezone.utc) if created else None
     )
 
+    usage = data.get("usage") or {}
     metadata = _metadata(
         model=data.get("model") or model,
         created_at=created_at,
         duration_s=elapsed,
-        eval_count=(data.get("usage") or {}).get("completion_tokens"),
+        eval_count=usage.get("completion_tokens"),
+        prompt_count=usage.get("prompt_tokens"),
     )
     return text, metadata, response.status_code
 
@@ -551,11 +562,13 @@ def _ask_anthropic(provider, model, prompt, session, timeout, seed, max_tokens):
     if not text:
         return None, data, response.status_code
 
+    usage = data.get("usage") or {}
     metadata = _metadata(
         model=data.get("model") or model,
         created_at=None,  # non fourni par l'API
         duration_s=elapsed,
-        eval_count=(data.get("usage") or {}).get("output_tokens"),
+        eval_count=usage.get("output_tokens"),
+        prompt_count=usage.get("input_tokens"),
     )
     return text, metadata, response.status_code
 

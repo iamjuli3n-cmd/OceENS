@@ -77,3 +77,29 @@ class Summary(SQLModel, table=True):
 
     # Métadonnées de génération (modèle, durée, nb de tokens...) au format texte
     metadata_text: Optional[str] = Field(sa_column=Column("metadata_text", Text))
+
+    # ─── Consommation, pour le calcul de coût ────────────────────────────────
+    #
+    # `metadata_text` porte déjà le modèle et le débit, mais sous forme de
+    # phrase : impossible d'en faire une somme. Ces trois colonnes stockent la
+    # consommation réelle renvoyée par le fournisseur, seule base honnête d'un
+    # coût — le tarif, lui, vit dans `llm_model_prices` et peut donc être
+    # corrigé après coup sans réécrire l'historique.
+    #
+    # NULL = information non fournie (synthèses générées avant cette
+    # fonctionnalité, ou fournisseur qui n'expose pas ses compteurs). Le coût
+    # est alors marqué inconnu, jamais estimé.
+
+    # Modèle réellement utilisé, tel que renvoyé par le fournisseur. Stocké ici
+    # car le prompt a pu changer de modèle depuis la génération.
+    model_used: Optional[str] = Field(
+        default=None, sa_column=Column("model_used", String)
+    )
+
+    input_tokens: Optional[int] = Field(
+        default=None, sa_column=Column("input_tokens", Integer)
+    )
+
+    output_tokens: Optional[int] = Field(
+        default=None, sa_column=Column("output_tokens", Integer)
+    )

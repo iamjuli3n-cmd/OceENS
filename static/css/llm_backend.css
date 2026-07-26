@@ -1,0 +1,298 @@
+/* Styles communs aux écrans d'administration LLM
+   (fournisseurs, tarifs, coûts).
+
+   Extraits du <style> inline de providers.html quand la partie LLM est passée
+   de un à trois écrans : trois copies du même bloc auraient dérivé. */
+
+.backend-main {
+    max-width: 1100px;
+    margin: 32px auto;
+    padding: 0 24px;
+}
+
+.backend-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.backend-header h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.header-links {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.section-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 32px 0 14px;
+}
+
+.hint {
+    font-size: .85rem;
+    color: var(--text-muted, #7f8fa6);
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+
+.notice {
+    padding: 10px 16px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    font-size: .88rem;
+}
+
+.notice.success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.notice.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Les tableaux peuvent dépasser sur mobile : ils défilent dans leur
+   conteneur plutôt que d'élargir la page entière. */
+.table-scroll {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card-bg, white);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
+}
+
+th,
+td {
+    padding: 11px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border, #dce4ec);
+    font-size: .88rem;
+}
+
+th {
+    background: var(--bg, #f0f4f8);
+    font-weight: 600;
+    color: var(--text-muted, #7f8fa6);
+    text-transform: uppercase;
+    font-size: .75rem;
+    letter-spacing: .04em;
+}
+
+td.muted {
+    color: var(--text-muted, #7f8fa6);
+}
+
+td.numeric,
+th.numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+code {
+    font-family: 'DM Mono', monospace;
+    font-size: .78rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: .75rem;
+    font-weight: 500;
+}
+
+.badge-ok {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.badge-warn {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-muted {
+    background: var(--bg, #f0f4f8);
+    color: var(--text-muted, #7f8fa6);
+}
+
+.btn {
+    display: inline-block;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: .82rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--purple, #470a68);
+    color: white;
+}
+
+.btn-primary:hover {
+    opacity: .88;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border, #dce4ec);
+    color: var(--text, #2c3e50);
+}
+
+.btn-secondary:hover {
+    background: var(--bg, #f0f4f8);
+}
+
+.btn-danger {
+    background: transparent;
+    border: 1px solid #df231d;
+    color: #df231d;
+}
+
+.btn-danger:hover {
+    background: #fef2f2;
+}
+
+.btn:disabled,
+.btn.disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.row-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.empty {
+    color: var(--text-muted, #7f8fa6);
+    text-align: center;
+    padding: 48px 0;
+}
+
+/* Résultat du test de connexion, sous les boutons d'une ligne fournisseur */
+.test-result {
+    display: block;
+    margin-top: 6px;
+    font-size: .78rem;
+    font-weight: 500;
+}
+
+.test-result.ok {
+    color: #065f46;
+}
+
+.test-result.ko {
+    color: #991b1b;
+}
+
+.test-result.warn {
+    color: #92400e;
+}
+
+.test-result.pending {
+    color: var(--text-muted, #7f8fa6);
+}
+
+/* ─── Formulaire de tarif ─────────────────────────────────────────────── */
+
+.price-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    background: var(--card-bg, white);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
+}
+
+.price-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.price-form .field-wide {
+    grid-column: 1 / -1;
+}
+
+.price-form label {
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.price-form input,
+.price-form select {
+    padding: 8px 10px;
+    border: 1px solid var(--border, #dce4ec);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: .88rem;
+    background: var(--card-bg, white);
+    color: var(--text, #2c3e50);
+}
+
+.price-form small {
+    font-size: .74rem;
+    color: var(--text-muted, #7f8fa6);
+}
+
+.price-form .form-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 8px;
+}
+
+/* ─── Écran de coûts ──────────────────────────────────────────────────── */
+
+.cost-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.cost-tile {
+    background: var(--card-bg, white);
+    border-radius: 10px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
+}
+
+.cost-tile .label {
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-muted, #7f8fa6);
+    font-weight: 600;
+}
+
+.cost-tile .value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+}
+
+.cost-tile .value.warn {
+    color: #92400e;
+}

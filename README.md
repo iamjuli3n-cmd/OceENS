@@ -296,42 +296,65 @@ réponse brute du fournisseur reste dans les logs du daemon pour le diagnostic.
 
 ---
 
-## Token Counting et Coûts Claude API
+## Coût des synthèses
 
-OceENS inclut des outils pour estimer et tracker la consommation de tokens **pour Claude API** (support d'autres fournisseurs à venir).
+Le coût de chaque synthèse est **mesuré, pas estimé**. Au moment de la
+génération, le daemon enregistre les compteurs de tokens renvoyés par le
+fournisseur (`Summary.input_tokens`, `output_tokens`, `model_used`) : c'est la
+seule occasion de les capturer, aucune API ne permet de les redemander après
+coup. Le montant est ensuite obtenu en croisant ces compteurs avec la grille
+tarifaire.
 
-### Utilisation rapide
+> [!NOTE]
+> Cette section remplace les anciens scripts `llm-utils/token-counting/`, qui
+> comptaient les tokens du **code source du dépôt** et les multipliaient par un
+> tarif codé en dur. Cette mesure ne disait rien de la dépense réelle de
+> l'application. Le suivi porte désormais sur les appels effectivement facturés.
 
-```bash
-# Estimation rapide (fonctionne sans API key)
-./estimate-tokens.sh          # Unix/Linux/Mac
-estimate-tokens.bat           # Windows
+### Grille tarifaire — `/backend/llm/prices`
 
-# Ou accès direct
-python llm-utils/token-counting/estimate_tokens_local.py
-```
+Les tarifs vivent en base (table `llm_model_prices`), en **dollars par million
+de tokens**, comme les publient les fournisseurs. Ils sont éditables depuis
+l'administration : pas besoin de livrer une version pour suivre une révision de
+prix, ni pour couvrir un fournisseur ajouté localement.
 
-**Statistiques du projet :**
-- ~68K tokens pour l'intégralité du codebase
-- Coût estimé : $0.20 (Sonnet 5) pour une revue complète
-- Session type (5 tours) : ~$0.23
+Sont pré-remplis au démarrage (`seed_model_prices`, idempotent — un tarif
+corrigé à la main n'est jamais réécrit) :
 
-### Configuration pour comptage exact
+| Modèle | Entrée $/M | Sortie $/M |
+| --- | ---: | ---: |
+| `claude-opus-5` | 5.00 | 25.00 |
+| `claude-sonnet-5` | 3.00 | 15.00 |
+| `claude-haiku-4-5` | 1.00 | 5.00 |
+| `gemma4:26b` (Ollama EPF, auto-hébergé) | 0.00 | 0.00 |
 
-Pour obtenir des comptages exacts via l'API Anthropic :
+Les tarifs des autres fournisseurs (OpenAI, Mistral, Groq…) sont **à saisir** :
+ils ne sont pas devinés. Un tarif spécifique à un fournisseur l'emporte sur un
+tarif générique portant le même nom de modèle.
 
-```bash
-export ANTHROPIC_API_KEY='sk-...'
-python llm-utils/token-counting/estimate_tokens.py
-```
+### Consultation
 
-### Documentation complète
+| Où | Quoi |
+| --- | --- |
+| `/backend/llm/costs` | Coût global, détaillé par sondage et par modèle (admin) |
+| Bouton 💰 sur une ligne de sondage | Coût des synthèses de ce sondage |
 
-Voir `llm-utils/token-counting/TOKEN_COUNTING_GUIDE.md` pour :
-- Guide d'intégration Claude Desktop
-- Stratégies de réduction de coûts
-- Tarification détaillée par modèle
-- Recommandations de modèles (Haiku, Sonnet 5, Opus)
+### Ce qui n'est pas chiffré
+
+Une synthèse n'est pas chiffrable quand ses compteurs manquent (générée avant
+cette fonctionnalité, ou fournisseur qui ne les expose pas) ou quand son modèle
+n'a pas de tarif enregistré. Elle est alors **comptée à part**, jamais estimée
+ni ramenée à zéro : un montant inventé serait plus nuisible qu'un montant
+absent, puisqu'il s'afficherait avec l'autorité d'un montant réel. Les écrans
+signalent explicitement qu'un total est partiel.
+
+À distinguer d'un coût **nul** : les modèles auto-hébergés valent réellement
+0,00 $, ce qui n'est pas la même information que « inconnu ».
+
+> [!IMPORTANT]
+> Le suivi démarre à la mise en service : les synthèses générées auparavant
+> n'ont pas de compteurs en base et ne peuvent pas être chiffrées
+> rétroactivement.
 
 ---
 
@@ -368,9 +391,13 @@ OceENS/
 │   ├── users.py                  #   Gestion des rôles utilisateurs
 │   ├── summaries.py              #   Déclenchement des synthèses LLM
 │   ├── prompts.py                #   Administration des prompts
-│   ├── llm_providers.py          #   Administration des fournisseurs LLM (CRUD + test)
 │   ├── survey_templates.py       #   Administration des modèles de sondage
-│   └── sections_questions.py     #   Administration des sections et questions
+│   ├── sections_questions.py     #   Administration des sections et questions
+│   └── llm/                      #   Administration LLM (URLs inchangées)
+│       ├── _access.py            #     Contrôle d'accès partagé des écrans LLM
+│       ├── providers.py          #     Fournisseurs LLM (CRUD + test de connexion)
+│       ├── prices.py             #     Grille tarifaire par modèle
+│       └── costs.py              #     Coût global et coût par sondage
 │
 ├── database/                     # Dossier contenant la base de données (ignoré par Git)
 │   └── db_oceens.db
@@ -379,16 +406,11 @@ OceENS/
 │   ├── helpers.py                # Navigation, statistiques, filtres, tri
 │   ├── visualisation_data.py     # Agrégations et contexte de visualisation
 │   ├── llm_client.py             # Client LLM multi-fournisseur (ollama/openai/anthropic)
+│   ├── llm_costs.py              # Coût des synthèses (tokens mesurés × grille tarifaire)
 │   └── export_csv.py             # Export CSV des réponses
 │
-├── llm-utils/                    # Outils pour intégrations LLM
-│   ├── README.md                 # Documentation des utilitaires LLM
-│   └── token-counting/           # Estimation des tokens et coûts Claude API
-│       ├── estimate_tokens_local.py       # Estimation rapide (sans API key)
-│       ├── estimate_tokens.py             # Comptage exact (requiert ANTHROPIC_API_KEY)
-│       ├── estimate-tokens.sh/.bat        # Wrappers de convenance
-│       ├── TOKEN_COUNTING_GUIDE.md        # Guide complet et optimisations
-│       └── README_TOKENS.md               # Référence rapide
+├── llm-utils/                    # Outils LLM hors application
+│   └── README.md                 # (le suivi des coûts est passé dans l'app, voir ci-dessus)
 │
 ├── templates/                    # Templates HTML (Jinja2)
 │   ├── index.html                     # Page d'accueil / login
@@ -404,7 +426,12 @@ OceENS/
 │   │   └── visualisation.html            # Visualisation des réponses
 │   ├── backend/                       # Pages d'administration (admin only)
 │   │   ├── prompts.html               # Liste des prompts LLM
-│   │   └── prompt_form.html           # Formulaire create/edit partagé
+│   │   ├── prompt_form.html           # Formulaire create/edit partagé
+│   │   └── llm/                       # Écrans LLM (fournisseurs, tarifs, coûts)
+│   │       ├── providers.html
+│   │       ├── provider_form.html
+│   │       ├── prices.html            # Grille tarifaire éditable
+│   │       └── costs.html             # Coût global et par sondage
 │   └── template_parts/                # Fragments réutilisables entre dashboards
 │       ├── part_site_header.html
 │       ├── part_dashboard_navigation.html
@@ -414,7 +441,8 @@ OceENS/
 ├── static/
 │   ├── css/                      # admin.css, student.css, program_manager.css, survey.css,
 │   │                              # survey_create.css, visualisation.css, prompt_form.css,
-│   │                              # theme.css, site_header.css, dashboard_navigation.css, responsive.css
+│   │                              # llm_backend.css (écrans LLM), theme.css, site_header.css,
+│   │                              # dashboard_navigation.css, responsive.css
 │   ├── js/
 │   │   └── survey.js
 │   └── img/
