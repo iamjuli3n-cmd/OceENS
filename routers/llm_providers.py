@@ -9,7 +9,13 @@ from core.auth import get_current_user
 from core.database import SessionDep
 from models import LLMProvider, Prompt, Role, User
 from core.dependencies import logger, templates
-from services.llm_client import LLMConfigError, list_models
+from services.llm_client import (
+    ERROR_AUTH,
+    ERROR_QUOTA,
+    LLMConfigError,
+    list_models,
+    ping_generation,
+)
 
 backend_router = APIRouter(tags=["Backend"], prefix="/backend")
 
@@ -386,12 +392,19 @@ def delete_provider(request: Request, provider_id: int, session: SessionDep):
 
 @backend_router.get("/providers/{provider_id}/test")
 def test_provider(request: Request, provider_id: int, session: SessionDep):
-    """Teste la connexion à un fournisseur en listant ses modèles (JSON).
+    """Teste un fournisseur : liste ses modèles, puis vérifie qu'il peut générer.
 
-    Appelé en fetch depuis la liste. Renvoie {"ok": true, "count": N} si le
-    fournisseur répond, sinon {"ok": false, "error": "..."}. Le message
-    d'erreur reste générique côté navigateur ; le détail (clé, URL, exception)
-    n'est écrit que dans les logs serveur — jamais renvoyé au client.
+    Appelé en fetch depuis la liste. Deux étapes, car lister les modèles ne
+    prouve rien sur la facturation : chez OpenAI comme chez Anthropic, GET
+    /v1/models répond encore parfaitement avec un solde à zéro. On enchaîne donc
+    sur un ping de génération d'un token, seul moyen de voir un crédit épuisé
+    avant que le daemon ne le découvre en pleine campagne de synthèses.
+
+    Renvoie {"ok": true, "count": N} si tout répond, {"ok": false, "error": ...}
+    sinon. Les causes de configuration (clé, URL, exception) restent génériques
+    côté navigateur et détaillées dans les logs ; le crédit épuisé, lui, est
+    annoncé explicitement — c'est justement l'information dont l'administrateur
+    a besoin, et elle ne révèle aucun secret.
     """
     # 1. AUTHENTIFICATION + contrôle admin
     user = get_current_user(request)
@@ -435,5 +448,47 @@ def test_provider(request: Request, provider_id: int, session: SessionDep):
             {"ok": False, "error": "Erreur inattendue (voir les logs serveur)."}
         )
 
-    # 4. Succès : renvoyer le nombre de modèles disponibles
-    return JSONResponse({"ok": True, "count": len(models)})
+    # 4. Le fournisseur répond. Reste à savoir s'il accepte de générer : on
+    #    ping le modèle par défaut, ou à défaut le premier modèle exposé.
+    model = provider.default_model or (models[0] if models else None)
+    if not model:
+        return JSONResponse({
+            "ok": True,
+            "count": 0,
+            "warning": "Connecté, mais aucun modèle à tester : crédit non vérifié.",
+        })
+
+    try:
+        ok, kind, message = ping_generation(provider, model)
+    except LLMConfigError as error:
+        logger.warning("Ping fournisseur %s : config invalide : %s", provider.name, error)
+        return JSONResponse(
+            {"ok": False, "error": "Configuration invalide (voir les logs serveur)."}
+        )
+    except RequestException as error:
+        logger.warning("Ping fournisseur %s : serveur injoignable : %s", provider.name, error)
+        return JSONResponse(
+            {"ok": False, "error": "Serveur injoignable (voir les logs serveur)."}
+        )
+    except Exception:
+        logger.exception("Ping fournisseur %s : erreur inattendue", provider.name)
+        return JSONResponse(
+            {"ok": False, "error": "Erreur inattendue (voir les logs serveur)."}
+        )
+
+    if not ok:
+        logger.warning("Ping fournisseur %s (%s) : %s", provider.name, kind, message)
+        # Une clé refusée est un problème de configuration : le message du
+        # fournisseur peut citer la clé envoyée, il reste donc dans les logs.
+        # Les autres cas (crédit, débit, modèle, panne) ne révèlent rien et
+        # gagnent à être affichés tels quels. `kind` permet au navigateur de
+        # distinguer le crédit épuisé, bloquant, d'un débit passager.
+        client_error = (
+            "Clé d'API refusée par le fournisseur (voir les logs serveur)."
+            if kind == ERROR_AUTH
+            else message
+        )
+        return JSONResponse({"ok": False, "kind": kind, "error": client_error})
+
+    # 5. Succès complet : la connexion répond et le compte peut générer.
+    return JSONResponse({"ok": True, "count": len(models), "model": model})

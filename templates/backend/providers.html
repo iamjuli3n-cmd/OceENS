@@ -178,6 +178,10 @@
             color: #991b1b;
         }
 
+        .test-result.warn {
+            color: #92400e;
+        }
+
         .test-result.pending {
             color: var(--text-muted, #7f8fa6);
         }
@@ -283,11 +287,20 @@
             try {
                 const r = await fetch(`/backend/providers/${id}/test`);
                 const data = await r.json();
-                if (data.ok) {
+                if (data.ok && data.warning) {
+                    // Connecté, mais le crédit n'a pas pu être vérifié.
+                    result.className = 'test-result warn';
+                    result.textContent = `⚠ ${data.warning}`;
+                } else if (data.ok) {
                     result.className = 'test-result ok';
-                    result.textContent = `✓ Connecté — ${data.count} modèle(s) disponible(s)`;
+                    result.textContent =
+                        `✓ Connecté — ${data.count} modèle(s), génération OK (${data.model})`;
                 } else {
-                    result.className = 'test-result ko';
+                    // Le crédit épuisé n'est pas une panne : il se règle en
+                    // rechargeant le compte, on le signale donc à part.
+                    result.className = data.kind === 'quota'
+                        ? 'test-result warn'
+                        : 'test-result ko';
                     result.textContent = `✗ ${data.error}`;
                 }
             } catch (e) {

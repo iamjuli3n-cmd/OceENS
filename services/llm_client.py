@@ -58,6 +58,11 @@ DEFAULT_MAX_TOKENS = 4096
 
 ANTHROPIC_VERSION = "2023-06-01"
 
+# Prompt et plafond du « ping » de génération (voir `ping_generation`) : il doit
+# coûter le strict minimum, sa réponse n'est jamais lue.
+PING_PROMPT = "ping"
+PING_MAX_TOKENS = 1
+
 # En dessous de ce seuil, la durée mesurée côté client ne vient pas d'une
 # génération réelle : c'est une réponse servie par le cache. Calculer un débit
 # dessus afficherait des millions de tokens/s à l'utilisateur.
@@ -229,6 +234,151 @@ def _error_metadata(response):
         return {"body": (response.text or "")[:500]}
 
 
+# ─── Normalisation des erreurs de fournisseur ─────────────────────────────────
+#
+# Chaque fournisseur signale ses pannes dans un format différent : le crédit
+# épuisé est un 429 `insufficient_quota` chez OpenAI, un 400 « Your credit
+# balance is too low » chez Anthropic. Stocker ce JSON brut dans
+# `Summary.metadata_text` laissait l'utilisateur devant une trace illisible,
+# alors que le problème — « il faut recharger le compte » — se règle en une
+# phrase. On classe donc l'erreur avant de l'écrire.
+
+ERROR_QUOTA = "quota"  # crédit épuisé / facturation : rien ne repassera seul
+ERROR_RATE_LIMIT = "rate_limit"  # débit dépassé : transitoire, réessayable
+ERROR_AUTH = "auth"  # clé refusée
+ERROR_MODEL = "model"  # modèle inconnu du fournisseur
+ERROR_SERVER = "server"  # panne côté fournisseur
+ERROR_UNKNOWN = "unknown"
+
+# Résumé court par catégorie, réutilisable partout (synthèses, test de
+# connexion). Le détail renvoyé par le fournisseur s'y ajoute quand il existe.
+ERROR_LABELS = {
+    ERROR_QUOTA: (
+        "⚠️ Crédit ou quota épuisé chez le fournisseur : la clé est valide mais "
+        "le compte ne peut plus générer. Rechargez le compte ou choisissez un "
+        "autre fournisseur."
+    ),
+    ERROR_RATE_LIMIT: (
+        "⏳ Limite de débit atteinte chez le fournisseur. Réessayez dans "
+        "quelques minutes."
+    ),
+    ERROR_AUTH: (
+        "🔑 Clé d'API refusée par le fournisseur. Vérifiez la variable "
+        "d'environnement configurée."
+    ),
+    ERROR_MODEL: "❓ Modèle inconnu du fournisseur.",
+    ERROR_SERVER: (
+        "🛠️ Le fournisseur a renvoyé une erreur interne. Réessayez plus tard."
+    ),
+    ERROR_UNKNOWN: "Échec de l'appel au fournisseur.",
+}
+
+# Repérage du crédit épuisé dans le code/type d'erreur puis, à défaut, dans le
+# message. Deux passes séparées car un message de limite de débit mentionne
+# parfois le mot « quota » sans que le compte soit à sec.
+_QUOTA_CODES = ("insufficient_quota", "billing", "payment", "credit", "quota")
+_QUOTA_MESSAGE = re.compile(
+    r"credit balance|insufficient (quota|funds|credit)|exceeded your current quota"
+    r"|billing|payment required|plans? & billing|solde|crédit",
+    re.IGNORECASE,
+)
+_RATE_LIMIT_CODES = ("rate_limit", "too_many_requests", "overloaded")
+_AUTH_CODES = ("invalid_api_key", "authentication", "permission", "unauthorized")
+_MODEL_CODES = ("model_not_found", "not_found", "does not exist", "unknown model")
+
+# Au-delà, le détail du fournisseur encombre l'affichage sans aider.
+_DETAIL_MAX_LENGTH = 200
+
+
+def _error_fields(payload):
+    """Extrait `(code, message)` d'un corps d'erreur, quel qu'en soit le format.
+
+    Formats rencontrés : ``{"error": {"code"|"type", "message"}}`` (OpenAI,
+    Groq, Anthropic), ``{"error": "..."}`` (Ollama), ``{"message": "..."}``
+    (Mistral), ``{"detail": "..."}`` (vLLM), et le ``{"body": "..."}`` produit
+    par `_error_metadata` quand la réponse n'est même pas du JSON.
+    """
+    if not isinstance(payload, dict):
+        return "", str(payload or "")
+
+    error = payload.get("error")
+    if isinstance(error, dict):
+        code = error.get("code") or error.get("type") or ""
+        message = error.get("message") or ""
+    elif isinstance(error, str):
+        code, message = "", error
+    else:
+        code, message = "", ""
+
+    if not message:
+        # Certains fournisseurs (Anthropic) portent le type à la racine.
+        message = payload.get("message") or payload.get("detail") or payload.get("body") or ""
+    if not code:
+        code = payload.get("type") or payload.get("code") or ""
+
+    return str(code), str(message)
+
+
+def classify_error(status_code, payload):
+    """Range une réponse en erreur dans l'une des catégories `ERROR_*`.
+
+    Le code HTTP seul ne suffit pas : OpenAI renvoie 429 aussi bien pour un
+    débit dépassé (transitoire) que pour un crédit épuisé (bloquant), et
+    Anthropic annonce le crédit épuisé en 400. On regarde donc d'abord ce que
+    dit le corps de la réponse, le code HTTP ne servant que de repli.
+    """
+    code, message = _error_fields(payload)
+    code_lower = code.lower()
+
+    # Débit avant quota : « rate_limit » est explicite, alors qu'un message de
+    # limite de débit peut mentionner le mot « quota » au passage.
+    if any(needle in code_lower for needle in _RATE_LIMIT_CODES):
+        return ERROR_RATE_LIMIT
+
+    if any(needle in code_lower for needle in _QUOTA_CODES):
+        return ERROR_QUOTA
+    if _QUOTA_MESSAGE.search(message):
+        return ERROR_QUOTA
+    # 402 Payment Required : sans ambiguïté, quel que soit le corps.
+    if status_code == 402:
+        return ERROR_QUOTA
+
+    if any(needle in code_lower for needle in _AUTH_CODES) or status_code in (401, 403):
+        return ERROR_AUTH
+    if any(needle in code_lower for needle in _MODEL_CODES) or status_code == 404:
+        return ERROR_MODEL
+    if status_code == 429:
+        return ERROR_RATE_LIMIT
+    if status_code and status_code >= 500:
+        return ERROR_SERVER
+
+    return ERROR_UNKNOWN
+
+
+def format_error_text(provider, model, status_code, payload):
+    """Rend une erreur de génération sous forme lisible, pour `metadata_text`.
+
+    Le JSON brut du fournisseur reste destiné aux logs ; ce qui est stocké en
+    base et relu par un responsable doit dire quoi faire.
+    """
+    kind = classify_error(status_code, payload)
+    text = f"{ERROR_LABELS[kind]} (fournisseur {provider.name}"
+    if model:
+        text += f", modèle {model}"
+    if status_code:
+        text += f", HTTP {status_code}"
+    text += ")"
+
+    _, detail = _error_fields(payload)
+    detail = " ".join(detail.split())  # une erreur multiligne tient sur une ligne
+    if detail:
+        if len(detail) > _DETAIL_MAX_LENGTH:
+            detail = detail[:_DETAIL_MAX_LENGTH].rstrip() + "…"
+        text += f" Détail : {detail}"
+
+    return text
+
+
 def _post(provider, path, payload, session, timeout):
     """POST commun aux trois adaptateurs, avec chronométrage côté client.
 
@@ -301,12 +451,15 @@ def check_model(provider, model, session=None):
 # ─── Adaptateurs : génération ─────────────────────────────────────────────────
 
 
-def _ask_ollama(provider, model, prompt, session, timeout, seed):
+def _ask_ollama(provider, model, prompt, session, timeout, seed, max_tokens):
+    options = {"seed": seed}
+    if max_tokens:
+        options["num_predict"] = max_tokens
     payload = {
         "model": model,
         "prompt": prompt,
         "stream": False,
-        "options": {"seed": seed},
+        "options": options,
     }
     response, elapsed = _post(provider, "/api/generate", payload, session, timeout)
 
@@ -342,13 +495,15 @@ def _ask_ollama(provider, model, prompt, session, timeout, seed):
     return text, metadata, response.status_code
 
 
-def _ask_openai(provider, model, prompt, session, timeout, seed):
+def _ask_openai(provider, model, prompt, session, timeout, seed, max_tokens):
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "stream": False,
         "seed": seed,
     }
+    if max_tokens:
+        payload["max_tokens"] = max_tokens
     response, elapsed = _post(
         provider, "/v1/chat/completions", payload, session, timeout
     )
@@ -376,12 +531,12 @@ def _ask_openai(provider, model, prompt, session, timeout, seed):
     return text, metadata, response.status_code
 
 
-def _ask_anthropic(provider, model, prompt, session, timeout, seed):
+def _ask_anthropic(provider, model, prompt, session, timeout, seed, max_tokens):
     # Anthropic n'expose pas de paramètre `seed` : la reproductibilité est
     # approchée par température nulle.
     payload = {
         "model": model,
-        "max_tokens": DEFAULT_MAX_TOKENS,
+        "max_tokens": max_tokens or DEFAULT_MAX_TOKENS,
         "temperature": 0,
         "messages": [{"role": "user", "content": prompt}],
     }
@@ -412,17 +567,60 @@ _ADAPTERS = {
 }
 
 
-def ask_model(provider, model, prompt, session=None, timeout=DEFAULT_TIMEOUT, seed=DEFAULT_SEED):
+def ask_model(
+    provider,
+    model,
+    prompt,
+    session=None,
+    timeout=DEFAULT_TIMEOUT,
+    seed=DEFAULT_SEED,
+    max_tokens=None,
+):
     """Interroge le fournisseur et retourne `(texte, métadonnées, code HTTP)`.
 
     `texte` vaut `None` quand la génération a échoué ; `métadonnées` contient
     alors la réponse brute du fournisseur, utile au diagnostic. Lève
     `LLMConfigError` si le fournisseur est mal configuré.
+
+    `max_tokens` plafonne la réponse. Les synthèses le laissent à `None` (pas
+    de limite hors celle qu'Anthropic impose) ; seul le ping de `ping_generation`
+    s'en sert pour ne payer qu'un token.
     """
     _check_api_type(provider)
     return _ADAPTERS[provider.api_type](
-        provider, model, prompt, session, timeout, seed
+        provider, model, prompt, session, timeout, seed, max_tokens
     )
+
+
+def ping_generation(provider, model, session=None, timeout=30):
+    """Vérifie que le compte peut réellement *générer*, pas seulement répondre.
+
+    `list_models` ne suffit pas à valider un fournisseur : chez OpenAI comme
+    chez Anthropic, la liste des modèles répond encore normalement avec un
+    solde à zéro. Seul un appel de génération fait apparaître le crédit épuisé
+    — d'où ce ping d'un token, dont la réponse n'est jamais lue.
+
+    Retourne `(ok, kind, message)` : `kind` et `message` valent `None` en cas de
+    succès, sinon `kind` est l'une des constantes `ERROR_*` et `message` le
+    texte lisible correspondant.
+    """
+    _check_api_type(provider)
+    _, payload, status_code = ask_model(
+        provider,
+        model,
+        PING_PROMPT,
+        session=session,
+        timeout=timeout,
+        max_tokens=PING_MAX_TOKENS,
+    )
+
+    # Une réponse vide mais en 200 suffit : la génération est autorisée, c'est
+    # tout ce que ce ping cherche à établir.
+    if status_code == 200:
+        return True, None, None
+
+    kind = classify_error(status_code, payload)
+    return False, kind, format_error_text(provider, model, status_code, payload)
 
 
 def build_cache_session(path="cache_llm.db"):

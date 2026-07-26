@@ -260,7 +260,8 @@ un secret système (`SECRET_KEY`, `ENTRA_CLIENT_SECRET`…).
    renseigner le nom, le type d'API, l'URL de base, le nom de la variable d'env
    (`OPENAI_API_KEY`), et un modèle par défaut. L'indicateur **« clé présente /
    absente »** confirme que la variable est bien chargée. Le bouton **Tester**
-   vérifie que l'URL et la clé répondent.
+   vérifie que l'URL et la clé répondent, puis envoie une génération d'un token
+   pour confirmer que le compte peut réellement générer (voir ci-dessous).
 
 4. **Relier un prompt** au fournisseur : dans `/backend/prompts`, un `<select>`
    permet de choisir le fournisseur d'un prompt. Un prompt sans fournisseur
@@ -269,6 +270,29 @@ un secret système (`SECRET_KEY`, `ENTRA_CLIENT_SECRET`…).
 > [!NOTE]
 > Un fournisseur référencé par au moins un prompt ne peut pas être supprimé
 > (pour ne pas casser la configuration de ces prompts).
+
+### Crédit épuisé et autres erreurs de fournisseur
+
+Chaque fournisseur signale ses pannes dans un format différent : un crédit
+épuisé est un `429 insufficient_quota` chez OpenAI, mais un `400 « Your credit
+balance is too low »` chez Anthropic. `services/llm_client.py` normalise ces
+réponses en catégories (`quota`, `rate_limit`, `auth`, `model`, `server`) et en
+tire un message lisible :
+
+> ⚠️ Crédit ou quota épuisé chez le fournisseur : la clé est valide mais le
+> compte ne peut plus générer. Rechargez le compte ou choisissez un autre
+> fournisseur. (fournisseur OpenAI, modèle gpt-4o-mini, HTTP 429)
+
+Ce message est écrit dans `Summary.metadata_text` à la place du JSON brut — il
+est donc visible directement depuis l'interface quand une synthèse échoue. La
+réponse brute du fournisseur reste dans les logs du daemon pour le diagnostic.
+
+> [!IMPORTANT]
+> Le bouton **Tester** ne se contente pas de lister les modèles : chez OpenAI
+> comme chez Anthropic, `GET /v1/models` répond encore parfaitement avec un
+> solde à zéro. Un ping de génération d'un token (coût négligeable) est donc
+> envoyé ensuite — c'est le seul moyen de repérer un crédit épuisé **avant** de
+> lancer une campagne de synthèses.
 
 ---
 

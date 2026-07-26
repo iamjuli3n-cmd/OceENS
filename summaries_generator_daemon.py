@@ -36,6 +36,7 @@ from services.llm_client import (
     ask_model,
     build_cache_session,
     check_model,
+    format_error_text,
     format_metadata_text,
 )
 
@@ -241,14 +242,22 @@ def process_summary(session, summary_row, http_session, md, checked_models):
         return
 
     if not answer:
+        # Le JSON brut du fournisseur part dans les logs, pour le diagnostic ;
+        # la base reçoit la version lisible, qui dit quoi corriger (crédit
+        # épuisé, débit dépassé, clé refusée…).
+        error_text = format_error_text(provider, model, status_code, metadata)
         logger.warning(
-            "Synthèse %s : réponse vide (HTTP %s)", summary_row.summary_id, status_code
+            "Synthèse %s : réponse vide (HTTP %s) — %s — réponse brute : %s",
+            summary_row.summary_id,
+            status_code,
+            error_text,
+            json.dumps(metadata, default=str),
         )
         finish_summary(
             session,
             summary_row,
             status_code,
-            metadata_text=json.dumps(metadata, default=str),
+            metadata_text=error_text,
         )
         return
 
