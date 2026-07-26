@@ -46,6 +46,12 @@ _ADDED_COLUMNS = {
     # avant celle-ci ne l'ont pas, et son absence casse toute lecture de la
     # table `prompts`.
     "prompts": (("provider_id", "INTEGER"),),
+    # Forfait par génération, ajouté quand il est apparu que le LLM
+    # auto-hébergé de l'école n'est pas gratuit à l'appel.
+    "llm_model_prices": (
+        ("flat_cost_min", "REAL DEFAULT 0"),
+        ("flat_cost_max", "REAL DEFAULT 0"),
+    ),
 }
 
 

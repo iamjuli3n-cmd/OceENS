@@ -25,6 +25,7 @@ from models.Question import Question
 from models.Respondent import Respondent
 from models.Role import Role
 from models.Section import Section
+from models.Setting import Setting
 from models.Stat import Stat
 from models.StatValue import StatValue
 from models.Submission import Submission
@@ -45,6 +46,7 @@ __all__ = [
     "Respondent",
     "Role",
     "Section",
+    "Setting",
     "Stat",
     "StatValue",
     "Submission",
