@@ -64,10 +64,13 @@
         {% endif %}
 
         <p class="hint">
-            Les montants sont calculés à partir des tokens réellement consommés, tels que
-            renvoyés par le fournisseur au moment de la génération, multipliés par la grille
-            tarifaire. Rien n'est estimé : une synthèse dont le coût est inconnu est comptée
-            à part plutôt qu'approximée.
+            Montants <strong>en euros</strong>, calculés à partir de ce qui a été réellement
+            consommé au moment de la génération : forfait par synthèse pour les modèles
+            auto-hébergés, tokens facturés pour les fournisseurs commerciaux.
+            Rien n'est estimé : une synthèse dont le coût est inconnu est comptée à part
+            plutôt qu'approximée. Une fourchette signale un tarif lui-même donné en
+            fourchette — l'afficher en un seul chiffre supposerait une précision que la
+            mesure n'a pas.
         </p>
 
         <h2 class="section-title">Par modèle</h2>

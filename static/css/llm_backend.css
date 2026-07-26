@@ -262,6 +262,42 @@ code {
     gap: 8px;
 }
 
+/* Taux de change : une ligne compacte, distincte du formulaire de tarif
+   puisqu'elle ne concerne que la saisie et pas un modèle en particulier. */
+.rate-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--card-bg, white);
+    padding: 12px 16px;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
+    margin-bottom: 18px;
+}
+
+.rate-form label {
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+.rate-form input {
+    width: 90px;
+    padding: 6px 10px;
+    border: 1px solid var(--border, #dce4ec);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: .88rem;
+    background: var(--card-bg, white);
+    color: var(--text, #2c3e50);
+}
+
+.rate-form small {
+    font-size: .74rem;
+    color: var(--text-muted, #7f8fa6);
+    flex: 1 1 240px;
+}
+
 /* ─── Écran de coûts ──────────────────────────────────────────────────── */
 
 .cost-tiles {

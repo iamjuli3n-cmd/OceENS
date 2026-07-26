@@ -437,6 +437,12 @@
           `Coût des synthèses : ${data.cost_label}`,
           `${data.summaries_total} synthèse(s) — ${data.input_tokens} tokens en entrée, ${data.output_tokens} en sortie`,
         ];
+        // Une fourchette vient d'un tarif lui-même donné en fourchette
+        // (forfait « tout inclus » du serveur de l'école) : le dire évite de
+        // la lire comme une imprécision de mesure.
+        if (data.cost_max > data.cost_min) {
+          lines.push('(fourchette : le tarif du modèle est lui-même un intervalle)');
+        }
         if (data.models.length) {
           lines.push(`Modèle(s) : ${data.models.join(', ')}`);
         }
