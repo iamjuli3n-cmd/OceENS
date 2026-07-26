@@ -39,34 +39,39 @@ def backend_costs(request: Request, session: SessionDep):
     total, per_survey, labels = global_cost(session)
 
     # Les sondages les plus coûteux en premier : c'est l'information qu'on
-    # vient chercher sur cette page.
+    # vient chercher sur cette page. Le tri se fait sur la borne haute, celle
+    # qui décide du budget à prévoir.
     surveys = sorted(
         (
             {
                 "survey_id": survey_id,
                 "survey": labels.get(survey_id),
                 "report": report,
-                "cost_label": format_cost(report["cost_usd"]),
+                "cost_label": format_cost(report["cost_min"], report["cost_max"]),
             }
             for survey_id, report in per_survey.items()
         ),
-        key=lambda item: item["report"]["cost_usd"],
+        key=lambda item: item["report"]["cost_max"],
         reverse=True,
     )
 
     models = sorted(
         (
-            {"model": model, **entry, "cost_label": format_cost(entry["cost_usd"])}
+            {
+                "model": model,
+                **entry,
+                "cost_label": format_cost(entry["cost_min"], entry["cost_max"]),
+            }
             for model, entry in total["models"].items()
         ),
-        key=lambda item: item["cost_usd"],
+        key=lambda item: item["cost_max"],
         reverse=True,
     )
 
     return templates.TemplateResponse(request, "backend/llm/costs.html", {
         "request": request,
         "total": total,
-        "total_label": format_cost(total["cost_usd"]),
+        "total_label": format_cost(total["cost_min"], total["cost_max"]),
         "surveys": surveys,
         "models": models,
     })
@@ -95,8 +100,9 @@ def api_survey_cost(request: Request, survey_id: int, session: SessionDep):
 
     return JSONResponse({
         "ok": True,
-        "cost_label": format_cost(report["cost_usd"]),
-        "cost_usd": report["cost_usd"],
+        "cost_label": format_cost(report["cost_min"], report["cost_max"]),
+        "cost_min": report["cost_min"],
+        "cost_max": report["cost_max"],
         "input_tokens": report["input_tokens"],
         "output_tokens": report["output_tokens"],
         "summaries_total": report["summaries_total"],

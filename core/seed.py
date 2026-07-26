@@ -30,9 +30,16 @@ from models import (
     Prompt,
     LLMModelPrice,
     LLMProvider,
+    Setting,
     Stat,
 )
 from core.database import engine
+from services.settings_store import (
+    DEFAULT_USD_TO_EUR,
+    USD_TO_EUR_KEY,
+    get_usd_to_eur,
+    set_setting,
+)
 
 logger = logging.getLogger("uvicorn")
 
@@ -983,22 +990,61 @@ def seed_llm_providers(session: Session):
     session.commit()
 
 
-# Tarifs de départ, en dollars par million de tokens (entrée, sortie).
+# Tarifs de départ. Format :
+#   (modèle, forfait_min, forfait_max, prix_entrée_Mtok, prix_sortie_Mtok, note)
 #
-# Seuls des tarifs vérifiables sont pré-remplis : les modèles Anthropic (grille
-# publique) et le serveur Ollama de l'école, gratuit à l'appel puisque
-# auto-hébergé. Les autres fournisseurs (OpenAI, Mistral, Groq…) sont laissés
-# à saisir dans `/backend/llm/prices` : inventer un tarif afficherait un
-# montant faux avec l'autorité d'un montant réel.
+# Le forfait est par génération ; les prix au token sont par million. Les deux
+# s'additionnent. **Tous les montants sont en euros.**
+#
+# Le LLM de l'école n'est pas gratuit : auto-hébergé ne veut pas dire sans
+# coût. GPU, électricité et amortissement du serveur reviennent à 2 à 5
+# centimes par synthèse, tout inclus — d'où un forfait en fourchette plutôt
+# qu'un prix au token.
+#
+# Les tarifs Anthropic sont publiés en dollars par million de tokens : ils sont
+# convertis ici une fois, au taux par défaut. À revérifier en administration —
+# le taux comme la grille bougent.
+#
+# Les autres fournisseurs (OpenAI, Mistral, Groq…) sont laissés à saisir dans
+# `/backend/llm/prices` : inventer un tarif afficherait un montant faux avec
+# l'autorité d'un montant réel.
 #
 # `provider_id` reste NULL : ces tarifs valent pour le nom de modèle quel que
 # soit l'endpoint qui le sert.
-DEFAULT_MODEL_PRICES = (
-    ("claude-opus-5", 5.00, 25.00, "Grille publique Anthropic"),
-    ("claude-sonnet-5", 3.00, 15.00, "Grille publique Anthropic"),
-    ("claude-haiku-4-5", 1.00, 5.00, "Grille publique Anthropic"),
-    ("gemma4:26b", 0.00, 0.00, "Ollama auto-hébergé (EPF) : pas de coût à l'appel"),
+_ANTHROPIC_USD_PER_MTOK = (
+    ("claude-opus-5", 5.00, 25.00),
+    ("claude-sonnet-5", 3.00, 15.00),
+    ("claude-haiku-4-5", 1.00, 5.00),
 )
+
+# Coût « tout inclus » d'une génération sur le serveur auto-hébergé de l'école.
+EPF_FLAT_COST_EUR = (0.02, 0.05)
+
+
+def default_model_prices(usd_to_eur=DEFAULT_USD_TO_EUR):
+    """Construit la grille de départ, en euros, pour un taux donné."""
+    prices = [
+        (
+            "gemma4:26b",
+            EPF_FLAT_COST_EUR[0],
+            EPF_FLAT_COST_EUR[1],
+            0.0,
+            0.0,
+            "Ollama auto-hébergé (EPF) : 2 à 5 centimes par synthèse, tout inclus "
+            "(GPU, électricité, amortissement)",
+        )
+    ]
+
+    note = (
+        f"Grille publique Anthropic, convertie de USD au taux {usd_to_eur} "
+        "— à revérifier"
+    )
+    for model, price_in, price_out in _ANTHROPIC_USD_PER_MTOK:
+        prices.append(
+            (model, 0.0, 0.0, price_in * usd_to_eur, price_out * usd_to_eur, note)
+        )
+
+    return tuple(prices)
 
 
 def seed_model_prices(session: Session):
@@ -1008,7 +1054,13 @@ def seed_model_prices(session: Session):
     générique). Un tarif corrigé à la main en administration n'est donc jamais
     réécrit au redémarrage suivant.
     """
-    for model, price_in, price_out, note in DEFAULT_MODEL_PRICES:
+    # Le taux enregistré prime : si l'administrateur l'a ajusté, un modèle
+    # ajouté plus tard doit être converti au même taux que les autres.
+    usd_to_eur = get_usd_to_eur(session)
+
+    for model, flat_min, flat_max, price_in, price_out, note in default_model_prices(
+        usd_to_eur
+    ):
         existing = session.exec(
             select(LLMModelPrice).where(
                 LLMModelPrice.model == model,
@@ -1022,6 +1074,8 @@ def seed_model_prices(session: Session):
             LLMModelPrice(
                 model=model,
                 provider_id=None,
+                flat_cost_min=flat_min,
+                flat_cost_max=flat_max,
                 input_price_per_mtok=price_in,
                 output_price_per_mtok=price_out,
                 note=note,
@@ -1029,6 +1083,17 @@ def seed_model_prices(session: Session):
         )
 
     session.commit()
+
+
+def seed_settings(session: Session):
+    """Enregistre le taux de change par défaut s'il n'existe pas encore."""
+    if session.get(Setting, USD_TO_EUR_KEY) is None:
+        set_setting(
+            session,
+            USD_TO_EUR_KEY,
+            DEFAULT_USD_TO_EUR,
+            description="Taux dollar → euro appliqué aux tarifs saisis en dollars.",
+        )
 
 
 def seed_prompts(session: Session):
@@ -1068,6 +1133,10 @@ def seed_all_if_necessary():
         # bases déjà déployées doivent l'obtenir sans repasser par un seed
         # complet. La fonction est idempotente.
         seed_llm_providers(session)
+
+        # Le taux de change avant la grille : `seed_model_prices` le lit pour
+        # convertir les tarifs publiés en dollars.
+        seed_settings(session)
 
         # Idem pour la grille tarifaire : les bases déjà déployées doivent
         # obtenir les tarifs connus sans repasser par un seed complet.

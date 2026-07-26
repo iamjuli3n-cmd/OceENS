@@ -1,21 +1,28 @@
-"""Calcul du coût réel des synthèses générées par LLM.
+"""Calcul du coût réel des synthèses générées par LLM. Montants **en euros**.
 
-Le coût est *mesuré*, pas estimé : il croise les compteurs de tokens renvoyés
-par le fournisseur au moment de la génération (`Summary.input_tokens` /
-`output_tokens`) avec la grille tarifaire de `llm_model_prices`.
+Le coût est *mesuré*, pas estimé : il croise ce qui a été réellement consommé
+au moment de la génération (`Summary.input_tokens` / `output_tokens`) avec la
+grille tarifaire de `llm_model_prices`.
 
-Deux conséquences assumées :
+Deux composantes s'additionnent pour chaque synthèse :
 
-- une synthèse dont le modèle n'a pas de tarif enregistré n'est pas chiffrée à
-  zéro, elle est comptée à part comme « non chiffrable ». Un montant inventé
-  serait plus nuisible qu'un montant absent, puisqu'il s'afficherait comme un
-  vrai ;
-- les synthèses générées avant l'ajout des compteurs (colonnes NULL) tombent
-  dans la même catégorie. L'historique ne peut pas être reconstitué : les
-  tokens consommés n'ont jamais été enregistrés.
+- un **forfait par génération**, pour les modèles dont le coût ne se mesure pas
+  au token. Le LLM auto-hébergé de l'école coûte 2 à 5 centimes « tout inclus »
+  (GPU, électricité, amortissement) : auto-hébergé ne veut pas dire gratuit ;
+- un **coût au token**, pour les fournisseurs facturant à la consommation.
 
-Les tarifs sont publiés par million de tokens, et stockés tels quels : la
-division n'a lieu qu'ici, au dernier moment.
+Tous les totaux sont des **fourchettes** `(min, max)`. Quand un tarif est
+connu exactement, min et max sont égaux et l'affichage se réduit de lui-même à
+un seul montant : il n'y a donc pas deux chemins de calcul à maintenir, et une
+imprécision d'entrée ne peut jamais se perdre en route.
+
+Trois choses restent hors du chiffrage, et sont comptées à part plutôt
+qu'approximées :
+
+- les synthèses générées avant l'ajout des compteurs (colonnes NULL) — les
+  tokens consommés n'ont jamais été enregistrés, l'historique est irrécupérable ;
+- celles dont le fournisseur n'expose pas ses compteurs ;
+- celles dont le modèle n'a aucun tarif enregistré.
 """
 
 import logging
@@ -55,11 +62,11 @@ def find_price(prices, provider_id, model):
 
 
 def summary_cost(summary_row, prices, provider_id=None):
-    """Coût d'une synthèse en dollars, ou None si non chiffrable.
+    """Coût d'une synthèse, en euros, sous forme `(min, max)`.
 
-    `None` signifie « on ne sait pas » — compteurs absents ou modèle sans
-    tarif — et doit rester distinct de 0.0, qui est le coût bien réel d'un
-    modèle auto-hébergé.
+    Retourne `None` quand le coût est inconnu — compteurs absents ou modèle
+    sans tarif. À ne pas confondre avec `(0.0, 0.0)`, qui est un coût nul
+    parfaitement connu.
     """
     if summary_row.input_tokens is None and summary_row.output_tokens is None:
         return None
@@ -71,15 +78,22 @@ def summary_cost(summary_row, prices, provider_id=None):
     tokens_in = summary_row.input_tokens or 0
     tokens_out = summary_row.output_tokens or 0
 
-    return (
+    # La part au token est exacte : seul le forfait porte l'incertitude.
+    token_cost = (
         tokens_in * price.input_price_per_mtok
         + tokens_out * price.output_price_per_mtok
     ) / TOKENS_PER_PRICE_UNIT
 
+    return (
+        price.flat_cost_min + token_cost,
+        price.flat_cost_max + token_cost,
+    )
+
 
 def _blank_report():
     return {
-        "cost_usd": 0.0,
+        "cost_min": 0.0,
+        "cost_max": 0.0,
         "input_tokens": 0,
         "output_tokens": 0,
         "summaries_priced": 0,  # synthèses effectivement chiffrées
@@ -93,7 +107,7 @@ def _accumulate(report, summary_row, cost):
     model = summary_row.model_used or "modèle inconnu"
     entry = report["models"].setdefault(
         model,
-        {"cost_usd": 0.0, "input_tokens": 0, "output_tokens": 0,
+        {"cost_min": 0.0, "cost_max": 0.0, "input_tokens": 0, "output_tokens": 0,
          "summaries": 0, "unpriced": 0},
     )
     entry["summaries"] += 1
@@ -103,15 +117,18 @@ def _accumulate(report, summary_row, cost):
         entry["unpriced"] += 1
         return
 
+    cost_min, cost_max = cost
     tokens_in = summary_row.input_tokens or 0
     tokens_out = summary_row.output_tokens or 0
 
     report["summaries_priced"] += 1
-    report["cost_usd"] += cost
+    report["cost_min"] += cost_min
+    report["cost_max"] += cost_max
     report["input_tokens"] += tokens_in
     report["output_tokens"] += tokens_out
 
-    entry["cost_usd"] += cost
+    entry["cost_min"] += cost_min
+    entry["cost_max"] += cost_max
     entry["input_tokens"] += tokens_in
     entry["output_tokens"] += tokens_out
 
@@ -162,9 +179,7 @@ def global_cost(session):
     total = _blank_report()
     per_survey = {}
 
-    rows = session.exec(
-        select(Summary).where(Summary.http_status == 200)
-    ).all()
+    rows = session.exec(select(Summary).where(Summary.http_status == 200)).all()
 
     for row in rows:
         provider_id = providers.get(row.prompt_id)
@@ -180,24 +195,39 @@ def global_cost(session):
 
     # Libellé des sondages, pour que le tableau soit lisible sans jointure
     # supplémentaire côté template.
-    labels = {}
-    for survey in session.exec(select(Survey)).all():
-        labels[survey.survey_id] = survey
+    labels = {survey.survey_id: survey for survey in session.exec(select(Survey)).all()}
 
     return total, per_survey, labels
 
 
-def format_cost(cost_usd):
-    """Rend un montant en dollars lisible, sans fausse précision.
+def format_amount(amount_eur):
+    """Rend un montant en euros, à la française (virgule décimale).
 
-    Une synthèse coûte souvent une fraction de centime : arrondir à deux
-    décimales afficherait « $0.00 » pour une campagne entière. On garde donc
-    assez de décimales pour que les petits montants restent visibles.
+    Une synthèse coûte quelques centimes : arrondir à deux décimales
+    afficherait « 0,00 € » pour un petit lot. On garde donc plus de décimales
+    tant que le montant est petit, sans jamais dépasser ce que la donnée
+    supporte.
     """
-    if cost_usd is None:
+    if amount_eur is None:
         return "—"
-    if cost_usd == 0:
-        return "$0.00"
-    if cost_usd < 0.01:
-        return f"${cost_usd:.4f}"
-    return f"${cost_usd:.2f}"
+    if amount_eur == 0:
+        return "0,00 €"
+    if amount_eur < 0.01:
+        text = f"{amount_eur:.4f}"
+    else:
+        text = f"{amount_eur:.2f}"
+    return text.replace(".", ",") + " €"
+
+
+def format_cost(cost_min, cost_max=None):
+    """Rend une fourchette de coût.
+
+    Se réduit à un seul montant quand les deux bornes coïncident : afficher
+    « 1,40 € à 1,40 € » ferait croire à une incertitude inexistante, alors
+    qu'afficher « 1,40 € » pour une vraie fourchette masquerait l'inverse.
+    """
+    if cost_min is None:
+        return "—"
+    if cost_max is None or abs(cost_max - cost_min) < 1e-9:
+        return format_amount(cost_min)
+    return f"{format_amount(cost_min)} à {format_amount(cost_max)}"
