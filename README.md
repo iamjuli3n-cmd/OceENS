@@ -131,7 +131,7 @@ docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/
    Ou directement avec Uvicorn :
 
    ```bash
-   uvicorn app:app --host 0.0.0.0 --port 8000
+   uvicorn main:app --host 0.0.0.0 --port 8000
    ```
 
    En production, `launch.sh` lance l'application et le daemon de synthèses dans des sessions `screen` séparées.
@@ -151,7 +151,7 @@ docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/
 ## Journalisation
 
 Les logs applicatifs utilisent le module standard Python `logging` et le logger
-`uvicorn`. Cela permet aux messages d'`app.py`, `auth.py` et `seed.py` de reprendre
+`uvicorn`. Cela permet aux messages de l'application, d'`auth.py` et de `seed.py` de reprendre
 le format, les couleurs et les handlers déjà configurés par le serveur.
 
 Les niveaux sont utilisés selon leur gravité :
@@ -181,7 +181,7 @@ except Exception:
 
 Les nouveaux diagnostics doivent utiliser le logger approprié plutôt que
 `print()`. Le niveau applicatif est actuellement réglé sur `DEBUG` dans
-`app.py`. Les logs applicatifs passent par le handler Uvicorn, généralement
+`core/dependencies.py`. Les logs applicatifs passent par le handler Uvicorn, généralement
 écrit sur `stderr` ; avec une redirection séparée, utilisez par exemple
 `2> error.log` pour les récupérer.
 
@@ -215,11 +215,7 @@ LLM_API_KEY=your_llm_api_key_here
 
 ```
 OceENS/
-├── app.py                        # Fabrique FastAPI, routes, autorisations, orchestration métier
-├── auth.py                       # Authentification Microsoft Entra ID (login, logout, callback)
-├── database.py                   # Moteur SQLite et dépendance SessionDep
-├── models.py                     # Schéma SQLModel (tables, relations)
-├── seed.py                       # Données initiales et synchronisation des formations
+├── main.py                       # Fabrique FastAPI, middlewares et assemblage des routeurs
 ├── sondage_loader.py             # Chargement d'un sondage complet pour l'export
 ├── survey_loader_from_xlsx.py    # Import de sondages depuis un fichier Excel
 ├── summaries_generator_daemon.py # Traitement asynchrone des synthèses LLM (processus séparé)
@@ -230,25 +226,47 @@ OceENS/
 ├── .env                          # Variables d'environnement (⚠️ non commité)
 ├── .gitignore                    # Fichiers et dossiers ignorés par Git
 │
+├── core/                         # Accès bas niveau et sécurité
+│   ├── auth.py                   #   Authentification Microsoft Entra ID (login, logout, callback)
+│   ├── database.py               #   Moteur SQLite et dépendance SessionDep
+│   ├── security.py               #   Rôles, périmètres, contrôle d'accès
+│   ├── dependencies.py           #   templates Jinja et logger partagés
+│   └── seed.py                   #   Données initiales et synchronisation des formations
+│
+├── models/                       # Schéma SQLModel, un fichier par table
+│   ├── __init__.py               #   Ré-exporte toutes les classes (voir sa docstring)
+│   └── User.py, Survey.py, ...
+│
+├── routers/                      # Routes découpées par domaine métier
+│   ├── pages.py                  #   Accueil et dashboards par rôle
+│   ├── surveys.py                #   Sondages : CRUD, statut, export, visualisation
+│   ├── students.py               #   Inscription des étudiants à un sondage
+│   ├── users.py                  #   Gestion des rôles utilisateurs
+│   ├── summaries.py              #   Déclenchement des synthèses LLM
+│   ├── prompts.py                #   Administration des prompts
+│   ├── survey_templates.py       #   Administration des modèles de sondage
+│   └── sections_questions.py     #   Administration des sections et questions
+│
 ├── database/                     # Dossier contenant la base de données (ignoré par Git)
 │   └── db_oceens.db
 │
-├── services/
+├── services/                     # Logique métier
+│   ├── helpers.py                # Navigation, statistiques, filtres, tri
 │   ├── visualisation_data.py     # Agrégations et contexte de visualisation
 │   └── export_csv.py             # Export CSV des réponses
 │
 ├── templates/                    # Templates HTML (Jinja2)
 │   ├── index.html                     # Page d'accueil / login
-│   ├── survey.html                    # Réponse au sondage
-│   ├── survey_create.html             # Création de sondage
-│   ├── visualisation.html             # Visualisation des réponses
 │   ├── dashboard/
 │   │   ├── admin.html
 │   │   ├── student.html
 │   │   ├── program_manager.html
 │   │   ├── facilitator.html
 │   │   ├── campus_manager.html
-│   │   └── prof.html                     # Satisfaction des enseignants (campus_manager, program_manager)
+│   │   ├── teachers-analytics.html       # Satisfaction des enseignants (campus_manager, program_manager)
+│   │   ├── survey.html                   # Réponse au sondage
+│   │   ├── survey_create.html            # Création de sondage
+│   │   └── visualisation.html            # Visualisation des réponses
 │   ├── backend/                       # Pages d'administration (admin only)
 │   │   ├── prompts.html               # Liste des prompts LLM
 │   │   └── prompt_form.html           # Formulaire create/edit partagé
@@ -336,8 +354,9 @@ Le dashboard `campus_manager` n'affiche que les sondages fermés ayant au moins 
 Le dépôt ne contient pas de suite de tests automatisés ni de CI. Avant de proposer un changement :
 
 ```bash
-python -m compileall -q app.py auth.py database.py models.py seed.py \
-  sondage_loader.py survey_loader_from_xlsx.py summaries_generator_daemon.py services
+python -m compileall -q main.py \
+  sondage_loader.py survey_loader_from_xlsx.py summaries_generator_daemon.py \
+  core models routers services
 git diff --check
 ```
 

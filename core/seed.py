@@ -20,7 +20,7 @@ from models import (
     Prompt,
     Stat,
 )
-from database import engine
+from core.database import engine
 
 logger = logging.getLogger("uvicorn")
 

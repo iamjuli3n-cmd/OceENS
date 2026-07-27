@@ -4,7 +4,7 @@ import json
 
 from sqlmodel import Session, func, select
 
-from database import engine
+from core.database import engine
 from models import (
     Answer,
     Module,
