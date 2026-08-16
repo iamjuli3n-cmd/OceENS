@@ -8,7 +8,7 @@ from models import User
 import os
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DATABASE_DIR = PROJECT_ROOT / "data"
+DEFAULT_DATABASE_DIR = PROJECT_ROOT / "database"
 RAW_DATABASE_PATH = os.getenv("LOCAL_DATABASE_DIR")
 
 if RAW_DATABASE_PATH:
