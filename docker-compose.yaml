@@ -8,6 +8,6 @@ services:
     env_file:
       - .env
     volumes:
-      - ${LOCAL_DATABASE_DIR:-./database}:/app/database
+      - ${LOCAL_DATABASE_DIR:-./data}:/app/data
       - ./import:/app/import
     restart: always

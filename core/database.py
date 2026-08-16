@@ -1,16 +1,25 @@
+from pathlib import Path
 from typing import Annotated
+
 from fastapi import Depends
 from sqlmodel import SQLModel, create_engine, Session, select
-# Assuming User is defined in models.py inheriting from SQLModel
-from models import User 
+
+from models import User
 import os
 
-DATABASE_PATH="./database/"
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}/db_oceens.db"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_DATABASE_DIR = PROJECT_ROOT / "data"
+RAW_DATABASE_PATH = os.getenv("LOCAL_DATABASE_DIR")
 
+if RAW_DATABASE_PATH:
+    DATABASE_PATH = Path(RAW_DATABASE_PATH).expanduser()
+    if not DATABASE_PATH.is_absolute():
+        DATABASE_PATH = (PROJECT_ROOT / DATABASE_PATH).resolve()
+else:
+    DATABASE_PATH = DEFAULT_DATABASE_DIR.resolve()
 
-if not os.path.exists(DATABASE_PATH):
-    os.mkdir(DATABASE_PATH)
+DATABASE_PATH.mkdir(parents=True, exist_ok=True)
+DATABASE_URL = f"sqlite:///{(DATABASE_PATH / 'db_oceens.db').resolve().as_posix()}"
 
 # check_same_thread is only needed for SQLite
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
