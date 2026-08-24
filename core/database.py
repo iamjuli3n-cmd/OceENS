@@ -8,6 +8,7 @@ Ce module centralise :
 
 import logging
 import os
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends
@@ -19,14 +20,21 @@ from models import User
 
 logger = logging.getLogger("uvicorn.error")
 
-# Emplacement du fichier de base (le dossier database/ est ignoré par Git)
-DATABASE_PATH="./database/"
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}/db_oceens.db"
+# Emplacement du fichier de base : configurable via la variable d'environnement
+# LOCAL_DATABASE_DIR, sinon dossier database/ à la racine du projet (ignoré par Git)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_DATABASE_DIR = PROJECT_ROOT / "database"
+RAW_DATABASE_PATH = os.getenv("LOCAL_DATABASE_DIR")
 
+if RAW_DATABASE_PATH:
+    DATABASE_PATH = Path(RAW_DATABASE_PATH).expanduser()
+    if not DATABASE_PATH.is_absolute():
+        DATABASE_PATH = (PROJECT_ROOT / DATABASE_PATH).resolve()
+else:
+    DATABASE_PATH = DEFAULT_DATABASE_DIR.resolve()
 
-# Créer le dossier database/ au premier lancement s'il n'existe pas
-if not os.path.exists(DATABASE_PATH):
-    os.mkdir(DATABASE_PATH)
+DATABASE_PATH.mkdir(parents=True, exist_ok=True)
+DATABASE_URL = f"sqlite:///{(DATABASE_PATH / 'db_oceens.db').resolve().as_posix()}"
 
 # check_same_thread=False : nécessaire pour SQLite avec FastAPI (multi-thread)
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
