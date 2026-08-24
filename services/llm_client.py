@@ -505,11 +505,15 @@ def _ask_ollama(provider, model, prompt, session, timeout, seed, max_tokens):
 
 
 def _ask_openai(provider, model, prompt, session, timeout, seed, max_tokens):
+    # Certains fournisseurs compatibles OpenAI (Mistral notamment) valident le
+    # corps de la requête de façon stricte et renvoient un 422 pour tout champ
+    # hors schéma, dont `seed`. Comme pour Anthropic ci-dessous, on ne l'envoie
+    # donc pas : ce n'est qu'un confort de reproductibilité, jamais une garantie
+    # exploitée ailleurs dans l'application.
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "stream": False,
-        "seed": seed,
     }
     if max_tokens:
         payload["max_tokens"] = max_tokens
