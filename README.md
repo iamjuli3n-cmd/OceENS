@@ -77,7 +77,7 @@ Un utilisateur peut cumuler plusieurs rôles, chacun avec son propre périmètre
 docker compose up --build
 ```
 
-La base SQLite est persistée dans un répertoire local. Par défaut `./data/` ; pour pointer ailleurs, définir `LOCAL_DATABASE_DIR` dans `.env` ou dans l'environnement :
+La base SQLite est persistée dans un répertoire local. Par défaut `./database/` ; pour pointer ailleurs, définir `LOCAL_DATABASE_DIR` dans `.env` ou dans l'environnement :
 
 ```env
 LOCAL_DATABASE_DIR=/chemin/vers/database
