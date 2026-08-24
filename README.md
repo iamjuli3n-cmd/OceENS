@@ -144,10 +144,10 @@ docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/
 
    Ce processus tourne en boucle, écrit en base et contacte un service LLM externe : à ne lancer que lorsque c'est nécessaire.
 
-   > Alternative en développement : définir `RUN_SUMMARIES_DAEMON=1` dans le
+   > La variable d'environnement `RUN_SUMMARIES_DAEMON=1` dans le
    > `.env` fait lancer automatiquement le daemon en process séparé au démarrage
-   > d'uvicorn (et l'arrête à la fermeture). Laisser vide en production, où
-   > `launch.sh` gère déjà le daemon dans sa propre session `screen`.
+   > d'uvicorn (et l'arrête à la fermeture). A utiliser en production avec Docker.
+   > NB : `launch.sh` (sans docker) gère déjà le daemon dans sa propre session `screen`.
 
 7. Ouvrez votre navigateur à l'adresse **http://localhost:8000**.
 
