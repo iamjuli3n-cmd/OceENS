@@ -510,7 +510,13 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
         for row in summary_rows:
             summary,section_name,module_name=row
             if summary.module_id:
-                q = data[section_name]["modules"][module_name]["teachers"][summary.teacher]["questions"][summary.question_id]
+                try:
+                    q = data[section_name]["modules"][module_name]["teachers"][summary.teacher]["questions"][summary.question_id]
+                except KeyError as e:
+                    print(f"Key not found : {e}")
+                    print(f"Data {data}")
+                    print(f"summary {summary}")
+
             else:
                 q = data[section_name]["questions"][summary.question_id]
             q["summary"]={"text":summary.summary_text,"metadata":summary.metadata_text}
