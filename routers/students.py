@@ -40,11 +40,17 @@ def add_survey_students(
     request: Request,
     session: SessionDep,
 ):
-    """Ajoute un ou plusieurs étudiants à un sondage."""
+    """Ajoute un ou plusieurs étudiants à un sondage.
+
+    Valide chaque mail (format + domaine autorisé), crée les utilisateurs
+    manquants à la volée, puis les inscrit comme respondents sans doublon.
+    """
+    # Vérifier que l'utilisateur peut gérer les étudiants de ce sondage
     _, error = _get_survey_for_student_management(survey_id, request, session)
     if error:
         return error
 
+    # Domaines mail autorisés (depuis .env, défaut EPF)
     allowed_domains = {
         domain.strip().casefold()
         for domain in os.environ.get(
@@ -52,15 +58,18 @@ def add_survey_students(
         ).split(",")
         if domain.strip()
     }
+    # Regex de validation basique d'une adresse mail
     email_pattern = re.compile(
         r"^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     )
 
+    # Trier les mails valides / invalides (en dédoublonnant les valides)
     emails = []
     invalid_emails = []
     for raw_email in body.emails:
         email = raw_email.strip().casefold()
         domain = email.rsplit("@", 1)[-1] if "@" in email else ""
+        # Rejeter si format incorrect ou domaine non autorisé
         if not email_pattern.fullmatch(email) or domain not in allowed_domains:
             if raw_email.strip():
                 invalid_emails.append(raw_email.strip())
@@ -68,6 +77,7 @@ def add_survey_students(
         if email not in emails:
             emails.append(email)
 
+    # Si au moins un mail est invalide, on rejette tout le lot (422)
     if invalid_emails:
         return JSONResponse(
             content={
@@ -83,6 +93,7 @@ def add_survey_students(
         )
 
     try:
+        # Charger les utilisateurs déjà existants pour ces mails
         existing_users = session.exec(
             select(User).where(func.lower(User.mail).in_(emails))
         ).all()
@@ -90,6 +101,7 @@ def add_survey_students(
             user.mail.casefold(): user for user in existing_users if user.mail
         }
 
+        # Pour chaque mail : réutiliser l'utilisateur, ou le créer s'il manque
         selected_users = []
         created_users_count = 0
         for email in emails:
@@ -97,11 +109,12 @@ def add_survey_students(
             if db_user is None:
                 db_user = User(mail=email)
                 session.add(db_user)
-                session.flush()
+                session.flush()  # flush pour obtenir l'user_id sans commit
                 users_by_mail[email] = db_user
                 created_users_count += 1
             selected_users.append(db_user)
 
+        # Repérer les utilisateurs déjà inscrits à ce sondage (pour ne pas dupliquer)
         user_ids = [user.user_id for user in selected_users]
         existing_respondent_ids = set(
             session.exec(
@@ -112,6 +125,7 @@ def add_survey_students(
             ).all()
         )
 
+        # Inscrire seulement les utilisateurs pas encore respondents
         added_count = 0
         for db_user in selected_users:
             if db_user.user_id in existing_respondent_ids:
@@ -120,7 +134,7 @@ def add_survey_students(
                 Respondent(
                     survey_id=survey_id,
                     user_id=db_user.user_id,
-                    submission_date=None,
+                    submission_date=None,  # None = pas encore répondu
                 )
             )
             added_count += 1
@@ -225,6 +239,11 @@ def _get_survey_for_student_management(
 
 
 def _get_survey_students_payload(session: Session, survey_id: int) -> dict:
+    """Construit le payload JSON de la liste des étudiants d'un sondage.
+
+    Renvoie pour chaque étudiant son mail et s'il a répondu (has_answered),
+    plus le compte total.
+    """
     rows = session.exec(
         select(User.mail, Respondent.submission_date)
         .join(Respondent, Respondent.user_id == User.user_id)

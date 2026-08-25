@@ -15,6 +15,8 @@ référence de classe, donc il n'y a pas de risque d'import circulaire ici.
 """
 
 from models.Answer import Answer
+from models.LLMModelPrice import LLMModelPrice
+from models.LLMProvider import LLMProvider
 from models.Module import Module
 from models.Option import Option
 from models.Program import Program
@@ -23,6 +25,7 @@ from models.Question import Question
 from models.Respondent import Respondent
 from models.Role import Role
 from models.Section import Section
+from models.Setting import Setting
 from models.Stat import Stat
 from models.StatValue import StatValue
 from models.Submission import Submission
@@ -33,6 +36,8 @@ from models.User import User
 
 __all__ = [
     "Answer",
+    "LLMModelPrice",
+    "LLMProvider",
     "Module",
     "Option",
     "Program",
@@ -41,6 +46,7 @@ __all__ = [
     "Respondent",
     "Role",
     "Section",
+    "Setting",
     "Stat",
     "StatValue",
     "Submission",

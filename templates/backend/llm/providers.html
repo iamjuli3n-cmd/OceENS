@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des fournisseurs LLM – OCEENS II</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/llm_backend.css') }}">
+</head>
+
+<body class="page-admin">
+
+    {% set header_title_fr = "Administration" %}
+    {% set header_back_url = "/dashboard/admin" %}
+    {% include 'template_parts/part_site_header.html' %}
+
+    <div class="backend-main">
+        <div class="backend-header">
+            <h1>Fournisseurs LLM</h1>
+            <div class="header-links">
+                <a href="/backend/llm/prices" class="btn btn-secondary">Tarifs</a>
+                <a href="/backend/llm/costs" class="btn btn-secondary">Coûts</a>
+                <a href="/backend/providers/new" class="btn btn-primary">+ Nouveau fournisseur</a>
+            </div>
+        </div>
+
+        {# Messages de succès / erreur passés en paramètre d'URL #}
+        {% if request.query_params.get("success") %}
+        <div class="notice success">Opération réussie ({{ request.query_params.get("success") }}).</div>
+        {% endif %}
+        {% if request.query_params.get("error") %}
+        <div class="notice error">Erreur : {{ request.query_params.get("error") }}.</div>
+        {% endif %}
+
+        {% if providers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>URL de base</th>
+                    <th>Modèle par défaut</th>
+                    <th>Variable de clé</th>
+                    <th>Clé</th>
+                    <th>Statut</th>
+                    <th style="width:180px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in providers %}
+                <tr>
+                    <td><strong>{{ item.provider.name }}</strong></td>
+                    <td><code>{{ item.provider.api_type }}</code></td>
+                    <td><code>{{ item.provider.base_url }}</code></td>
+                    <td>{{ item.provider.default_model or "—" }}</td>
+                    <td><code>{{ item.provider.api_key_env }}</code></td>
+                    <td>
+                        {% if item.key_present %}
+                        <span class="badge badge-ok">présente</span>
+                        {% else %}
+                        <span class="badge badge-warn">absente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.provider.is_active %}
+                        <span class="badge badge-ok">actif</span>
+                        {% else %}
+                        <span class="badge badge-muted">inactif</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <button type="button" class="btn btn-secondary"
+                                data-test-id="{{ item.provider.provider_id }}"
+                                onclick="testProvider({{ item.provider.provider_id }})">Tester</button>
+                            <a href="/backend/providers/{{ item.provider.provider_id }}/edit"
+                                class="btn btn-secondary">Modifier</a>
+                            {% if item.prompt_count == 0 %}
+                            <form method="POST" action="/backend/providers/{{ item.provider.provider_id }}/delete"
+                                onsubmit="return confirm('Supprimer ce fournisseur ?');">
+                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                            </form>
+                            {% else %}
+                            <button class="btn btn-danger disabled" disabled
+                                title="Utilisé par {{ item.prompt_count }} prompt(s)">Supprimer</button>
+                            {% endif %}
+                        </div>
+                        {# Résultat du test affiché sous les boutons #}
+                        <span class="test-result" data-test-result="{{ item.provider.provider_id }}"></span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty">Aucun fournisseur LLM configuré.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        // Teste la connexion à un fournisseur (liste ses modèles côté serveur)
+        async function testProvider(id) {
+            const btn = document.querySelector(`[data-test-id="${id}"]`);
+            const result = document.querySelector(`[data-test-result="${id}"]`);
+
+            // État "en cours"
+            btn.disabled = true;
+            result.className = 'test-result pending';
+            result.textContent = 'Test en cours…';
+
+            try {
+                const r = await fetch(`/backend/providers/${id}/test`);
+                const data = await r.json();
+                if (data.ok && data.warning) {
+                    // Connecté, mais le crédit n'a pas pu être vérifié.
+                    result.className = 'test-result warn';
+                    result.textContent = `⚠ ${data.warning}`;
+                } else if (data.ok) {
+                    result.className = 'test-result ok';
+                    result.textContent =
+                        `✓ Connecté — ${data.count} modèle(s), génération OK (${data.model})`;
+                } else {
+                    // Le crédit épuisé n'est pas une panne : il se règle en
+                    // rechargeant le compte, on le signale donc à part.
+                    result.className = data.kind === 'quota'
+                        ? 'test-result warn'
+                        : 'test-result ko';
+                    result.textContent = `✗ ${data.error}`;
+                }
+            } catch (e) {
+                result.className = 'test-result ko';
+                result.textContent = '✗ Erreur réseau';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+
+</body>
+
+</html>

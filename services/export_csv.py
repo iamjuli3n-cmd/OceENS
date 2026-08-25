@@ -1,9 +1,17 @@
+"""Export CSV des réponses d'un sondage.
+
+Aplati un sondage complet en un tableau (une ligne par réponse), applique un
+tri métier stable et renvoie une réponse HTTP téléchargeable. L'encodage
+utf-8-sig garantit l'ouverture correcte des accents dans Excel.
+"""
+
 import re
 
 import pandas as pd
 from fastapi.responses import Response
 
 
+# Colonnes du CSV exporté, dans l'ordre d'affichage
 EXPORT_COLUMNS = [
     "campus",
     "program",
@@ -55,6 +63,11 @@ SORT_ASCENDING = [
 
 
 def _safe_filename(value: str) -> str:
+    """Nettoie une valeur pour l'utiliser dans un nom de fichier.
+
+    Remplace tout caractère non alphanumérique par un underscore, pour éviter
+    des noms de fichier invalides ou dangereux.
+    """
     value = value or "export"
     value = re.sub(r"[^a-zA-Z0-9_-]+", "_", value)
     return value.strip("_")

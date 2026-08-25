@@ -144,6 +144,11 @@ docker run -p 8000:8000 --env-file .env -v oceens_db:/app/database -v ./import:/
 
    Ce processus tourne en boucle, écrit en base et contacte un service LLM externe : à ne lancer que lorsque c'est nécessaire.
 
+   > La variable d'environnement `RUN_SUMMARIES_DAEMON=1` dans le
+   > `.env` fait lancer automatiquement le daemon en process séparé au démarrage
+   > d'uvicorn (et l'arrête à la fermeture). A utiliser en production avec Docker.
+   > NB : `launch.sh` (sans docker) gère déjà le daemon dans sa propre session `screen`.
+
 7. Ouvrez votre navigateur à l'adresse **http://localhost:8000**.
 
 ---
@@ -211,6 +216,148 @@ LLM_API_KEY=your_llm_api_key_here
 
 ---
 
+## Fournisseurs LLM (synthèses de verbatims)
+
+Les synthèses de verbatims sont générées par un LLM. Le fournisseur est
+**configurable depuis l'interface** (`/backend/providers`, admin uniquement),
+sans toucher au code. Le fournisseur par défaut est **Ollama EPF**
+(`https://locallm.mde.epf.fr/ollama`), créé automatiquement au premier
+démarrage.
+
+### Types d'API supportés
+
+| `api_type` | Couvre |
+|------------|--------|
+| `ollama`    | Serveurs Ollama (local, EPF, tiers) |
+| `openai`    | OpenAI **et tout endpoint compatible OpenAI** : vLLM, Groq, Mistral, LM Studio… |
+| `anthropic` | API Claude (Anthropic) |
+
+### Principe de sécurité : aucune clé en base
+
+La base SQLite n'est pas chiffrée et part dans les sauvegardes. **Aucune clé
+d'API n'y est donc stockée.** La table `llm_providers` ne contient que le *nom*
+de la variable d'environnement (`api_key_env`, ex. `OPENAI_API_KEY`) ; la valeur
+reste dans le `.env` et n'est résolue qu'au moment de l'appel. Ce nom est validé
+contre une liste blanche (`LLM_*` ou `*_API_KEY`) pour empêcher de pointer vers
+un secret système (`SECRET_KEY`, `ENTRA_CLIENT_SECRET`…).
+
+### Ajouter un nouveau fournisseur
+
+1. **Ajouter la clé au `.env`** avec un nom conforme (`LLM_*` ou `*_API_KEY`) :
+
+   ```env
+   OPENAI_API_KEY=sk-...
+   ```
+
+2. **Redémarrer le daemon** de synthèses (les variables du `.env` ne sont lues
+   qu'au démarrage) :
+
+   ```bash
+   python summaries_generator_daemon.py
+   ```
+
+3. **Créer le fournisseur** dans `/backend/providers` → *+ Nouveau fournisseur* :
+   renseigner le nom, le type d'API, l'URL de base, le nom de la variable d'env
+   (`OPENAI_API_KEY`), et un modèle par défaut. L'indicateur **« clé présente /
+   absente »** confirme que la variable est bien chargée. Le bouton **Tester**
+   vérifie que l'URL et la clé répondent, puis envoie une génération d'un token
+   pour confirmer que le compte peut réellement générer (voir ci-dessous).
+
+4. **Relier un prompt** au fournisseur : dans `/backend/prompts`, un `<select>`
+   permet de choisir le fournisseur d'un prompt. Un prompt sans fournisseur
+   (`provider_id` NULL) retombe automatiquement sur Ollama EPF.
+
+> [!NOTE]
+> Un fournisseur référencé par au moins un prompt ne peut pas être supprimé
+> (pour ne pas casser la configuration de ces prompts).
+
+### Crédit épuisé et autres erreurs de fournisseur
+
+Chaque fournisseur signale ses pannes dans un format différent : un crédit
+épuisé est un `429 insufficient_quota` chez OpenAI, mais un `400 « Your credit
+balance is too low »` chez Anthropic. `services/llm_client.py` normalise ces
+réponses en catégories (`quota`, `rate_limit`, `auth`, `model`, `server`) et en
+tire un message lisible :
+
+> ⚠️ Crédit ou quota épuisé chez le fournisseur : la clé est valide mais le
+> compte ne peut plus générer. Rechargez le compte ou choisissez un autre
+> fournisseur. (fournisseur OpenAI, modèle gpt-4o-mini, HTTP 429)
+
+Ce message est écrit dans `Summary.metadata_text` à la place du JSON brut — il
+est donc visible directement depuis l'interface quand une synthèse échoue. La
+réponse brute du fournisseur reste dans les logs du daemon pour le diagnostic.
+
+> [!IMPORTANT]
+> Le bouton **Tester** ne se contente pas de lister les modèles : chez OpenAI
+> comme chez Anthropic, `GET /v1/models` répond encore parfaitement avec un
+> solde à zéro. Un ping de génération d'un token (coût négligeable) est donc
+> envoyé ensuite — c'est le seul moyen de repérer un crédit épuisé **avant** de
+> lancer une campagne de synthèses.
+
+---
+
+## Coût des synthèses
+
+Le coût de chaque synthèse est **mesuré, pas estimé**. Au moment de la
+génération, le daemon enregistre les compteurs de tokens renvoyés par le
+fournisseur (`Summary.input_tokens`, `output_tokens`, `model_used`) : c'est la
+seule occasion de les capturer, aucune API ne permet de les redemander après
+coup. Le montant est ensuite obtenu en croisant ces compteurs avec la grille
+tarifaire.
+
+> [!NOTE]
+> Cette section remplace les anciens scripts `llm-utils/token-counting/`, qui
+> comptaient les tokens du **code source du dépôt** et les multipliaient par un
+> tarif codé en dur. Cette mesure ne disait rien de la dépense réelle de
+> l'application. Le suivi porte désormais sur les appels effectivement facturés.
+
+### Grille tarifaire — `/backend/llm/prices`
+
+Les tarifs vivent en base (table `llm_model_prices`), en **dollars par million
+de tokens**, comme les publient les fournisseurs. Ils sont éditables depuis
+l'administration : pas besoin de livrer une version pour suivre une révision de
+prix, ni pour couvrir un fournisseur ajouté localement.
+
+Sont pré-remplis au démarrage (`seed_model_prices`, idempotent — un tarif
+corrigé à la main n'est jamais réécrit) :
+
+| Modèle | Entrée $/M | Sortie $/M |
+| --- | ---: | ---: |
+| `claude-opus-5` | 5.00 | 25.00 |
+| `claude-sonnet-5` | 3.00 | 15.00 |
+| `claude-haiku-4-5` | 1.00 | 5.00 |
+| `gemma4:26b` (Ollama EPF, auto-hébergé) | 0.00 | 0.00 |
+
+Les tarifs des autres fournisseurs (OpenAI, Mistral, Groq…) sont **à saisir** :
+ils ne sont pas devinés. Un tarif spécifique à un fournisseur l'emporte sur un
+tarif générique portant le même nom de modèle.
+
+### Consultation
+
+| Où | Quoi |
+| --- | --- |
+| `/backend/llm/costs` | Coût global, détaillé par sondage et par modèle (admin) |
+| Bouton 💰 sur une ligne de sondage | Coût des synthèses de ce sondage |
+
+### Ce qui n'est pas chiffré
+
+Une synthèse n'est pas chiffrable quand ses compteurs manquent (générée avant
+cette fonctionnalité, ou fournisseur qui ne les expose pas) ou quand son modèle
+n'a pas de tarif enregistré. Elle est alors **comptée à part**, jamais estimée
+ni ramenée à zéro : un montant inventé serait plus nuisible qu'un montant
+absent, puisqu'il s'afficherait avec l'autorité d'un montant réel. Les écrans
+signalent explicitement qu'un total est partiel.
+
+À distinguer d'un coût **nul** : les modèles auto-hébergés valent réellement
+0,00 $, ce qui n'est pas la même information que « inconnu ».
+
+> [!IMPORTANT]
+> Le suivi démarre à la mise en service : les synthèses générées auparavant
+> n'ont pas de compteurs en base et ne peuvent pas être chiffrées
+> rétroactivement.
+
+---
+
 ## Structure du projet
 
 ```
@@ -245,7 +392,12 @@ OceENS/
 │   ├── summaries.py              #   Déclenchement des synthèses LLM
 │   ├── prompts.py                #   Administration des prompts
 │   ├── survey_templates.py       #   Administration des modèles de sondage
-│   └── sections_questions.py     #   Administration des sections et questions
+│   ├── sections_questions.py     #   Administration des sections et questions
+│   └── llm/                      #   Administration LLM (URLs inchangées)
+│       ├── _access.py            #     Contrôle d'accès partagé des écrans LLM
+│       ├── providers.py          #     Fournisseurs LLM (CRUD + test de connexion)
+│       ├── prices.py             #     Grille tarifaire par modèle
+│       └── costs.py              #     Coût global et coût par sondage
 │
 ├── database/                     # Dossier contenant la base de données (ignoré par Git)
 │   └── db_oceens.db
@@ -253,7 +405,12 @@ OceENS/
 ├── services/                     # Logique métier
 │   ├── helpers.py                # Navigation, statistiques, filtres, tri
 │   ├── visualisation_data.py     # Agrégations et contexte de visualisation
+│   ├── llm_client.py             # Client LLM multi-fournisseur (ollama/openai/anthropic)
+│   ├── llm_costs.py              # Coût des synthèses (tokens mesurés × grille tarifaire)
 │   └── export_csv.py             # Export CSV des réponses
+│
+├── llm-utils/                    # Outils LLM hors application
+│   └── README.md                 # (le suivi des coûts est passé dans l'app, voir ci-dessus)
 │
 ├── templates/                    # Templates HTML (Jinja2)
 │   ├── index.html                     # Page d'accueil / login
@@ -269,7 +426,12 @@ OceENS/
 │   │   └── visualisation.html            # Visualisation des réponses
 │   ├── backend/                       # Pages d'administration (admin only)
 │   │   ├── prompts.html               # Liste des prompts LLM
-│   │   └── prompt_form.html           # Formulaire create/edit partagé
+│   │   ├── prompt_form.html           # Formulaire create/edit partagé
+│   │   └── llm/                       # Écrans LLM (fournisseurs, tarifs, coûts)
+│   │       ├── providers.html
+│   │       ├── provider_form.html
+│   │       ├── prices.html            # Grille tarifaire éditable
+│   │       └── costs.html             # Coût global et par sondage
 │   └── template_parts/                # Fragments réutilisables entre dashboards
 │       ├── part_site_header.html
 │       ├── part_dashboard_navigation.html
@@ -279,7 +441,8 @@ OceENS/
 ├── static/
 │   ├── css/                      # admin.css, student.css, program_manager.css, survey.css,
 │   │                              # survey_create.css, visualisation.css, prompt_form.css,
-│   │                              # theme.css, site_header.css, dashboard_navigation.css, responsive.css
+│   │                              # llm_backend.css (écrans LLM), theme.css, site_header.css,
+│   │                              # dashboard_navigation.css, responsive.css
 │   ├── js/
 │   │   └── survey.js
 │   └── img/
@@ -334,6 +497,22 @@ Les sondages chargés par `survey_loader_from_xlsx.py` n'ont pas de question `QC
 ### Périmètre de la direction de campus
 
 Le dashboard `campus_manager` n'affiche que les sondages fermés ayant au moins un répondant. Le lien vers le questionnaire et le QR code y sont masqués (`can_view_survey_link=False`) : ce rôle consulte les résultats sans diffuser les sondages. Le garde `{% if can_view_survey_link | default(true) %}` laisse les autres dashboards inchangés.
+
+### Nettoyage des étudiants orphelins
+
+Lors de la suppression d'un sondage, les étudiants qui ne sont plus rattachés à
+**aucun autre** sondage sont également supprimés, pour éviter d'accumuler des
+comptes inutilisés (`services/helpers.py`, `_delete_orphan_students`). Un
+garde-fou protège les utilisateurs à rôle privilégié (`admin`,
+`program_manager`, `facilitator`, `campus_manager`) : un enseignant ou un
+gestionnaire ayant répondu à un sondage n'est jamais effacé.
+
+### Ajout d'un utilisateur par mail
+
+L'onglet « Utilisateurs » du dashboard administrateur propose un bouton
+**« + Ajouter un utilisateur »** : un mail suffit pour créer le compte, avec le
+rôle `student` par défaut (`POST /api/users`, admin uniquement). Le mail est
+validé (format + domaine autorisé) et les doublons sont refusés.
 
 ---
 

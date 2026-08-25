@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarifs des modèles LLM – OCEENS II</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site_header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/llm_backend.css') }}">
+</head>
+
+<body class="page-admin">
+
+    {% set header_title_fr = "Administration" %}
+    {% set header_back_url = "/dashboard/admin" %}
+    {% include 'template_parts/part_site_header.html' %}
+
+    <div class="backend-main">
+        <div class="backend-header">
+            <h1>Tarifs des modèles</h1>
+            <div class="header-links">
+                <a href="/backend/providers" class="btn btn-secondary">Fournisseurs</a>
+                <a href="/backend/llm/costs" class="btn btn-secondary">Coûts</a>
+            </div>
+        </div>
+
+        {% if request.query_params.get("success") %}
+        <div class="notice success">Opération réussie ({{ request.query_params.get("success") }}).</div>
+        {% endif %}
+        {% if request.query_params.get("error") %}
+        <div class="notice error">Erreur : {{ request.query_params.get("error") }}.</div>
+        {% endif %}
+
+        <p class="hint">
+            Tous les montants sont <strong>en euros</strong>. Un tarif combine deux
+            composantes, additionnées : un <strong>forfait par synthèse</strong> (pour les
+            modèles dont le coût ne se mesure pas au token — le LLM auto-hébergé de l'école
+            revient à 2 à 5 centimes tout inclus) et un <strong>prix au million de
+            tokens</strong> (pour les fournisseurs facturant à la consommation).
+            Un modèle sans tarif enregistré n'est pas compté à zéro : il est signalé comme
+            « non chiffrable » dans les écrans de coût, pour ne jamais afficher un montant
+            inventé.
+        </p>
+
+        {# Le taux ne sert qu'à la saisie : il convertit un tarif entré en dollars.
+           Le modifier ne réécrit pas les tarifs déjà enregistrés. #}
+        <form method="POST" action="/backend/llm/settings/rate" class="rate-form">
+            <label for="usd_to_eur">Taux dollar → euro</label>
+            <input type="text" name="usd_to_eur" id="usd_to_eur" value="{{ usd_to_eur }}">
+            <button type="submit" class="btn btn-secondary">Enregistrer le taux</button>
+            <small>Appliqué aux tarifs saisis en dollars. Les tarifs déjà convertis ne
+                changent pas.</small>
+        </form>
+
+        {% if prices %}
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Modèle</th>
+                        <th>Fournisseur</th>
+                        <th>Forfait / synthèse</th>
+                        <th>Entrée €/M</th>
+                        <th>Sortie €/M</th>
+                        <th>Note</th>
+                        <th style="width:150px"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in prices %}
+                    <tr>
+                        <td><code>{{ item.price.model }}</code></td>
+                        <td>{{ item.provider_name }}</td>
+                        <td>{{ item.flat_label }}</td>
+                        <td>{{ item.input_label }}</td>
+                        <td>{{ item.output_label }}</td>
+                        <td class="muted">{{ item.price.note or "—" }}</td>
+                        <td>
+                            <div class="row-actions">
+                                <button type="button" class="btn btn-secondary"
+                                    onclick="editPrice(this)"
+                                    data-price-id="{{ item.price.price_id }}"
+                                    data-model="{{ item.price.model }}"
+                                    data-provider="{{ item.price.provider_id or '' }}"
+                                    data-flat-min="{{ item.price.flat_cost_min }}"
+                                    data-flat-max="{{ item.price.flat_cost_max }}"
+                                    data-input="{{ item.price.input_price_per_mtok }}"
+                                    data-output="{{ item.price.output_price_per_mtok }}"
+                                    data-note="{{ item.price.note or '' }}">Modifier</button>
+                                <form method="POST" action="/backend/llm/prices/{{ item.price.price_id }}/delete"
+                                    onsubmit="return confirm('Supprimer ce tarif ? Les synthèses concernées deviendront non chiffrables.');">
+                                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty">Aucun tarif enregistré : aucun coût ne peut être calculé.</p>
+        {% endif %}
+
+        <h2 class="section-title" id="form-title">Ajouter un tarif</h2>
+        <form method="POST" action="/backend/llm/prices/save" class="price-form">
+            {# Vide en création, rempli par « Modifier » : le même formulaire sert aux deux. #}
+            <input type="hidden" name="price_id" id="price_id" value="">
+
+            <div class="field">
+                <label for="model">Modèle</label>
+                <input type="text" name="model" id="model" required placeholder="claude-opus-5">
+                <small>Identifiant exact envoyé au fournisseur.</small>
+            </div>
+
+            <div class="field">
+                <label for="provider_id">Fournisseur</label>
+                <select name="provider_id" id="provider_id">
+                    <option value="">Tous les fournisseurs</option>
+                    {% for provider in providers %}
+                    <option value="{{ provider.provider_id }}">{{ provider.name }}</option>
+                    {% endfor %}
+                </select>
+                <small>Laisser « Tous » sauf si ce fournisseur a un tarif négocié.</small>
+            </div>
+
+            <div class="field">
+                <label for="currency">Devise de saisie</label>
+                <select name="currency" id="currency">
+                    <option value="EUR">Euros (€)</option>
+                    <option value="USD">Dollars ($) — convertis à l'enregistrement</option>
+                </select>
+                <small>Le stockage est toujours en euros.</small>
+            </div>
+
+            <div class="field">
+                <label for="flat_cost_min">Forfait par synthèse — min</label>
+                <input type="text" name="flat_cost_min" id="flat_cost_min" value="0">
+                <small>Coût fixe par génération, hors tokens.</small>
+            </div>
+
+            <div class="field">
+                <label for="flat_cost_max">Forfait par synthèse — max</label>
+                <input type="text" name="flat_cost_max" id="flat_cost_max" value="0">
+                <small>Laisser vide ou égal au min si le coût est exact.</small>
+            </div>
+
+            <div class="field">
+                <label for="input_price_per_mtok">Prix entrée (/M tokens)</label>
+                <input type="text" name="input_price_per_mtok" id="input_price_per_mtok" value="0">
+            </div>
+
+            <div class="field">
+                <label for="output_price_per_mtok">Prix sortie (/M tokens)</label>
+                <input type="text" name="output_price_per_mtok" id="output_price_per_mtok" value="0">
+            </div>
+
+            <div class="field field-wide">
+                <label for="note">Note</label>
+                <input type="text" name="note" id="note" placeholder="Date du relevé, palier, lien vers la grille…">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                <button type="button" class="btn btn-secondary" onclick="resetPriceForm()">Annuler</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Recharge le formulaire avec un tarif existant : « Modifier » ne fait
+        // que pré-remplir, l'enregistrement passe par la même route que la création.
+        function editPrice(button) {
+            document.getElementById('price_id').value = button.dataset.priceId;
+            document.getElementById('model').value = button.dataset.model;
+            document.getElementById('provider_id').value = button.dataset.provider;
+            document.getElementById('flat_cost_min').value = button.dataset.flatMin;
+            document.getElementById('flat_cost_max').value = button.dataset.flatMax;
+            document.getElementById('input_price_per_mtok').value = button.dataset.input;
+            document.getElementById('output_price_per_mtok').value = button.dataset.output;
+            document.getElementById('note').value = button.dataset.note;
+            // Les valeurs relues sont déjà en euros : repasser la devise sur EUR
+            // évite une seconde conversion à l'enregistrement.
+            document.getElementById('currency').value = 'EUR';
+
+            document.getElementById('form-title').textContent =
+                'Modifier le tarif de ' + button.dataset.model;
+            document.getElementById('form-title').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetPriceForm() {
+            document.querySelector('.price-form').reset();
+            document.getElementById('price_id').value = '';
+            document.getElementById('form-title').textContent = 'Ajouter un tarif';
+        }
+    </script>
+
+</body>
+
+</html>

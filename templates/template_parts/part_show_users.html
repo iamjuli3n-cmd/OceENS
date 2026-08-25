@@ -1,7 +1,56 @@
-<div class="card-title">
+<style>
+    .btn-add-user {
+        margin-left: auto;
+        padding: 6px 14px;
+        border: none;
+        border-radius: 6px;
+        background: var(--purple, #470a68);
+        color: #fff;
+        font-size: .82rem;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .btn-add-user:hover {
+        opacity: .88;
+    }
+
+    .add-user-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0;
+    }
+
+    .add-user-form input[type="email"] {
+        flex: 1;
+        max-width: 320px;
+        padding: 8px 12px;
+        border: 1px solid var(--border, #dce4ec);
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: .88rem;
+    }
+
+    .add-user-error {
+        color: #991b1b;
+        font-size: .8rem;
+    }
+</style>
+
+<div class="card-title" style="display:flex; align-items:center; gap:10px;">
     Liste des utilisateurs
     <span class="count" id="count-label">{{users | length}} affiché(s)</span>
+    <button type="button" class="btn-add-user" onclick="toggleAddUserForm()">+ Ajouter un utilisateur</button>
 </div>
+
+<!-- Formulaire d'ajout rapide d'un utilisateur (rôle étudiant par défaut) -->
+<form id="add-user-form" class="add-user-form" style="display:none;" onsubmit="return submitAddUser(event)">
+    <input type="email" id="add-user-email" name="email" required
+        placeholder="prenom.nom@epf.fr">
+    <button type="submit" class="btn-edit">Ajouter</button>
+    <span id="add-user-error" class="add-user-error"></span>
+</form>
 
 <!--
 <div class="search-wrap">
@@ -91,6 +140,40 @@
 </div>
 
 <script>
+
+    // Affiche/masque le formulaire d'ajout d'utilisateur
+    function toggleAddUserForm() {
+        const form = document.getElementById('add-user-form');
+        form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+        if (form.style.display === 'flex') {
+            document.getElementById('add-user-email').focus();
+        }
+    }
+
+    // Envoie le mail au backend, crée l'utilisateur (rôle étudiant) puis recharge
+    async function submitAddUser(event) {
+        event.preventDefault();
+        const errorSpan = document.getElementById('add-user-error');
+        errorSpan.textContent = '';
+        const email = document.getElementById('add-user-email').value.trim();
+
+        try {
+            const r = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            });
+            if (r.ok) {
+                location.reload();
+            } else {
+                const data = await r.json();
+                errorSpan.textContent = data.error || 'Erreur lors de la création.';
+            }
+        } catch (e) {
+            errorSpan.textContent = 'Erreur réseau.';
+        }
+        return false;
+    }
 
     function filter(role) {
         const allUsers = document.querySelectorAll("#users-tbody tr");

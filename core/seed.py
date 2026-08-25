@@ -1,4 +1,14 @@
-from sqlmodel import Session, delete
+"""Peuplement initial de la base de données (seed).
+
+Ce module remplit la base avec des données de départ : filières (toujours
+synchronisées depuis un CSV), fournisseur LLM par défaut (idempotent), puis un
+jeu de données de démonstration (utilisateurs, sondages, réponses...) UNIQUEMENT
+si la base est vide.
+
+Point d'entrée : `seed_all_if_necessary()`, appelé au démarrage de l'app.
+"""
+
+from sqlmodel import Session, delete, select
 from pathlib import Path
 import logging
 
@@ -18,9 +28,18 @@ from models import (
     Answer,
     Submission,
     Prompt,
+    LLMModelPrice,
+    LLMProvider,
+    Setting,
     Stat,
 )
 from core.database import engine
+from services.settings_store import (
+    DEFAULT_USD_TO_EUR,
+    USD_TO_EUR_KEY,
+    get_usd_to_eur,
+    set_setting,
+)
 
 logger = logging.getLogger("uvicorn")
 
@@ -523,6 +542,11 @@ def seed_options(session: Session):
 
 
 def _normalize_header(value: str) -> str:
+    """Normalise un en-tête de colonne CSV pour comparaison robuste.
+
+    Minuscules, accents retirés, espaces → underscores. Permet de retrouver une
+    colonne quelle que soit sa casse ou son accentuation ("Numéro" == "numero").
+    """
     return (
         (value or "")
         .strip()
@@ -536,8 +560,15 @@ def _normalize_header(value: str) -> str:
 
 
 def _get_csv_value(row: dict, *possible_names: str) -> str:
+    """Récupère une valeur de ligne CSV en tolérant les variantes d'en-tête.
+
+    Essaie plusieurs noms de colonne possibles (après normalisation) et renvoie
+    la première valeur trouvée, ou "" si aucune ne correspond.
+    """
+    # Réindexer la ligne avec des clés normalisées
     normalized_row = {_normalize_header(key): value for key, value in row.items()}
 
+    # Tester chaque nom candidat jusqu'à en trouver un présent
     for name in possible_names:
         key = _normalize_header(name)
         if key in normalized_row:
@@ -929,6 +960,142 @@ def seed_answers(session: Session):
 
     session.commit()
 
+DEFAULT_PROVIDER_NAME = "Ollama EPF"
+
+
+def seed_llm_providers(session: Session):
+    """Crée le fournisseur LLM historique s'il n'existe pas.
+
+    Relançable sans doublon : la présence est testée sur `name`, qui sert de
+    clé fonctionnelle. Aucune clé d'API n'est écrite ici, uniquement le nom de
+    la variable d'environnement qui la porte.
+    """
+
+    existing = session.exec(
+        select(LLMProvider).where(LLMProvider.name == DEFAULT_PROVIDER_NAME)
+    ).first()
+    if existing:
+        return
+
+    session.add(
+        LLMProvider(
+            name=DEFAULT_PROVIDER_NAME,
+            api_type="ollama",
+            base_url="https://locallm.mde.epf.fr/ollama",
+            api_key_env="LLM_API_KEY",
+            default_model="gemma4:26b",
+            is_active=True,
+        )
+    )
+    session.commit()
+
+
+# Tarifs de départ. Format :
+#   (modèle, forfait_min, forfait_max, prix_entrée_Mtok, prix_sortie_Mtok, note)
+#
+# Le forfait est par génération ; les prix au token sont par million. Les deux
+# s'additionnent. **Tous les montants sont en euros.**
+#
+# Le LLM de l'école n'est pas gratuit : auto-hébergé ne veut pas dire sans
+# coût. GPU, électricité et amortissement du serveur reviennent à 2 à 5
+# centimes par synthèse, tout inclus — d'où un forfait en fourchette plutôt
+# qu'un prix au token.
+#
+# Les tarifs Anthropic sont publiés en dollars par million de tokens : ils sont
+# convertis ici une fois, au taux par défaut. À revérifier en administration —
+# le taux comme la grille bougent.
+#
+# Les autres fournisseurs (OpenAI, Mistral, Groq…) sont laissés à saisir dans
+# `/backend/llm/prices` : inventer un tarif afficherait un montant faux avec
+# l'autorité d'un montant réel.
+#
+# `provider_id` reste NULL : ces tarifs valent pour le nom de modèle quel que
+# soit l'endpoint qui le sert.
+_ANTHROPIC_USD_PER_MTOK = (
+    ("claude-opus-5", 5.00, 25.00),
+    ("claude-sonnet-5", 3.00, 15.00),
+    ("claude-haiku-4-5", 1.00, 5.00),
+)
+
+# Coût « tout inclus » d'une génération sur le serveur auto-hébergé de l'école.
+EPF_FLAT_COST_EUR = (0.02, 0.05)
+
+
+def default_model_prices(usd_to_eur=DEFAULT_USD_TO_EUR):
+    """Construit la grille de départ, en euros, pour un taux donné."""
+    prices = [
+        (
+            "gemma4:26b",
+            EPF_FLAT_COST_EUR[0],
+            EPF_FLAT_COST_EUR[1],
+            0.0,
+            0.0,
+            "Ollama auto-hébergé (EPF) : 2 à 5 centimes par synthèse, tout inclus "
+            "(GPU, électricité, amortissement)",
+        )
+    ]
+
+    note = (
+        f"Grille publique Anthropic, convertie de USD au taux {usd_to_eur} "
+        "— à revérifier"
+    )
+    for model, price_in, price_out in _ANTHROPIC_USD_PER_MTOK:
+        prices.append(
+            (model, 0.0, 0.0, price_in * usd_to_eur, price_out * usd_to_eur, note)
+        )
+
+    return tuple(prices)
+
+
+def seed_model_prices(session: Session):
+    """Insère les tarifs connus, sans écraser ceux déjà saisis.
+
+    Relançable : la présence est testée sur le couple (modèle, fournisseur
+    générique). Un tarif corrigé à la main en administration n'est donc jamais
+    réécrit au redémarrage suivant.
+    """
+    # Le taux enregistré prime : si l'administrateur l'a ajusté, un modèle
+    # ajouté plus tard doit être converti au même taux que les autres.
+    usd_to_eur = get_usd_to_eur(session)
+
+    for model, flat_min, flat_max, price_in, price_out, note in default_model_prices(
+        usd_to_eur
+    ):
+        existing = session.exec(
+            select(LLMModelPrice).where(
+                LLMModelPrice.model == model,
+                LLMModelPrice.provider_id.is_(None),
+            )
+        ).first()
+        if existing:
+            continue
+
+        session.add(
+            LLMModelPrice(
+                model=model,
+                provider_id=None,
+                flat_cost_min=flat_min,
+                flat_cost_max=flat_max,
+                input_price_per_mtok=price_in,
+                output_price_per_mtok=price_out,
+                note=note,
+            )
+        )
+
+    session.commit()
+
+
+def seed_settings(session: Session):
+    """Enregistre le taux de change par défaut s'il n'existe pas encore."""
+    if session.get(Setting, USD_TO_EUR_KEY) is None:
+        set_setting(
+            session,
+            USD_TO_EUR_KEY,
+            DEFAULT_USD_TO_EUR,
+            description="Taux dollar → euro appliqué aux tarifs saisis en dollars.",
+        )
+
+
 def seed_prompts(session: Session):
     """Remplit la table prompts."""
 
@@ -952,9 +1119,28 @@ Réponses : ```{ANSWERS}```
 
 
 def seed_all_if_necessary():
+    """Point d'entrée du seed, appelé au démarrage de l'application.
+
+    Toujours exécuté : synchro des filières et du fournisseur LLM par défaut
+    (idempotents). Le jeu de données de démo n'est inséré que si la base est
+    vide (test: présence d'au moins un utilisateur).
+    """
     with Session(engine) as session:
         # Toujours synchroniser les programmes depuis le CSV
         seed_programs(session)
+
+        # Toujours garantir la présence du fournisseur LLM par défaut : les
+        # bases déjà déployées doivent l'obtenir sans repasser par un seed
+        # complet. La fonction est idempotente.
+        seed_llm_providers(session)
+
+        # Le taux de change avant la grille : `seed_model_prices` le lit pour
+        # convertir les tarifs publiés en dollars.
+        seed_settings(session)
+
+        # Idem pour la grille tarifaire : les bases déjà déployées doivent
+        # obtenir les tarifs connus sans repasser par un seed complet.
+        seed_model_prices(session)
 
         # Seeder le reste uniquement si la base est vide
         if session.query(User).first():

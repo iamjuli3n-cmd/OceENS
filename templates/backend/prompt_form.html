@@ -48,6 +48,20 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="provider_id">Fournisseur LLM</label>
+                    <select id="provider_id" name="provider_id">
+                        {# Option vide = repli sur le fournisseur par défaut (Ollama EPF) #}
+                        <option value="">Par défaut (Ollama EPF)</option>
+                        {% for provider in providers %}
+                        <option value="{{ provider.provider_id }}"
+                            {% if prompt and prompt.provider_id == provider.provider_id %}selected{% endif %}>
+                            {{ provider.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label for="prompt_text">Texte du prompt</label>
                     <textarea id="prompt_text" name="prompt_text"
                         placeholder="Entrez le texte du prompt…">{{ prompt.prompt_text or '' if prompt else '' }}</textarea>
