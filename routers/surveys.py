@@ -91,6 +91,31 @@ async def create_survey(
         )
 
 
+    # ── Validation du paramétrage (issue #29) ──
+    # Le front bloque déjà ces cas, mais l'API doit refuser d'elle-même : un
+    # module sans enseignant produit des réponses inexploitables, et le
+    # paramétrage n'est plus modifiable une fois le sondage publié.
+    if not survey.ues:
+        return JSONResponse(
+            content={"error": "Le sondage doit contenir au moins une UE."},
+            status_code=400,
+        )
+
+    for ue in survey.ues:
+        if not ue.modules:
+            return JSONResponse(
+                content={"error": f"L'UE « {ue.name} » doit contenir au moins un module."},
+                status_code=400,
+            )
+        for module_data in ue.modules:
+            if not [t for t in module_data.teachers if t and t.strip()]:
+                return JSONResponse(
+                    content={
+                        "error": f"Le module « {module_data.name} » doit avoir au moins un enseignant."
+                    },
+                    status_code=400,
+                )
+
     # ── Transaction unique : Survey + Modules + Users + Respondent ──
     nb_crees = 0
     nb_existants = 0
