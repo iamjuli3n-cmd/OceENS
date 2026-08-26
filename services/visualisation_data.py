@@ -8,6 +8,7 @@ template de visualisation : sections, questions, options, comptages de réponses
 from collections import defaultdict
 from typing import Any, Dict, Optional
 import json
+import logging
 
 from sqlmodel import Session, func, select
 
@@ -26,6 +27,8 @@ from models import (
     Summary,
     StatValue,
 )
+
+logger = logging.getLogger("uvicorn.error")
 
 
 # Seuils de couleur par statistique : chaque seuil (max) → couleur affichée.
@@ -510,15 +513,36 @@ def get_visualisation_context2(survey_id: int) -> Optional[Dict[str, Any]]:
         for row in summary_rows:
             summary,section_name,module_name=row
             if summary.module_id:
-                try:
-                    q = data[section_name]["modules"][module_name]["teachers"][summary.teacher]["questions"][summary.question_id]
-                except KeyError as e:
-                    print(f"Key not found : {e}")
-                    print(f"Data {data}")
-                    print(f"summary {summary}")
-
+                # Le dictionnaire est indexé avec le nom normalisé (`.title()`,
+                # cf. teacher_key plus haut) alors que Summary.teacher recopie
+                # Answer.teacher brut : sans normalisation ici, la clé ne
+                # correspond pas et la synthèse est perdue.
+                teacher_key = summary.teacher.title() if summary.teacher else None
+                q = (
+                    data.get(section_name, {})
+                    .get("modules", {})
+                    .get(module_name, {})
+                    .get("teachers", {})
+                    .get(teacher_key, {})
+                    .get("questions", {})
+                    .get(summary.question_id)
+                )
             else:
                 q = data[section_name]["questions"][summary.question_id]
+            if q is None:
+                # Cas connu : un module sans enseignant n'alimente jamais
+                # ["teachers"] (issue #29). On ignore la synthèse plutôt que de
+                # la rattacher à la question de l'itération précédente.
+                logger.warning(
+                    "Synthèse %s ignorée : question %s introuvable "
+                    "(section=%s, module=%s, enseignant=%r)",
+                    summary.summary_id,
+                    summary.question_id,
+                    section_name,
+                    module_name,
+                    summary.teacher,
+                )
+                continue
             q["summary"]={"text":summary.summary_text,"metadata":summary.metadata_text}
 
         context["sections"] = data
